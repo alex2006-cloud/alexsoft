@@ -1,0 +1,43 @@
+# Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+credentials.json
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Dependencies / build
+node_modules/
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Docker / local data
+data/
+*.log
+
+# Generated diagrams (CI writes here; keep folder)
+artifacts/generated/**
+!artifacts/generated/.gitkeep
+!artifacts/generated/README.md
+
+# Structurizr Lite local state
+artifacts/structurizr/.structurizr/
