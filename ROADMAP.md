@@ -7,7 +7,7 @@
 - [x] Структура монорепозитория
 - [x] Папка артефактов + Structurizr C4 L1
 - [x] `.env.example`
-- [ ] GitHub remote + первый push
+- [x] GitHub remote + первый push (`alex2006-cloud/alexsoft`)
 - [ ] Локальный `.env` (не в git)
 
 ## Этап 1 — публичный контур
