@@ -45,13 +45,13 @@
 
 ## Текущий этап
 
-**Этап 0 — каркас репозитория и C4 Level 1.** Лендинг, DNS, GitHub Actions, БД и observability — следующие шаги (см. [ROADMAP.md](ROADMAP.md), замысел — [CONCEPT.md](CONCEPT.md)).
+**Этап 1 — публичный контур.** Лендинг (Next.js), домен + DNS, GitHub Actions. Каркас репозитория и C4 L1 уже есть (см. [ROADMAP.md](ROADMAP.md), замысел — [CONCEPT.md](CONCEPT.md)).
 
 ## Быстрый старт (пока без сервисов)
 
 1. Скопировать `.env.example` → `.env` и задать локальные значения.
 2. Открыть архитектурную модель: `artifacts/structurizr/workspace.dsl` (Structurizr Lite или Structurizr CLI).
-3. Дальше — `apps/landing` и `infra/compose`.
+3. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
 
 ## Стек (целевой)
 
