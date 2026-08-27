@@ -1,0 +1,21 @@
+# Публичный лендинг на VPS (osipcraft.ru).
+# Сборка статики: cd apps/landing && LANDING_URL=https://osipcraft.ru npm run build
+# На сервере Caddy раздаёт apps/landing/out как /var/www/osipcraft.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../../apps/landing/out:/var/www/osipcraft:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

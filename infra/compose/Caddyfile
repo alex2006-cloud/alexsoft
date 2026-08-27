@@ -1,0 +1,16 @@
+osipcraft.ru {
+	encode gzip zstd
+	root * /var/www/osipcraft
+	try_files {path} {path}.html {path}/index.html /404.html
+	file_server
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+	}
+}
+
+www.osipcraft.ru {
+	redir https://osipcraft.ru{uri} permanent
+}
