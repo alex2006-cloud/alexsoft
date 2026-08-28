@@ -11,6 +11,12 @@ on:
       - ".github/workflows/landing.yml"
   workflow_dispatch:
 
+env:
+  LANDING_URL: https://osipcraft.ru
+  DEPLOY_HOST: 130.17.1.193
+  DEPLOY_USER: root
+  DEPLOY_PATH: /var/www/osipcraft
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,3 +37,41 @@ jobs:
       # Lint locally currently crashes (eslint-config-next + ESLint 9).
       # next build already type-checks TypeScript.
       - run: npm run build
+        env:
+          LANDING_URL: ${{ env.LANDING_URL }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: landing-static
+          path: apps/landing/out/
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: landing-static
+          path: out
+
+      - name: Upload static site to VPS
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.LANDING_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SSH_PRIVATE_KEY}" ]; then
+            echo "Missing GitHub secret LANDING_SSH_KEY"
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts 2>/dev/null
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
+            out/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "chown -R www-data:www-data ${DEPLOY_PATH}"

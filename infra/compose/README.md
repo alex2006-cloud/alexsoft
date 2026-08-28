@@ -15,6 +15,6 @@ npm ci
 npm run build
 ```
 
-На VPS: Caddy ставится из пакета (см. выкладку), корень сайта — `/var/www/osipcraft`.
+На VPS: nginx раздаёт `/var/www/osipcraft`. После push в `main` статика выкладывается автоматически (workflow **Landing**, секрет `LANDING_SSH_KEY` в GitHub).
 
 `docker-compose.yml` в этой папке — тот же контур, когда на сервере будет Docker и запас RAM.
