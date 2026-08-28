@@ -20,3 +20,5 @@ npm run dev
 npm run build
 npm start
 ```
+
+CI: при push в `apps/landing` GitHub Actions собирает лендинг (`.github/workflows/landing.yml`). Вкладка **Actions** в репозитории.
