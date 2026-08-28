@@ -18,4 +18,9 @@ docker run -it --rm -p 8080:8080 -v "${PWD}/artifacts/structurizr:/usr/local/str
 
 Открыть http://localhost:8080 — workspace подхватит `workspace.dsl`.
 
-Вариант B — [Structurizr CLI](https://docs.structurizr.com/cli) для экспорта в CI (этап GitHub Actions).
+Вариант B — GitHub Actions: workflow `.github/workflows/structurizr.yml` проверяет DSL и выгружает PNG/SVG в `generated/` при push. Локально то же через Docker:
+
+```bash
+docker run --rm -v "${PWD}:/usr/local/structurizr" structurizr/structurizr:2026.06.28-playwright validate -workspace artifacts/structurizr/workspace.dsl
+docker run --rm -v "${PWD}:/usr/local/structurizr" structurizr/structurizr:2026.06.28-playwright export -workspace artifacts/structurizr/workspace.dsl -format png -output artifacts/generated
+```

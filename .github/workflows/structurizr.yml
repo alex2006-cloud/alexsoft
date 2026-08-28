@@ -1,0 +1,59 @@
+name: Structurizr
+
+on:
+  push:
+    paths:
+      - "artifacts/structurizr/**"
+      - ".github/workflows/structurizr.yml"
+  pull_request:
+    paths:
+      - "artifacts/structurizr/**"
+      - ".github/workflows/structurizr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate workspace
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/usr/local/structurizr" \
+            structurizr/structurizr:2026.06.28-playwright \
+            validate -workspace artifacts/structurizr/workspace.dsl
+
+      - name: Export PNG and SVG
+        run: |
+          mkdir -p artifacts/generated
+          docker run --rm \
+            -v "${{ github.workspace }}:/usr/local/structurizr" \
+            structurizr/structurizr:2026.06.28-playwright \
+            export -workspace artifacts/structurizr/workspace.dsl -format png -output artifacts/generated
+          docker run --rm \
+            -v "${{ github.workspace }}:/usr/local/structurizr" \
+            structurizr/structurizr:2026.06.28-playwright \
+            export -workspace artifacts/structurizr/workspace.dsl -format svg -output artifacts/generated
+          ls -la artifacts/generated
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: structurizr-diagrams
+          path: artifacts/generated/**
+
+      - name: Commit diagrams to main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/generated
+          if git diff --staged --quiet; then
+            echo "Diagrams unchanged"
+            exit 0
+          fi
+          git commit -m "Update Structurizr diagram exports."
+          git push

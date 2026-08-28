@@ -45,7 +45,7 @@
 
 ## Текущий этап
 
-**Этап 1 — публичный контур.** Лендинг (Next.js), домен + DNS, GitHub Actions. Каркас репозитория и C4 L1 уже есть (см. [ROADMAP.md](ROADMAP.md), замысел — [CONCEPT.md](CONCEPT.md)).
+**Этап 1 — публичный контур.** Лендинг на VPS (`osipcraft.ru`). Осталось включить экспорт Structurizr в Actions (см. [ROADMAP.md](ROADMAP.md)).
 
 ## Быстрый старт (пока без сервисов)
 

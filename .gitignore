@@ -34,10 +34,5 @@ __pycache__/
 data/
 *.log
 
-# Generated diagrams (CI writes here; keep folder)
-artifacts/generated/**
-!artifacts/generated/.gitkeep
-!artifacts/generated/README.md
-
 # Structurizr Lite local state
 artifacts/structurizr/.structurizr/

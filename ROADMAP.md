@@ -13,8 +13,9 @@
 ## Этап 1 — публичный контур
 
 - [x] Лендинг (Next.js): страница, портфолио, кнопки на сервисы
-- [ ] Домен + DNS
-- [ ] GitHub Actions (lint/build + экспорт Structurizr при push)
+- [x] Домен + DNS (`osipcraft.ru`, хостинг Hostline, VPS Fornex)
+- [x] GitHub Actions: сборка лендинга
+- [ ] GitHub Actions: экспорт Structurizr (PNG/SVG) при push
 
 ## Этап 2 — платформа данных
 
