@@ -35,6 +35,9 @@ export function Contact() {
             <a className="link" href={siteHref} target="_blank" rel="noreferrer">
               {siteLabel}
             </a>
+            <a className="link" href="/card">
+              Цифровая визитка →
+            </a>
           </div>
         </Reveal>
       </div>

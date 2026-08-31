@@ -36,6 +36,9 @@ export function Hero() {
               <a className="btn btn-ghost" href="/#contact">
                 Связаться →
               </a>
+              <a className="btn btn-ghost" href="/card">
+                Визитка
+              </a>
             </div>
           </div>
           <div className="hidden lg:block">

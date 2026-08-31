@@ -10,16 +10,16 @@
 - [x] GitHub remote + первый push (`alex2006-cloud/alexsoft`)
 - [x] Локальный `.env` (не в git)
 
-## Этап 1 — публичный контур
+## Этап 1 — публичный контур (готово)
 
 - [x] Лендинг (Next.js): страница, портфолио, кнопки на сервисы
 - [x] Домен + DNS (`osipcraft.ru`, хостинг Hostline, VPS Fornex)
 - [x] GitHub Actions: сборка лендинга
-- [ ] GitHub Actions: экспорт Structurizr (PNG/SVG) при push
+- [x] GitHub Actions: экспорт Structurizr (PNG/SVG) при push
 
 ## Этап 2 — платформа данных
 
-- [ ] PostgreSQL
+- [x] PostgreSQL — локально (нативная установка Windows, ADR-0004); VPS/облако позже
 - [ ] Redis
 - [ ] MinIO
 

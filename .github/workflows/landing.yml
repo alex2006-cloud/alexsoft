@@ -56,22 +56,18 @@ jobs:
           name: landing-static
           path: out
 
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.LANDING_SSH_KEY }}
+
+      - name: Trust VPS host key
+        run: ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
+
       - name: Upload static site to VPS
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.LANDING_SSH_KEY }}
         run: |
           set -euo pipefail
-          if [ -z "${SSH_PRIVATE_KEY}" ]; then
-            echo "Missing GitHub secret LANDING_SSH_KEY"
-            exit 1
-          fi
-          mkdir -p ~/.ssh
-          printf '%s\n' "${SSH_PRIVATE_KEY}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts 2>/dev/null
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes" \
             out/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
-            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "chown -R www-data:www-data ${DEPLOY_PATH}"

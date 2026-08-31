@@ -31,7 +31,15 @@ npm start
 
 | Secret | Значение |
 |--------|----------|
-| `LANDING_SSH_KEY` | приватный ключ SSH для `root@130.17.1.193` (весь файл, включая `BEGIN`/`END`) |
+| `LANDING_SSH_KEY` | приватный ключ SSH для `root@130.17.1.193` (весь файл `alexsoft_fornex`, включая `BEGIN`/`END`) |
+
+В PowerShell скопируй ключ **без искажений**:
+
+```powershell
+Get-Content $env:USERPROFILE\.ssh\alexsoft_fornex -Raw | Set-Clipboard
+```
+
+Вставь в секрет и сохрани. Ключ **без парольной фразы**. Если deploy падает с `error in libcrypto` — секрет перезапиши этой командой.
 
 Публичный ключ с этой пары должен быть в `/root/.ssh/authorized_keys` на сервере.
 

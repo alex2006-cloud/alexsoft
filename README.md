@@ -45,13 +45,14 @@
 
 ## Текущий этап
 
-**Этап 1 — публичный контур.** Лендинг на VPS (`osipcraft.ru`). Осталось включить экспорт Structurizr в Actions (см. [ROADMAP.md](ROADMAP.md)).
+**Этап 2 — платформа данных.** PostgreSQL, Redis, MinIO. Публичный контур готов (см. [ROADMAP.md](ROADMAP.md)).
 
-## Быстрый старт (пока без сервисов)
+## Быстрый старт
 
-1. Скопировать `.env.example` → `.env` и задать локальные значения.
-2. Открыть архитектурную модель: `artifacts/structurizr/workspace.dsl` (Structurizr Lite или Structurizr CLI).
-3. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
+1. Скопировать `.env.example` → `.env` и задать локальные значения (в т.ч. `POSTGRES_PASSWORD`).
+2. PostgreSQL (локально): установить PostgreSQL 16, создать БД `alexsoft` — [infra/postgres/README.md](infra/postgres/README.md), [ADR-0004](artifacts/adr/0004-postgresql-native-local.md).
+3. Архитектурная модель: `artifacts/structurizr/workspace.dsl` (Structurizr Lite или Structurizr CLI).
+4. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
 
 ## Стек (целевой)
 

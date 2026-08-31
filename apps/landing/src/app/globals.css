@@ -237,6 +237,226 @@ body {
   background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.16), transparent 42%);
 }
 
+.visiting-card-page {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+}
+
+.visiting-card-scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+}
+
+.visiting-card {
+  position: relative;
+  width: min(100%, 42rem);
+  border-radius: 28px;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(41, 151, 255, 0.55),
+    rgba(167, 139, 250, 0.35) 45%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.visiting-card-glow {
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  background: radial-gradient(circle at 50% 30%, rgba(41, 151, 255, 0.18), transparent 58%);
+  pointer-events: none;
+}
+
+.visiting-card-inner {
+  border-radius: 27px;
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.06), transparent 38%),
+    linear-gradient(180deg, #121214 0%, #09090b 100%);
+  padding: clamp(1.35rem, 4vw, 2rem);
+}
+
+.visiting-card-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1rem 1.15rem;
+  align-items: center;
+}
+
+.visiting-card-photo {
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 999px;
+  object-fit: cover;
+  object-position: 54% 12%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.visiting-card-brand {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-dim);
+}
+
+.visiting-card-name {
+  margin-top: 0.35rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 4.5vw, 2.15rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.visiting-card-role {
+  margin-top: 0.35rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #9ecbff;
+}
+
+.visiting-card-location {
+  margin-top: 0.2rem;
+  font-size: 0.875rem;
+  color: var(--color-ink-dim);
+}
+
+.visiting-card-tagline {
+  margin-top: 1.25rem;
+  font-size: clamp(1.05rem, 2.2vw, 1.2rem);
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+  color: rgba(245, 245, 247, 0.88);
+}
+
+.visiting-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.visiting-card-tags li {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(245, 245, 247, 0.82);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.visiting-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.35rem;
+}
+
+.visiting-card-stat-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.visiting-card-stat-label {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  color: var(--color-ink-dim);
+}
+
+.visiting-card-divider {
+  height: 1px;
+  margin: 1.35rem 0 1.1rem;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.14),
+    transparent
+  );
+}
+
+.visiting-card-contacts {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.visiting-card-contact {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+  padding: 0.72rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.visiting-card-contact:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.visiting-card-contact-primary {
+  border-color: rgba(41, 151, 255, 0.35);
+  background: rgba(41, 151, 255, 0.08);
+}
+
+.visiting-card-contact-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-dim);
+}
+
+.visiting-card-contact-value {
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+  word-break: break-word;
+}
+
+.visiting-card-hint {
+  max-width: 28rem;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-ink-dim);
+}
+
+@media (max-width: 520px) {
+  .visiting-card-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .visiting-card-contact {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
