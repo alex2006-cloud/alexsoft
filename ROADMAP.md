@@ -20,8 +20,8 @@
 ## Этап 2 — платформа данных
 
 - [x] PostgreSQL — локально (нативная установка Windows, ADR-0004); VPS/облако позже
-- [ ] Redis
-- [ ] MinIO
+- [x] Redis — локально (Memurai / Windows, ADR-0005); VPS/облако позже
+- [x] MinIO — локально (нативный `minio.exe` + Console, ADR-0006); VPS/облако позже
 
 ## Этап 3 — observability и BI
 

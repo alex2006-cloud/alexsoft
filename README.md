@@ -51,8 +51,10 @@
 
 1. Скопировать `.env.example` → `.env` и задать локальные значения (в т.ч. `POSTGRES_PASSWORD`).
 2. PostgreSQL (локально): установить PostgreSQL 16, создать БД `alexsoft` — [infra/postgres/README.md](infra/postgres/README.md), [ADR-0004](artifacts/adr/0004-postgresql-native-local.md).
-3. Архитектурная модель: `artifacts/structurizr/workspace.dsl` (Structurizr Lite или Structurizr CLI).
-4. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
+3. Redis (локально): Memurai + Redis Insight — [infra/redis/README.md](infra/redis/README.md), [ADR-0005](artifacts/adr/0005-redis-native-local.md).
+4. MinIO (локально): `minio.exe` + Console — [infra/minio/README.md](infra/minio/README.md), [ADR-0006](artifacts/adr/0006-minio-native-local.md).
+5. Архитектурная модель: `artifacts/structurizr/workspace.dsl` (Structurizr Lite или Structurizr CLI).
+6. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
 
 ## Стек (целевой)
 

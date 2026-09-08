@@ -16,7 +16,7 @@ workspace "alexsoft" "Personal Ecosystem Lab — персональная мул
             games = container "Games" "Мини-игры как отдельные продукты." "TBD"
             rag = container "RAG" "Поиск и ответы по собственной базе знаний." "TBD"
             aiGateway = container "AI Gateway" "Единый шлюз/оркестратор агентов: посты, тестировщик, ответы в каналы." "LangChain/LangGraph"
-            dataPlatform = container "Data Platform" "PostgreSQL, MinIO, ETL; витрины для BI." "PostgreSQL, MinIO"
+            dataPlatform = container "Data Platform" "PostgreSQL, Redis, MinIO, ETL; витрины для BI." "PostgreSQL, Redis, MinIO"
             observability = container "Observability" "Логи, метрики, дашборды." "Grafana, Loki, Prometheus"
         }
 

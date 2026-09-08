@@ -1,0 +1,5 @@
+# Заметки
+
+Простой текстовый объект — удобно смотреть в Console без превью Markdown.
+
+Платформа данных alexsoft, этап 2: PostgreSQL → Redis → MinIO.

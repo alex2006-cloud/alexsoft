@@ -10,6 +10,14 @@
 
 Опционально (если есть Docker Desktop): `docker-compose.data.yml` — [ADR-0003](../../artifacts/adr/0003-postgresql-local-docker-compose.md) (superseded для локальной разработки).
 
+## Redis (локально)
+
+См. [ADR-0005](../../artifacts/adr/0005-redis-native-local.md) и [infra/redis/README.md](../redis/README.md) — **Memurai** (нативный Redis на Windows) + GUI **Redis Insight**.
+
+## MinIO (локально)
+
+См. [ADR-0006](../../artifacts/adr/0006-minio-native-local.md) и [infra/minio/README.md](../minio/README.md) — **нативный `minio.exe`**, S3 API `:9000`, встроенная **Console** `:9001`. Docker — не основной путь.
+
 ## Лендинг (osipcraft.ru)
 
 Статика Next.js + Caddy с Let’s Encrypt. Сборка на машине разработчика (на VPS 1 ГБ `next build` не помещается).

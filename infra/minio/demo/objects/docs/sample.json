@@ -1,0 +1,11 @@
+{
+  "project": "alexsoft",
+  "component": "minio-demo",
+  "bucket": "alexsoft",
+  "prefix": "demo/docs",
+  "purpose": "sample JSON object for Console and mc",
+  "s3": {
+    "endpoint": "http://127.0.0.1:9000",
+    "console": "http://127.0.0.1:9001"
+  }
+}
