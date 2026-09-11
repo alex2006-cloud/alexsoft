@@ -20,7 +20,7 @@
 
 ## Лендинг (osipcraft.ru)
 
-Статика Next.js + Caddy с Let’s Encrypt. Сборка на машине разработчика (на VPS 1 ГБ `next build` не помещается).
+Статика Next.js. Сборка на машине разработчика или в GitHub Actions (на VPS 1 ГиБ `next build` не помещается).
 
 ```bash
 cd apps/landing
@@ -29,6 +29,23 @@ npm ci
 npm run build
 ```
 
-На VPS: nginx раздаёт `/var/www/osipcraft`. После push в `main` статика выкладывается автоматически (workflow **Landing**, секрет `LANDING_SSH_KEY` в GitHub).
+### Прод сейчас (VPS)
 
-`docker-compose.yml` в этой папке — тот же контур, когда на сервере будет Docker и запас RAM.
+**Host Nginx + Certbot** — [ADR-0007](../../artifacts/adr/0007-edge-nginx-npm.md), конфиг [`infra/nginx/osipcraft.ru.conf`](../nginx/osipcraft.ru.conf). После push в `main` статика выкладывается в `/var/www/osipcraft` (workflow **Landing**, секрет `LANDING_SSH_KEY`).
+
+### Docker + Nginx Proxy Manager (когда есть Docker и ~≥2 ГиБ RAM)
+
+`docker-compose.yml` в этой папке: **nginx** (`landing`) раздаёт статику, **Nginx Proxy Manager** — HTTPS и GUI.
+
+```bash
+# из корня репо, с собранным apps/landing/out
+cd infra/compose
+docker compose up -d
+```
+
+- UI: `http://127.0.0.1:81` (с VPS — только SSH-туннель: `ssh -L 81:127.0.0.1:81 root@VPS`).
+- Первый вход NPM: `admin@example.com` / `changeme` — сразу сменить.
+- Proxy Host: Domain `osipcraft.ru` → Forward `http://landing:80` → SSL Let’s Encrypt в UI.
+- На VPS с rsync: в `.env` рядом с compose — `LANDING_STATIC_PATH=/var/www/osipcraft`.
+
+aaPanel не используем (тяжёлая панель, чужой стек) — см. ADR-0007.

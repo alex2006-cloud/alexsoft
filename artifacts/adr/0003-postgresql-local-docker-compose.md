@@ -10,10 +10,10 @@
   - **Сеть:** порт `5432` только на **`127.0.0.1`**; в интернет не публикуем.
   - **Конфигурация:** переменные из `.env` (шаблон `.env.example`); volume `postgres_data` для персистентности.
   - **Схема БД:** на старте — init-скрипты в `infra/postgres/init/` (расширения). Полноценные миграции и перенос данных на VPS/облако — когда появится первый потребитель БД или переезд инфры.
-  - **Compose-файл:** `infra/compose/docker-compose.data.yml` (отдельно от `docker-compose.yml` с Caddy для VPS).
+  - **Compose-файл:** `infra/compose/docker-compose.data.yml` (отдельно от `docker-compose.yml` edge/лендинг для VPS — см. [ADR-0007](0007-edge-nginx-npm.md)).
 - **Последствия:**
   - Локальный запуск: `docker compose -f infra/compose/docker-compose.data.yml up -d` из корня репо (с заполненным `.env`).
-  - `docker-compose.yml` (Caddy/лендинг) на VPS не меняется; Postgres туда не добавляем до отдельного решения.
+  - `docker-compose.yml` (Nginx + NPM / лендинг) на VPS не меняется этим ADR; Postgres туда не добавляем до отдельного решения.
   - Redis и MinIO — следующие пункты этапа 2; порядок по-прежнему PostgreSQL → Redis → MinIO.
   - Metabase и продукты подключаются к `DATABASE_URL` / `POSTGRES_*` локально; при переносе на VPS потребуется ADR или дополнение к этому ADR (бэкапы, сеть, роли).
   - Новые схемы продуктов — через init или миграции конкретного сервиса; не плодить отдельные БД в одном инстансе без причины.

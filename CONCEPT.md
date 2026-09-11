@@ -70,7 +70,7 @@
 
 \- CI/CD: GitHub Actions
 
-\- Контейнеризация и оркестрация: Docker Compose > k3s (облегченный K8s)
+\- Контейнеризация и оркестрация: Docker Compose, Docker Desktop > k3s (облегченный K8s) + опционально Portainer
 
 \- БД: PostgreSQL, MinIO (для файлов) + встроенная Console
 
@@ -115,6 +115,8 @@ PostgreSQL
 Memurai (Redis-совместимый сервер под Windows) и Redis Insight
 
 MinIO (нативно на Windows) + встроенная Console
+
+Docker Compose + Docker Desktop
 
 Автогенерация Structurizr-диаграмм в CI при push
 
@@ -164,9 +166,13 @@ LangChain/LangGraph, интеграция с Redis для кеша ответо�
 
 
 
-Создать MinIO (В облаке) и создать SSH-туннель из Ноутбука до облачного MinIO Console 
+Создать MinIO в облаке (mc mirror) / Yandex Object Storage и создать SSH-туннель из Ноутбука до облачного MinIO Console
 
 Мигрировать БД с локалки на облако
+
+
+
+Docker + опционально Portainer
 
 
 

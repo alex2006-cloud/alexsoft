@@ -1,13 +1,14 @@
 # Stop local pet-project services started by scripts\dev-up.ps1
-# Does NOT stop PostgreSQL Windows service by default.
-# Pass -Landing to also kill whatever listens on port 3000.
+# Stops Memurai, MinIO, and Landing (:3000).
+# Does NOT stop PostgreSQL Windows service.
+# Pass -SkipLanding to leave next dev running.
 #
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-down.ps1
-#   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-down.ps1 -Landing
+#   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-down.ps1 -SkipLanding
 
 param(
-    [switch]$Landing
+    [switch]$SkipLanding
 )
 
 $ErrorActionPreference = "Continue"
@@ -36,13 +37,22 @@ else {
     Write-Host "MinIO process stopped (no stop script)"
 }
 
-if ($Landing) {
+if (-not $SkipLanding) {
+    Write-Host "[..] Stopping Landing (:3000)..."
     $listeners = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue |
         Select-Object -ExpandProperty OwningProcess -Unique
-    foreach ($procId in $listeners) {
-        Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
-        Write-Host "Stopped process on :3000 (PID $procId)"
+    if (-not $listeners) {
+        Write-Host "Landing is not running on :3000"
     }
+    else {
+        foreach ($procId in $listeners) {
+            Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+            Write-Host "Stopped process on :3000 (PID $procId)"
+        }
+    }
+}
+else {
+    Write-Host "[--] Landing left running (-SkipLanding)" -ForegroundColor DarkYellow
 }
 
 Write-Host "=== done ===" -ForegroundColor Cyan

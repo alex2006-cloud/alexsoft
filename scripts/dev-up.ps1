@@ -1,14 +1,14 @@
-# Start local pet-project services that do NOT survive Windows reboot.
-# PostgreSQL (postgresql-x64-16) is a Windows Automatic service; script only starts it if stopped.
+# Start local pet-project services that do NOT survive Windows reboot:
+# PostgreSQL (if stopped), Memurai, MinIO, Landing (next dev).
 #
-# Usage (from anywhere):
+# Usage:
 #   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-up.ps1
-#   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-up.ps1 -Landing
+#   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-up.ps1 -SkipLanding
 #
 # Stop: scripts\dev-down.ps1
 
 param(
-    [switch]$Landing
+    [switch]$SkipLanding
 )
 
 $ErrorActionPreference = "Stop"
@@ -72,8 +72,8 @@ if (-not (Test-PortListen -Port 9000)) {
 }
 Write-Host "[OK] MinIO up" -ForegroundColor Green
 
-# --- Optional landing ---
-if ($Landing) {
+# --- Landing ---
+if (-not $SkipLanding) {
     Write-Host ""
     Write-Host "[..] Landing (next dev :3000)..." -ForegroundColor Yellow
     $landingDir = Join-Path $repoRoot "apps\landing"
@@ -93,6 +93,10 @@ if ($Landing) {
         Write-Host "[OK] Landing started in a new terminal window" -ForegroundColor Green
     }
 }
+else {
+    Write-Host ""
+    Write-Host "[--] Landing skipped (-SkipLanding)" -ForegroundColor DarkYellow
+}
 
 Write-Host ""
 Write-Host "=== ready ===" -ForegroundColor Cyan
@@ -100,7 +104,7 @@ Write-Host "Redis:    127.0.0.1:6379"
 Write-Host "MinIO:    http://127.0.0.1:9000"
 Write-Host "Console:  http://127.0.0.1:9001"
 Write-Host "Postgres: 127.0.0.1:5432"
-if ($Landing) {
+if (-not $SkipLanding) {
     Write-Host "Landing:  http://127.0.0.1:3000"
 }
 Write-Host ""

@@ -1,21 +1,43 @@
-# Публичный лендинг на VPS (osipcraft.ru).
-# Сборка статики: cd apps/landing && LANDING_URL=https://osipcraft.ru npm run build
-# На сервере Caddy раздаёт apps/landing/out как /var/www/osipcraft.
+# Edge на VPS / локальный Docker: Nginx (статика) за Nginx Proxy Manager (HTTPS + GUI).
+# Прод сейчас: host Nginx + Certbot (см. infra/nginx/, ADR-0007) — RAM ~1 ГиБ, Docker нет.
+# Этот compose — когда на машине есть Docker и запас RAM (ориентир ≥ 2 ГиБ).
+#
+# Статика: LANDING_STATIC_PATH (по умолчанию apps/landing/out).
+# На VPS с rsync-деплоем: LANDING_STATIC_PATH=/var/www/osipcraft
+#
+# После up: http://127.0.0.1:81 — NPM UI (по умолчанию admin@example.com / changeme).
+# Proxy Host: osipcraft.ru → http://landing:80, SSL Let's Encrypt в UI.
 
 services:
-  caddy:
-    image: caddy:2-alpine
+  landing:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ${LANDING_STATIC_PATH:-../../apps/landing/out}:/var/www/osipcraft:ro
+      - ./landing.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - edge
+    expose:
+      - "80"
+
+  npm:
+    image: jc21/nginx-proxy-manager:2
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
-      - "443:443/udp"
+      - "127.0.0.1:81:81"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ../../apps/landing/out:/var/www/osipcraft:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    networks:
+      - edge
+    depends_on:
+      - landing
+
+networks:
+  edge:
 
 volumes:
-  caddy_data:
-  caddy_config:
+  npm_data:
+  npm_letsencrypt:
