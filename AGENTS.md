@@ -12,7 +12,7 @@
 
 ## Стек (не подменять без ADR)
 
-Лендинг: Next.js. CI: GitHub Actions. Оркестрация: Docker Compose, позже k3s. Данные: PostgreSQL, MinIO, Redis. BI: Metabase (позже Superset/ClickHouse). Брокер: RabbitMQ. Наблюдаемость: Grafana, Loki, Prometheus. AI: LangChain/LangGraph или AutoGen через `apps/ai-gateway`.
+Лендинг: Next.js. CI: GitHub Actions. Оркестрация: Docker Compose (на VPS), позже k3s. Данные: PostgreSQL, MinIO, Redis. BI: Metabase — локально JAR + Java ([ADR-0009](artifacts/adr/0009-metabase-native-local.md)); позже Superset/ClickHouse. Брокер: RabbitMQ. Наблюдаемость: Grafana, Loki, Prometheus, Grafana Alloy — локально native ([ADR-0008](artifacts/adr/0008-observability-native-local.md)). AI: LangChain/LangGraph или AutoGen через `apps/ai-gateway`.
 
 ## Что не делать
 

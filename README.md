@@ -45,17 +45,49 @@
 
 ## Текущий этап
 
-**Этап 2 — платформа данных.** PostgreSQL, Redis, MinIO. Публичный контур готов (см. [ROADMAP.md](ROADMAP.md)).
+**Этап 4 — первый продукт в контейнере.** Этап 3 закрыт: observability ([ADR-0008](artifacts/adr/0008-observability-native-local.md)) и Metabase ([ADR-0009](artifacts/adr/0009-metabase-native-local.md)). Дальше — мини-игра/бот + Compose (см. [ROADMAP.md](ROADMAP.md)).
 
 ## Быстрый старт
 
-1. Скопировать `.env.example` → `.env` и задать локальные значения (в т.ч. `POSTGRES_PASSWORD`).
+1. Скопировать `.env.example` → `.env` и задать локальные значения (в т.ч. `POSTGRES_PASSWORD`, `GRAFANA_ADMIN_PASSWORD`).
 2. PostgreSQL (локально): установить PostgreSQL 16, создать БД `alexsoft` — [infra/postgres/README.md](infra/postgres/README.md), [ADR-0004](artifacts/adr/0004-postgresql-native-local.md).
 3. Redis (локально): Memurai + Redis Insight — [infra/redis/README.md](infra/redis/README.md), [ADR-0005](artifacts/adr/0005-redis-native-local.md).
 4. MinIO (локально): `minio.exe` + Console — [infra/minio/README.md](infra/minio/README.md), [ADR-0006](artifacts/adr/0006-minio-native-local.md).
-5. Архитектурная модель: `artifacts/structurizr/workspace.dsl` (Structurizr Lite или Structurizr CLI).
-6. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
+5. Observability (локально, по одному компоненту): Loki → Prometheus → Alloy → Grafana — [ADR-0008](artifacts/adr/0008-observability-native-local.md), каталоги `infra/loki`, `infra/prometheus`, `infra/alloy`, `infra/grafana`.
+6. Metabase (локально, JAR + Java): [infra/metabase/README.md](infra/metabase/README.md) → http://127.0.0.1:3002
+7. Архитектурная модель: `artifacts/structurizr/workspace.dsl` (Structurizr Lite или Structurizr CLI).
+8. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
+
+### Порты локальной лаборатории
+
+| Порт | Сервис |
+|------|--------|
+| 3000 | Лендинг (Next.js) |
+| 3001 | Grafana |
+| 3002 | Metabase |
+| 3100 / 9096 | Loki HTTP / gRPC |
+| 9090 | Prometheus |
+| 12345 | Alloy HTTP UI |
+| 5432 | PostgreSQL |
+| 6379 | Redis (Memurai) |
+| 9000 / 9001 | MinIO S3 / Console |
+
+Источник правды по значениям — `.env` (шаблон `.env.example`).
+
+### Observability — быстрый просмотр
+
+```powershell
+powershell -ExecutionPolicy Bypass -File infra\loki\start-loki.ps1
+powershell -ExecutionPolicy Bypass -File infra\prometheus\start-prometheus.ps1
+powershell -ExecutionPolicy Bypass -File infra\alloy\start-alloy.ps1
+powershell -ExecutionPolicy Bypass -File infra\alloy\seed-demo-log.ps1
+powershell -ExecutionPolicy Bypass -File infra\grafana\start-grafana.ps1
+```
+
+- Grafana: http://127.0.0.1:3001 (`admin` / `GRAFANA_ADMIN_PASSWORD`)
+- Explore → Loki: `{job="alexsoft-demo"}`
+- Explore → Prometheus: `alloy_build_info`
 
 ## Стек (целевой)
 
-Next.js · GitHub monorepo · GitHub Actions · Docker Compose → k3s · PostgreSQL · MinIO · Redis · Metabase → Superset/ClickHouse · RabbitMQ · Grafana · Loki · Prometheus · LangChain/LangGraph или AutoGen.
+Next.js · GitHub monorepo · GitHub Actions · Docker Compose → k3s · PostgreSQL · MinIO · Redis · Metabase → Superset/ClickHouse · RabbitMQ · Grafana · Loki · Prometheus · Grafana Alloy · LangChain/LangGraph или AutoGen.

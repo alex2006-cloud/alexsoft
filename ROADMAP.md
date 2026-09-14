@@ -17,20 +17,32 @@
 - [x] GitHub Actions: сборка лендинга
 - [x] GitHub Actions: экспорт Structurizr (PNG/SVG) при push
 
-## Этап 2 — платформа данных
+## Этап 2 — платформа данных (готово)
 
 - [x] PostgreSQL — локально (нативная установка Windows, ADR-0004); VPS/облако позже
 - [x] Redis — локально (Memurai / Windows, ADR-0005); VPS/облако позже
 - [x] MinIO — локально (нативный `minio.exe` + Console, ADR-0006); VPS/облако позже
 
-## Этап 3 — observability и BI
+## Этап 3 — observability и BI (готово)
 
-- [ ] Loki — логи контейнеров
-- [ ] Prometheus — метрики
-- [ ] Grafana — хотя бы один сервис
-- [ ] Metabase поверх PostgreSQL
+На Windows — нативно и по одному компоненту. Docker/Compose — на этапе VPS, не в этой нитке.
 
-## Этап 4 — первый продукт в контейнере
+**Observability**
+
+- [x] Loki (native) — хранение логов
+- [x] Prometheus (native) — хранение метрик
+- [x] Grafana Alloy (native) — агент сбора
+- [x] Grafana (native) — UI (порт ≠ 3000, лендинг)
+- [x] Alloy: один поток логов → Loki, одна метрика → Prometheus
+- [x] Просмотр в Grafana (логи и метрики)
+- [x] ADR + README + порты в `.env` / `.env.example`
+
+**BI (после observability)**
+
+- [x] Metabase поверх PostgreSQL (native) — [ADR-0009](artifacts/adr/0009-metabase-native-local.md)
+- [x] Один отчёт / вопрос в Metabase (`demo_items`)
+
+## Этап 4 — первый продукт в контейнере (текущий)
 
 - [ ] Мини-игра или бот как отдельный контейнер
 - [ ] Кнопка/ссылка с лендинга

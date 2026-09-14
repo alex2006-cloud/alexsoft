@@ -66,6 +66,19 @@ SELECT current_database(), current_user, version();
 
 Расширения: `\dx` в psql или в DBeaver → **Extensions** — `uuid-ossp`, `pgcrypto`.
 
+## 5. Логи изменений БД (для Alloy → Loki)
+
+По умолчанию PostgreSQL почти не пишет SQL в файл. Чтобы Alloy видел INSERT/UPDATE/DELETE/DDL:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File infra\postgres\enable-change-logging.ps1
+powershell -ExecutionPolicy Bypass -File infra\postgres\seed-pg-change.ps1
+```
+
+`enable-change-logging` спросит пароль роли **`postgres`** (не путать с `POSTGRES_PASSWORD` приложения `alexsoft`). После этого в Grafana Explore → Loki: `{job="postgresql"}`.
+
+См. также [ADR-0008](../../artifacts/adr/0008-observability-native-local.md) и [infra/alloy/README.md](../alloy/README.md).
+
 ## Параметры подключения (DBeaver)
 
 | Поле | Значение |

@@ -1,0 +1,23 @@
+# ADR-0008: Observability — нативный стек на Windows (Loki, Prometheus, Alloy, Grafana)
+
+- **Статус:** accepted
+- **Дата:** 2026-09-14
+- **Контекст:** Этап 3 дорожной карты — observability и BI. Платформа данных (ADR-0004…0006) уже на Windows native. Нужны логи, метрики и единый UI без переноса контура в Docker Compose на ноутбуке: цель обучения — поставить и понять каждый компонент как end-user. Docker Engine + Compose отложены на этап VPS/облака. Стек по CONCEPT: Loki (логи), Prometheus (метрики), Grafana Alloy (агент), Grafana (UI). Metabase — отдельный подэтап BI, в этот ADR не входит.
+- **Решение:**
+  - **Где:** только локально (Windows), standalone-бинарники в `%LOCALAPPDATA%\<Component>\`, пользовательские процессы (не Windows Service / не MSI как основной путь).
+  - **Компоненты и версии (зафиксированы скриптами установки):**
+    - **Loki** v3.7.7 — хранилище логов, HTTP `127.0.0.1:3100`, gRPC `127.0.0.1:9096`
+    - **Prometheus** v3.14.0 — TSDB метрик, `127.0.0.1:9090`, с `--web.enable-remote-write-receiver` для приёма remote_write от Alloy
+    - **Grafana Alloy** v1.19.2 — агент: файл-лог → Loki; scrape себя → Prometheus remote_write; UI `127.0.0.1:12345`
+    - **Grafana OSS** v13.2.1 — UI Explore/дашборды, `127.0.0.1:3001` (порт **3000** занят лендингом Next.js)
+  - **Сеть:** только loopback; в интернет не публикуем.
+  - **Конфиги в репо:** `infra/loki/`, `infra/prometheus/`, `infra/alloy/`, `infra/grafana/` (install/start/stop + README). Данные и бинарники вне git.
+  - **Пайплайны:** demo-файл (`job=alexsoft-demo`) и логи PostgreSQL (`job=postgresql`, при `log_statement=mod`) → Loki; метрики Alloy + **CPU ноутбука** через `prometheus.exporter.windows` → Prometheus remote_write; Grafana datasources через provisioning.
+  - **Порты и секреты:** `.env` / `.env.example` (`LOKI_*`, `PROMETHEUS_*`, `ALLOY_*`, `GRAFANA_*`, опционально `POSTGRES_LOG_GLOB`).
+  - **Docker Compose:** не основной путь для локальной observability; перенос на VPS — отдельный ADR.
+- **Последствия:**
+  - Инструкции: `infra/loki/README.md`, `infra/postgres/README.md` (change logging), `infra/prometheus/README.md`, `infra/alloy/README.md`, `infra/grafana/README.md`.
+  - Без агента Loki пуст; без remote_write receiver Prometheus не примет push от Alloy.
+  - Для SQL change-логов нужен `log_statement=mod` + reload (`enable-change-logging.ps1`) или перезапуск службы PostgreSQL.
+  - Температура CPU на Windows часто недоступна стабильно; нагрузка CPU через `windows_cpu_time_total` — рабочий путь.
+  - BI этапа 3: Metabase — [ADR-0009](0009-metabase-native-local.md).

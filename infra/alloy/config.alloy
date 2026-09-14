@@ -1,0 +1,78 @@
+// alexsoft stage 3 — Alloy pipelines (Windows native)
+// Env (set by start-alloy.ps1):
+//   ALLOY_DEMO_LOG, POSTGRES_LOG_GLOB, LOKI_PUSH_URL,
+//   PROMETHEUS_REMOTE_WRITE_URL, ALLOY_HTTP_PORT
+
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+// --- Logs → Loki -------------------------------------------------------------
+
+loki.write "local" {
+  endpoint {
+    url = sys.env("LOKI_PUSH_URL")
+  }
+}
+
+loki.source.file "demo" {
+  targets = [
+    {
+      __path__ = sys.env("ALLOY_DEMO_LOG"),
+      job      = "alexsoft-demo",
+      service  = "alloy-demo",
+    },
+  ]
+  forward_to = [loki.write.local.receiver]
+}
+
+// PostgreSQL server logs (change statements when log_statement=mod)
+// On Russian Windows, PG messages are typically Windows-1251, not UTF-8.
+loki.source.file "postgres" {
+  targets = [
+    {
+      __path__ = sys.env("POSTGRES_LOG_GLOB"),
+      job      = "postgresql",
+      service  = "postgresql",
+    },
+  ]
+  forward_to = [loki.write.local.receiver]
+  encoding   = "WINDOWS-1251"
+
+  file_match {
+    enabled     = true
+    sync_period = "10s"
+  }
+}
+
+// --- Metrics → Prometheus ----------------------------------------------------
+
+prometheus.remote_write "local" {
+  endpoint {
+    url = sys.env("PROMETHEUS_REMOTE_WRITE_URL")
+  }
+}
+
+prometheus.scrape "alloy_self" {
+  targets = [
+    {
+      __address__ = "127.0.0.1:" + sys.env("ALLOY_HTTP_PORT"),
+      job         = "alloy",
+      service     = "alloy",
+    },
+  ]
+  scrape_interval = "15s"
+  forward_to      = [prometheus.remote_write.local.receiver]
+}
+
+// Laptop CPU (and light system context) via embedded Windows exporter
+prometheus.exporter.windows "laptop" {
+  enabled_collectors = ["cpu", "system", "os"]
+}
+
+prometheus.scrape "windows_cpu" {
+  targets         = prometheus.exporter.windows.laptop.targets
+  scrape_interval = "15s"
+  forward_to      = [prometheus.remote_write.local.receiver]
+}

@@ -2,7 +2,9 @@
 
 Локальный контур и публичная витрина.
 
-Порядок появления сервисов данных: PostgreSQL → Redis → MinIO → Loki/Prometheus/Grafana → продукты → RabbitMQ.
+Порядок появления сервисов данных: PostgreSQL → Redis → MinIO → продукты → RabbitMQ.
+
+Observability (Loki / Prometheus / Alloy / Grafana) на ноутбуке — **нативно**, не через Compose: [ADR-0008](../../artifacts/adr/0008-observability-native-local.md). Compose для этого контура — на этапе VPS.
 
 ## PostgreSQL (локально)
 

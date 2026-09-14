@@ -86,7 +86,7 @@
 
 \- Мониторинг системы: Grafana
 
-\- Мониторинг логов: Loki (Сбор логов), Prometheus (собирает метрики)
+\- Мониторинг логов: Loki (Хранилище логов), Prometheus (собирает метрики), Grafana Alloy (агент для сбора логов)
 
 \- AI-агенты — фреймворк LangChain/LangGraph или AutoGen
 
@@ -122,7 +122,9 @@ Docker Compose + Docker Desktop
 
 
 
-Loki: сбор логов всех контейнеров
+Loki
+
+Grafana Alloy
 
 Prometheus
 
