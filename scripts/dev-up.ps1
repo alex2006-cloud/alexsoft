@@ -8,7 +8,8 @@
 # Stop: scripts\dev-down.ps1
 
 param(
-    [switch]$SkipLanding
+    [switch]$SkipLanding,
+    [switch]$SkipGames
 )
 
 $ErrorActionPreference = "Stop"
@@ -98,6 +99,32 @@ else {
     Write-Host "[--] Landing skipped (-SkipLanding)" -ForegroundColor DarkYellow
 }
 
+# --- Games ---
+if (-not $SkipGames) {
+    Write-Host ""
+    Write-Host "[..] Games (next dev :3010/games)..." -ForegroundColor Yellow
+    $gamesDir = Join-Path $repoRoot "apps\games"
+    if (-not (Test-Path (Join-Path $gamesDir "package.json"))) {
+        Write-Error "Games app not found: $gamesDir"
+    }
+    if (Test-PortListen -Port 3010) {
+        Write-Host "[OK] Something already listens on 3010 - skip npm run dev" -ForegroundColor Green
+    }
+    else {
+        $cmd = "Set-Location -LiteralPath '$gamesDir'; npm run dev"
+        Start-Process -FilePath "powershell.exe" -ArgumentList @(
+            "-NoExit",
+            "-ExecutionPolicy", "Bypass",
+            "-Command", $cmd
+        )
+        Write-Host "[OK] Games started in a new terminal window" -ForegroundColor Green
+    }
+}
+else {
+    Write-Host ""
+    Write-Host "[--] Games skipped (-SkipGames)" -ForegroundColor DarkYellow
+}
+
 Write-Host ""
 Write-Host "=== ready ===" -ForegroundColor Cyan
 Write-Host "Redis:    127.0.0.1:6379"
@@ -106,6 +133,9 @@ Write-Host "Console:  http://127.0.0.1:9001"
 Write-Host "Postgres: 127.0.0.1:5432"
 if (-not $SkipLanding) {
     Write-Host "Landing:  http://127.0.0.1:3000"
+}
+if (-not $SkipGames) {
+    Write-Host "Games:    http://127.0.0.1:3010/games"
 }
 Write-Host ""
 $downScript = Join-Path $PSScriptRoot "dev-down.ps1"

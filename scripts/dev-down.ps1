@@ -8,7 +8,8 @@
 #   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-down.ps1 -SkipLanding
 
 param(
-    [switch]$SkipLanding
+    [switch]$SkipLanding,
+    [switch]$SkipGames
 )
 
 $ErrorActionPreference = "Continue"
@@ -53,6 +54,24 @@ if (-not $SkipLanding) {
 }
 else {
     Write-Host "[--] Landing left running (-SkipLanding)" -ForegroundColor DarkYellow
+}
+
+if (-not $SkipGames) {
+    Write-Host "[..] Stopping Games (:3010)..."
+    $gameListeners = Get-NetTCPConnection -LocalPort 3010 -State Listen -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty OwningProcess -Unique
+    if (-not $gameListeners) {
+        Write-Host "Games is not running on :3010"
+    }
+    else {
+        foreach ($procId in $gameListeners) {
+            Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+            Write-Host "Stopped process on :3010 (PID $procId)"
+        }
+    }
+}
+else {
+    Write-Host "[--] Games left running (-SkipGames)" -ForegroundColor DarkYellow
 }
 
 Write-Host "=== done ===" -ForegroundColor Cyan

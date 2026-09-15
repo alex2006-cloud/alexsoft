@@ -13,7 +13,7 @@ workspace "alexsoft" "Personal Ecosystem Lab — персональная мул
         alexsoft = softwareSystem "alexsoft" "Персональная платформа: лендинг, продукты, данные, AI-агенты, DevOps-контур." {
 
             landing = container "Landing" "Визитка, портфолио, кнопки перехода к демо." "Next.js"
-            games = container "Games" "Мини-игры как отдельные продукты." "TBD"
+            games = container "Games" "Мини-игры: каталог /games (Контур, Вайб-чек, Десант). Отдельное Next.js-приложение; статика склеивается с лендингом в CI." "Next.js"
             rag = container "RAG" "Поиск и ответы по собственной базе знаний." "TBD"
             aiGateway = container "AI Gateway" "Единый шлюз/оркестратор агентов: посты, тестировщик, ответы в каналы." "LangChain/LangGraph"
             dataPlatform = container "Data Platform" "PostgreSQL, Redis, MinIO, ETL; витрины для BI." "PostgreSQL, Redis, MinIO"

@@ -248,7 +248,8 @@ export const lab = {
     {
       name: "Игры",
       blurb: "Мини-продукты, чтобы быстро проверить UX, контур данных и выкладку.",
-      status: "Скоро",
+      status: "Live",
+      href: "/games",
     },
     {
       name: "RAG",

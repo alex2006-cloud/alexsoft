@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/Reveal";
 import { lab } from "@/content/site";
+import Link from "next/link";
 
 const visuals = [
   "from-[#1e3a8a] via-[#0f172a] to-black",
@@ -24,9 +25,9 @@ export function Lab() {
           </p>
         </Reveal>
         <div className="mt-14 grid gap-5 md:grid-cols-3">
-          {lab.products.map((product, index) => (
-            <Reveal key={product.name} delay={index * 80}>
-              <article className="overflow-hidden rounded-[28px] bg-white shadow-[0_2px_24px_rgba(0,0,0,0.04)]">
+          {lab.products.map((product, index) => {
+            const card = (
+              <>
                 <div
                   className={`tile-visual aspect-[16/10] bg-gradient-to-br ${visuals[index]}`}
                 />
@@ -40,10 +41,39 @@ export function Lab() {
                   <p className="mt-3 text-[0.98rem] leading-relaxed text-paper-ink/70">
                     {product.blurb}
                   </p>
+                  {"href" in product && product.href ? (
+                    <p className="mt-4 text-sm font-medium text-blue">Открыть →</p>
+                  ) : null}
                 </div>
-              </article>
-            </Reveal>
-          ))}
+              </>
+            );
+
+            return (
+              <Reveal key={product.name} delay={index * 80}>
+                {"href" in product && product.href ? (
+                  product.href.startsWith("/games") ? (
+                    <a
+                      href={product.href}
+                      className="block overflow-hidden rounded-[28px] bg-white shadow-[0_2px_24px_rgba(0,0,0,0.04)] transition-transform duration-200 hover:scale-[1.015]"
+                    >
+                      {card}
+                    </a>
+                  ) : (
+                    <Link
+                      href={product.href}
+                      className="block overflow-hidden rounded-[28px] bg-white shadow-[0_2px_24px_rgba(0,0,0,0.04)] transition-transform duration-200 hover:scale-[1.015]"
+                    >
+                      {card}
+                    </Link>
+                  )
+                ) : (
+                  <article className="overflow-hidden rounded-[28px] bg-white shadow-[0_2px_24px_rgba(0,0,0,0.04)]">
+                    {card}
+                  </article>
+                )}
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>

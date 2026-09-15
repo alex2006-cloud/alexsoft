@@ -32,8 +32,8 @@
 
 | Путь | Назначение |
 |------|------------|
-| `apps/landing` | Публичный SPA (Next.js) |
-| `apps/games` | Мини-игры |
+| `apps/landing` | Публичный SPA (Next.js), витрина |
+| `apps/games` | Мини-игры (Next.js, `basePath: /games`) |
 | `apps/rag` | RAG-сервис |
 | `apps/ai-gateway` | Единый AI-шлюз / оркестратор |
 | `packages/` | Общие библиотеки |
@@ -45,7 +45,7 @@
 
 ## Текущий этап
 
-**Этап 4 — первый продукт в контейнере.** Этап 3 закрыт: observability ([ADR-0008](artifacts/adr/0008-observability-native-local.md)) и Metabase ([ADR-0009](artifacts/adr/0009-metabase-native-local.md)). Дальше — мини-игра/бот + Compose (см. [ROADMAP.md](ROADMAP.md)).
+**Этап 5 — AI-контур.** Этап 4 закрыт: игры в `apps/games` ([ADR-0010](artifacts/adr/0010-games-static-app.md)), Lab → `/games`. Дальше — RabbitMQ, векторная БД, AI-gateway (см. [ROADMAP.md](ROADMAP.md)).
 
 ## Быстрый старт
 
@@ -57,6 +57,7 @@
 6. Metabase (локально, JAR + Java): [infra/metabase/README.md](infra/metabase/README.md) → http://127.0.0.1:3002
 7. Архитектурная модель: `artifacts/structurizr/workspace.dsl` (Structurizr Lite или Structurizr CLI).
 8. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
+9. Игры: `cd apps/games && npm install && npm run dev` → http://localhost:3010/games (лендинг в dev проксирует `/games`).
 
 ### Порты локальной лаборатории
 
@@ -65,6 +66,7 @@
 | 3000 | Лендинг (Next.js) |
 | 3001 | Grafana |
 | 3002 | Metabase |
+| 3010 | Игры (Next.js, локально; путь `/games`) |
 | 3100 / 9096 | Loki HTTP / gRPC |
 | 9090 | Prometheus |
 | 12345 | Alloy HTTP UI |

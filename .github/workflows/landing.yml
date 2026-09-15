@@ -1,13 +1,15 @@
-name: Landing
+name: Site
 
 on:
   push:
     paths:
       - "apps/landing/**"
+      - "apps/games/**"
       - ".github/workflows/landing.yml"
   pull_request:
     paths:
       - "apps/landing/**"
+      - "apps/games/**"
       - ".github/workflows/landing.yml"
   workflow_dispatch:
 
@@ -20,9 +22,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/landing
     steps:
       - uses: actions/checkout@v4
 
@@ -30,19 +29,41 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: apps/landing/package-lock.json
+          cache-dependency-path: |
+            apps/landing/package-lock.json
+            apps/games/package-lock.json
 
-      - run: npm ci
-
-      # Lint locally currently crashes (eslint-config-next + ESLint 9).
-      # next build already type-checks TypeScript.
-      - run: npm run build
+      - name: Build landing
+        working-directory: apps/landing
+        run: |
+          npm ci
+          npm run build
         env:
           LANDING_URL: ${{ env.LANDING_URL }}
 
+      - name: Build games
+        working-directory: apps/games
+        run: |
+          npm ci
+          npm run build
+        env:
+          LANDING_URL: ${{ env.LANDING_URL }}
+
+      - name: Merge games into landing static export
+        run: |
+          set -euo pipefail
+          mkdir -p apps/landing/out/games
+          # Games use basePath=/games; export lives at out/ with asset URLs /games/_next/...
+          # Place that tree under landing/out/games/ so Nginx serves /games correctly.
+          cp -a apps/games/out/. apps/landing/out/games/
+          test -f apps/landing/out/index.html
+          test -f apps/landing/out/games/index.html
+          test -d apps/landing/out/games/_next
+          ls -la apps/landing/out/games | head -n 30
+
       - uses: actions/upload-artifact@v4
         with:
-          name: landing-static
+          name: site-static
           path: apps/landing/out/
           if-no-files-found: error
 
@@ -53,7 +74,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: landing-static
+          name: site-static
           path: out
 
       - name: Load SSH key
