@@ -13,11 +13,11 @@
 
 ## Стек (не подменять без ADR)
 
-Лендинг: Next.js. Игры: Next.js в `apps/games` (`basePath: /games`), статика мержится в CI с лендингом ([ADR-0010](artifacts/adr/0010-games-static-app.md)). CI: GitHub Actions. Оркестрация: Docker Compose (на VPS), позже k3s. Данные: PostgreSQL, MinIO, Redis. BI: Metabase — локально JAR + Java ([ADR-0009](artifacts/adr/0009-metabase-native-local.md)); позже Superset/ClickHouse. Брокер: RabbitMQ. Наблюдаемость: Grafana, Loki, Prometheus, Grafana Alloy — локально native ([ADR-0008](artifacts/adr/0008-observability-native-local.md)). AI: LangChain/LangGraph или AutoGen через `apps/ai-gateway`.
+Лендинг: Next.js. Игры: Next.js в `apps/games` (`basePath: /games`), статика мержится в CI с лендингом ([ADR-0010](artifacts/adr/0010-games-static-app.md)). CI: GitHub Actions. Оркестрация: нативно → Docker Compose (VPS) → k3s. Данные: PostgreSQL, MinIO, Redis (Memurai локально). BI: Metabase ([ADR-0009](artifacts/adr/0009-metabase-native-local.md)). Брокер: RabbitMQ — **после** ИИ-блока этапа 5. Наблюдаемость инфра: Grafana, Loki, Prometheus, Alloy ([ADR-0008](artifacts/adr/0008-observability-native-local.md)). **AI Gateway (LLM): LiteLLM.** LLM: Qwen, DeepSeek, ChatGPT. Агент 1: LangGraph + LangSmith Studio (IDE) + LangFlow. Агент 2: CrewAI. Агент 3: AutoGen. ВБД: Qdrant или Weaviate. RAG: `apps/rag`. LangSmith (платформа) — LLM-трейсы/evals. Redis-кеш ответов AI — после ИИ-блока. **API Gateway** / **IAM** — этап 6, TBD. Не обходить LiteLLM.
 
 ## Что не делать
 
 - Не коммитить `.env`, ключи, дампы БД.
 - Не класть бизнес-логику продуктов в лендинг — лендинг витрина и маршрутизация.
 - Не класть логику игр в `apps/landing` — только ссылка Lab → `/games`.
-- Не плодить второй AI-стек в обход шлюза, когда шлюз уже появится.
+- Не плодить второй прод-шлюз к моделям в обход **LiteLLM**; AutoGen/CrewAI — только как агент 2 после первого продукта.

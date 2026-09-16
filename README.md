@@ -45,7 +45,7 @@
 
 ## Текущий этап
 
-**Этап 5 — AI-контур.** Этап 4 закрыт: игры в `apps/games` ([ADR-0010](artifacts/adr/0010-games-static-app.md)), Lab → `/games`. Дальше — RabbitMQ, векторная БД, AI-gateway (см. [ROADMAP.md](ROADMAP.md)).
+**Этап 5 — AI-контур.** LiteLLM+Qwen → LangGraph+продукт → CrewAI+продукт → AutoGen+продукт → RAG+продукт → LangSmith; Redis-кеш и RabbitMQ — после ИИ-блока. См. [ROADMAP.md](ROADMAP.md), [CONCEPT.md](CONCEPT.md).
 
 ## Быстрый старт
 

@@ -4,9 +4,10 @@ export type GameEntry = {
   subtitle: string;
   blurb: string;
   status: "Live" | "Скоро";
-  /** Path inside the games app (basePath /games is added by Next Link). */
+  /** Path inside the games app (basePath /games is added by Next Link / Image). */
   href: string;
-  gradient?: string;
+  /** Cover under public/covers/ */
+  cover: string;
 };
 
 export const gamesCatalog = {
@@ -23,7 +24,7 @@ export const games: GameEntry[] = [
       "30 секунд, полоска вайба и зелёная зона. Поймал — W и slay. Промах — L и skill issue.",
     status: "Live",
     href: "/vibe-check",
-    gradient: "from-[#ff6ec7] via-[#7c3aed] to-[#0f172a]",
+    cover: "/covers/vibe-check.png",
   },
   {
     slug: "contour",
@@ -33,6 +34,7 @@ export const games: GameEntry[] = [
       "Соберите системный контекст Personal Ecosystem Lab: кто к кому ходит и зачем — как на диаграмме C4.",
     status: "Live",
     href: "/contour",
+    cover: "/covers/contour.png",
   },
   {
     slug: "desant",
@@ -42,5 +44,6 @@ export const games: GameEntry[] = [
       "Беги, прыгай, стреляй — боковой экшен в духе Contra. Со своим чиптюном в браузере.",
     status: "Live",
     href: "/desant",
+    cover: "/covers/desant.png",
   },
 ];

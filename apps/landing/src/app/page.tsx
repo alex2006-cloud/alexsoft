@@ -4,6 +4,7 @@ import { Expertise } from "@/components/Expertise";
 import { Hero } from "@/components/Hero";
 import { Lab } from "@/components/Lab";
 import { Manifesto } from "@/components/Manifesto";
+import { Portfolio } from "@/components/Portfolio";
 import { Proof } from "@/components/Proof";
 import { Work } from "@/components/Work";
 
@@ -14,6 +15,7 @@ export default function HomePage() {
       <Proof />
       <Manifesto />
       <Work />
+      <Portfolio />
       <Expertise />
       <Lab />
       <Career />

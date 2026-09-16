@@ -53,14 +53,64 @@
 
 ## Этап 5 — AI-контур (текущий)
 
-- [ ] RabbitMQ
-- [ ] Векторная БД (выбор на реализации)
-- [ ] LangChain/LangGraph + Redis-кеш ответов
-- [ ] Первый AI-продукт (пост / тестировщик / ответы в каналы)
+По [CONCEPT.md](CONCEPT.md). **Redis-кеш ответов и RabbitMQ — после ИИ-блока**, не блокируют первые AI-продукты (Memurai уже стоит с этапа 2, но в AI пока не встраиваем).  
+**AI Gateway = LiteLLM** (не путать с API Gateway / IAM — этап 6). Облачные LLM: Qwen, DeepSeek, ChatGPT. Три агента подряд, у каждого свой продукт; затем RAG-продукт.  
+**LangSmith Studio** (IDE графа; бывш. LangGraph Studio) ≠ **LangSmith** (платформа трейсов/evals).
+
+**5.1 — AI Gateway + первая LLM**
+
+- [ ] LiteLLM (локально)
+- [ ] Подключить **Qwen** (далее DeepSeek / ChatGPT по мере надобности)
+- [ ] Ключи в `.env`, проверка одного запроса через шлюз
+- [ ] ADR: AI Gateway = LiteLLM
+
+**5.2 — агент 1 (LangGraph) + продукт**
+
+- [ ] LangChain / LangGraph + LangSmith Studio (IDE; бывш. LangGraph Studio) + LangFlow (через LiteLLM)
+- [ ] AI-продукт через агент 1 (пост / тестировщик / ответы в каналы — один сценарий)
+- [ ] Демо / ссылка с лендинга (Lab), когда готово
+- [ ] ADR: агент 1 = LangGraph-стек
+
+**5.3 — агент 2 (CrewAI) + продукт**
+
+- [ ] CrewAI через LiteLLM
+- [ ] AI-продукт через агент 2
+- [ ] ADR: CrewAI vs LangGraph
+
+**5.4 — агент 3 (AutoGen) + продукт**
+
+- [ ] AutoGen через LiteLLM
+- [ ] AI-продукт через агент 3
+- [ ] ADR: AutoGen vs LangGraph / CrewAI
+
+**5.5 — векторная БД + RAG + продукт с RAG**
+
+- [ ] Выбор ВБД: Qdrant **или** Weaviate (ADR)
+- [ ] RAG, 3 слоя: загрузка → хранение эмбеддингов → пайплайны поиска (LangChain / LlamaIndex — ADR)
+- [ ] `apps/rag` + AI-продукт **с RAG**
+- [ ] Lab «RAG» → Live (когда есть URL)
+
+**5.6 — LangSmith (платформа, не Studio)**
+
+- [ ] Довести LangSmith (платформа): трейсы, анализ, оценка прогонов — не путать с LangSmith Studio
+- [ ] Зафиксировать: Loki/Grafana ≠ LangSmith (платформа) ≠ LangSmith Studio (IDE)
+
+**5.7 — после ИИ-блока (не критично сейчас)**
+
+- [ ] Интеграция Redis/Memurai — кеш ответов AI
+- [ ] RabbitMQ — очередь долгих AI-задач
+- [ ] ADR + порты в `.env` / README
 
 ## Этап 6 — облако и комплаенс
 
-- [ ] Переход в облако
+Сначала обсуждение «что переносим». Затем по CONCEPT:
+
+- [ ] Архитектура переноса (Structurizr / ADR)
+- [ ] API Gateway (инструмент — уточнить)
+- [ ] IAM (инструмент — уточнить)
+- [ ] SSH, Docker на VDS (+ опционально Portainer)
+- [ ] Redis вместо Memurai; Postgres/MinIO в облаке; туннели к DBeaver / Console
+- [ ] Observability и Metabase на VDS (по необходимости)
 - [ ] k3s
 - [ ] Kafka (если понадобится сверх RabbitMQ)
-- [ ] Заявка в РКН как оператор ПДн — только если появятся персональные данные субъектов РФ в проде
+- [ ] Заявка в РКН как оператор ПДн — только если появятся ПДн субъектов РФ в проде

@@ -70,13 +70,15 @@
 
 \- CI/CD: GitHub Actions
 
-\- Контейнеризация и оркестрация: Docker Compose, Docker Desktop > k3s (облегченный K8s) + опционально Portainer
+\- API Gateway (Уточнить конкретный инструмент)
+
+\- IAM (Уточнить конкретный инструмент)
+
+\- Контейнеризация и оркестрация: Нативная установка > Docker Compose + Docker Desktop > k3s (облегченный K8s) + опционально Portainer
 
 \- БД: PostgreSQL, MinIO (для файлов) + встроенная Console
 
 \- Приложение для работы с базами данных: DBeaver
-
-\- Векторная БД: (Определиться на стадии реализации)
 
 \- Системы кеширования: Memurai (Redis-совместимый сервер под Windows) + Redis Insight > Redis
 
@@ -88,7 +90,21 @@
 
 \- Мониторинг логов: Loki (Хранилище логов), Prometheus (собирает метрики), Grafana Alloy (агент для сбора логов)
 
-\- AI-агенты — фреймворк LangChain/LangGraph или AutoGen
+\- AI Gateway: LiteLLM
+
+\- Облачная LLM: Qwen, DeepSeek, ChatGPT
+
+\- AI-агент 1 — фреймворк LangChain/LangGraph + LangSmith Studio (IDE графа; бывш. LangGraph Studio) + LangFlow (drag-and-drop агентов)
+
+\- AI-агент 2 — CrewAI
+
+\- AI-агент 3 — AutoGen
+
+\- Векторная БД: Qdrant или Weaviate
+
+\- RAG сервис:  (необходимо проработать все 3 слоя: Загрузка в ВБД (LangChain?), ВБД для хранения эмбеддингов, RAG-пайплайны для поиска релевантных данных по запросу (LlamaIndex?)
+
+\- Мониторинг, логирование и аналитика LLM: LangSmith (платформа — трейсы, анализ и оценка прогонов; не путать с LangSmith Studio)
 
 
 
@@ -136,19 +152,39 @@ Metabase поверх PostgreSQL
 
 Реализовать мини-игру или первый бот как отдельный контейнер, подключить к лэндингу
 
-Docker
+
+
+Установить и настроить AI Gateway: LiteLLM
+
+Подключить облачную LLM: Qwen (далее DeepSeek, ChatGPT по мере надобности)
+
+Подключить AI-агент 1 — фреймворк LangChain/LangGraph + LangSmith Studio + LangFlow
+
+AI продукт через AI-агент 1
+
+Подключить AI-агент 2 — CrewAI
+
+AI продукт через AI-агент 2
+
+Подключить AI-агент 3 — AutoGen
+
+AI продукт через AI-агент 3
+
+Подключить векторную БД: Qdrant или Weaviate
+
+Подключить и настроить RAG-сервис (3 слоя: загрузка в ВБД; хранение эмбеддингов; RAG-пайплайны поиска — LangChain / LlamaIndex уточнить)
+
+AI продукт через AI-агент с RAG
+
+Подключить и настроить мониторинг LLM: LangSmith (платформа)
 
 
 
-RabbitMQ
+После ИИ-блока (не критично для первых AI-продуктов):
 
-Векторная БД
+Интеграция Redis/Memurai — кеш ответов AI
 
-LangChain/LangGraph, интеграция с Redis для кеша ответов
-
-
-
-Первый AI продукт
+RabbitMQ — очередь для долгих AI-задач
 
 
 
@@ -156,13 +192,15 @@ LangChain/LangGraph, интеграция с Redis для кеша ответо�
 
 Проработать и нарисовать архитектуру
 
+API Gateway (Уточнить конкретный инструмент)
+
+IAM
+
 SSH подключение
 
-Сделать API Gateway
 
 
-
-Научиться делать Контейнеры и запускать их
+Docker/ Научиться делать Контейнеры и запускать их
 
 Создать Redis вместо Memurai, подключить к нему Redis Insight через SSH-туннель из Ноутбука
 

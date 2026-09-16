@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   agentRules: false,
   output: "export",
   basePath: "/games",
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;

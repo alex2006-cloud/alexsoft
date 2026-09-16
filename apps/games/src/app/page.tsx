@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { games, gamesCatalog } from "@/content/games";
 
@@ -33,11 +34,17 @@ export default function GamesCatalogPage() {
                 href={game.href}
                 className="group block overflow-hidden rounded-[28px] border border-line bg-panel transition-[border-color,transform] duration-200 hover:border-white/25 hover:scale-[1.01]"
               >
-                <div
-                  className={`aspect-[16/9] bg-gradient-to-br ${
-                    game.gradient ?? "from-[#1e3a8a] via-[#0f172a] to-black"
-                  }`}
-                />
+                <div className="relative aspect-[16/9] overflow-hidden bg-black">
+                  <Image
+                    src={game.cover}
+                    alt={`Обложка: ${game.name}`}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    sizes="(max-width: 768px) 100vw, 560px"
+                    priority={game.slug === "vibe-check"}
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-panel/80 via-transparent to-transparent" />
+                </div>
                 <div className="px-6 py-6">
                   <div className="flex items-center justify-between gap-3">
                     <div>

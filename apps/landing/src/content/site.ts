@@ -19,6 +19,7 @@ export const site = {
   },
   nav: [
     { href: "/#work", label: "Работы" },
+    { href: "/#portfolio", label: "Портфолио" },
     { href: "/#expertise", label: "Экспертиза" },
     { href: "/#lab", label: "Лаборатория" },
     { href: "/#contact", label: "Контакты" },
@@ -238,6 +239,78 @@ export const expertise = [
     ],
   },
 ] as const;
+
+/** Материалы для витрины: файлы лежат в apps/landing/public/portfolio/ */
+export const portfolio = {
+  title: "Портфолио",
+  headline: "Материалы, которые можно открыть и скачать",
+  lead: "Методики, калькуляторы и продуктовые презентации из практики AI и данных. PDF — смотрите в браузере, Excel — скачивайте.",
+  items: [
+    {
+      id: "ai-project-methodology",
+      title: "Методика проектов с применением ИИ",
+      emoji: "📝",
+      summary:
+        "Пошаговый контур AI/ML-проекта: опросник, анализ данных и инфраструктуры, калькулятор трудозатрат, ТКП, договор, функциональная и техническая архитектура.",
+      kind: "Методика",
+      format: "PDF",
+      previewHref: "/portfolio/ai-project-methodology-v2.3.pdf",
+      downloadHref: "/portfolio/ai-project-methodology-v2.3.pdf",
+    },
+    {
+      id: "ai-project-calculator",
+      title: "Калькулятор сметы по ИИ",
+      emoji: "🧮",
+      summary:
+        "Excel-смета с драйверами сложности: этапы от инфраструктуры до сдачи, роли (PM, DS, архитектор), нормативы и ставки для расчёта ч/д и стоимости.",
+      kind: "Калькулятор",
+      format: "XLSX",
+      downloadHref: "/portfolio/ai-project-calculator-v2.0.xlsx",
+    },
+    {
+      id: "ai-project-estimate-pnl",
+      title: "Смета, PnL и опросник AI-проекта",
+      emoji: "📊",
+      summary:
+        "Пакет для оценки проекта: ставки и команда, опросник заказчика, ограничения, калькулятор бюджета, план, смета, ОПУ (P&L) и планирование ресурсов.",
+      kind: "Финансовая модель",
+      format: "XLSX",
+      downloadHref: "/portfolio/ai-project-estimate-pnl.xlsx",
+    },
+    {
+      id: "supportai-pitch",
+      title: "SupportAI — цифровой ассистент поддержки",
+      emoji: "🤖",
+      summary:
+        "Питч продукта: автоклассификация и маршрутизация обращений 1Л/2Л, консультации через RAG, типовые сценарии, архитектура, рынок и модель монетизации.",
+      kind: "Презентация",
+      format: "PDF",
+      previewHref: "/portfolio/supportai-pitch.pdf",
+      downloadHref: "/portfolio/supportai-pitch.pdf",
+    },
+    {
+      id: "tz-template",
+      title: "Шаблон технического задания",
+      emoji: "📋",
+      summary:
+        "Готовый шаблон ТЗ: структура требований, границы решения, NFR и критерии приёмки — чтобы быстро собрать постановку для AI/ИТ-проекта.",
+      kind: "Шаблон",
+      format: "PDF",
+      previewHref: "/portfolio/tz-template-v2.2.pdf",
+      downloadHref: "/portfolio/tz-template-v2.2.pdf",
+    },
+  ] as readonly {
+    id: string;
+    title: string;
+    emoji: string;
+    summary: string;
+    kind: string;
+    format: string;
+    previewHref?: string;
+    downloadHref: string;
+    coverHref?: string;
+  }[],
+} as const;
 
 export const lab = {
   title: "Личная лаборатория",
