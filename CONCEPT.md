@@ -156,7 +156,7 @@ Metabase поверх PostgreSQL
 
 Установить и настроить AI Gateway: LiteLLM
 
-Подключить облачную LLM: Qwen (далее DeepSeek, ChatGPT по мере надобности)
+Подключить облачную LLM: DeepSeek (подключён); Qwen / ChatGPT по мере надобности
 
 Подключить AI-агент 1 — фреймворк LangChain/LangGraph + LangSmith Studio + LangFlow
 

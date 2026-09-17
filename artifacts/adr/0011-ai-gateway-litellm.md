@@ -1,0 +1,21 @@
+# ADR-0011: AI Gateway = LiteLLM (native Windows + LLM providers)
+
+- **Статус:** accepted
+- **Дата:** 2026-09-16 (обновлено 2026-09-17: DeepSeek)
+- **Контекст:** Этап 5 дорожной карты — AI-контур. Нужен единый шлюз к облачным LLM до агентов (LangGraph / CrewAI / AutoGen) и RAG. Не путать с **API Gateway** / **IAM** (этап 6). На ноутбуке — нативная установка без Docker (как MinIO/Metabase). Первая модель в плане — **Qwen** (DashScope); фактически рабочий провайдер на ноутбуке — **DeepSeek**.
+- **Решение:**
+  - **Продукт шлюза:** **LiteLLM Proxy** — OpenAI-compatible API; все последующие агенты ходят в модели только через него.
+  - **Где:** локально (Windows). Python venv + пакет `litellm[proxy]` в `%LOCALAPPDATA%\LiteLLM\` (вне репозитория). Скрипты: `infra/litellm/`. Документация продукта: `apps/ai-gateway/`.
+  - **Сеть:** loopback, порт **`8080`** (`LITELLM_HOST` / `LITELLM_PORT` / `AI_GATEWAY_URL`). В интернет не публикуем.
+  - **Модели (5.1):**
+    - алиас `deepseek` → `deepseek/deepseek-chat`. Ключ: `DEEPSEEK_API_KEY` (platform.deepseek.com). **Подключён и проверен.**
+    - алиас `qwen` → `dashscope/qwen-plus`. Ключ: `DASHSCOPE_API_KEY`. База API по умолчанию международная: `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` (`DASHSCOPE_API_BASE`); для ключа региона China/Beijing — `https://dashscope.aliyuncs.com/compatible-mode/v1`.
+  - **Доступ к прокси:** `LITELLM_MASTER_KEY` (Bearer / пароль Admin UI). ChatGPT — позже, отдельная запись в `config.yaml` и ключ в `.env`.
+  - **Admin UI:** требует Postgres для Prisma. Предпочтительно отдельная БД `litellm`; если у роли нет `CREATEDB` — схема `litellm` внутри БД `alexsoft` (`LITELLM_DATABASE_URL` с `?schema=litellm`). В процесс LiteLLM мапится как `DATABASE_URL`; **не** подставлять application `DATABASE_URL` alexsoft без изоляции. Создание: `infra/litellm/setup-db.ps1`.
+  - **Docker Compose:** не основной путь на ноутбуке; VPS — отдельное решение.
+- **Последствия:**
+  - Инструкция: `infra/litellm/README.md`.
+  - Smoke по умолчанию — DeepSeek (`DEEPSEEK_API_KEY`); Qwen — `smoke-test.ps1 -Model qwen` при наличии `DASHSCOPE_API_KEY`.
+  - Без БД `litellm` / Prisma Admin UI отвечает «Not connected to DB» (API `/v1/chat/completions` при этом может работать с моделями из `config.yaml`).
+  - Structurizr: контейнер AI Gateway — технология **LiteLLM** (агенты — потребители шлюза, не сам шлюз).
+  - Следующий шаг ROADMAP: 5.2 LangGraph-стек + AI-продукт через LiteLLM (модель по умолчанию можно указать `deepseek`).

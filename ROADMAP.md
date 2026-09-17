@@ -57,19 +57,21 @@
 **AI Gateway = LiteLLM** (не путать с API Gateway / IAM — этап 6). Облачные LLM: Qwen, DeepSeek, ChatGPT. Три агента подряд, у каждого свой продукт; затем RAG-продукт.  
 **LangSmith Studio** (IDE графа; бывш. LangGraph Studio) ≠ **LangSmith** (платформа трейсов/evals).
 
-**5.1 — AI Gateway + первая LLM**
+**5.1 — AI Gateway + LLM**
 
-- [ ] LiteLLM (локально)
-- [ ] Подключить **Qwen** (далее DeepSeek / ChatGPT по мере надобности)
-- [ ] Ключи в `.env`, проверка одного запроса через шлюз
-- [ ] ADR: AI Gateway = LiteLLM
+- [x] LiteLLM (локально)
+- [x] Подключить **DeepSeek** (`deepseek` → `deepseek/deepseek-chat`, ключ `DEEPSEEK_API_KEY`) — рабочий провайдер
+- [x] Алиас **Qwen** в конфиге (`qwen` → `dashscope/qwen-plus`; ключ `DASHSCOPE_API_KEY` — по мере надобности)
+- [x] Ключ DeepSeek в `.env`, проверка запроса через шлюз
+- [ ] ChatGPT / OpenAI — по мере надобности
+- [x] ADR: AI Gateway = LiteLLM ([ADR-0011](artifacts/adr/0011-ai-gateway-litellm.md))
 
 **5.2 — агент 1 (LangGraph) + продукт**
 
-- [ ] LangChain / LangGraph + LangSmith Studio (IDE; бывш. LangGraph Studio) + LangFlow (через LiteLLM)
+- [x] LangChain / LangGraph + LangSmith Studio (IDE; бывш. LangGraph Studio) + LangFlow (через LiteLLM)
 - [ ] AI-продукт через агент 1 (пост / тестировщик / ответы в каналы — один сценарий)
 - [ ] Демо / ссылка с лендинга (Lab), когда готово
-- [ ] ADR: агент 1 = LangGraph-стек
+- [x] ADR: агент 1 = LangGraph-стек ([ADR-0012](artifacts/adr/0012-agent1-langgraph-stack.md))
 
 **5.3 — агент 2 (CrewAI) + продукт**
 

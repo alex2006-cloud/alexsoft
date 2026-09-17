@@ -1,0 +1,21 @@
+#!/bin/sh
+# Auto-export LangFlow flows into the repo before commit, then stage them.
+# Installed via: powershell -ExecutionPolicy Bypass -File infra/githooks/install-hooks.ps1
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+cd "$ROOT" || exit 0
+
+if command -v powershell.exe >/dev/null 2>&1; then
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "infra/agent1/export-langflow.ps1" || true
+elif command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -ExecutionPolicy Bypass -File "infra/agent1/export-langflow.ps1" || true
+else
+  python "infra/agent1/export-langflow.py" || true
+fi
+
+# Stage exported flows if the directory exists (never fail the commit).
+if [ -d "apps/agent1/langflow/flows" ]; then
+  git add -A "apps/agent1/langflow/flows" 2>/dev/null || true
+fi
+
+exit 0

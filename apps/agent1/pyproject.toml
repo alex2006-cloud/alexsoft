@@ -1,0 +1,17 @@
+[project]
+name = "alexsoft-agent1"
+version = "0.1.0"
+description = "Agent 1 (LangGraph) for alexsoft Personal Ecosystem Lab"
+requires-python = ">=3.11"
+dependencies = [
+  "langchain",
+  "langgraph",
+  "langchain-openai",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["graph", "graph_llm"]

@@ -45,7 +45,7 @@
 
 ## Текущий этап
 
-**Этап 5 — AI-контур.** LiteLLM+Qwen → LangGraph+продукт → CrewAI+продукт → AutoGen+продукт → RAG+продукт → LangSmith; Redis-кеш и RabbitMQ — после ИИ-блока. См. [ROADMAP.md](ROADMAP.md), [CONCEPT.md](CONCEPT.md).
+**Этап 5 — AI-контур.** LiteLLM+DeepSeek (Qwen в конфиге) → LangGraph+продукт → CrewAI+продукт → AutoGen+продукт → RAG+продукт → LangSmith; Redis-кеш и RabbitMQ — после ИИ-блока. См. [ROADMAP.md](ROADMAP.md), [CONCEPT.md](CONCEPT.md).
 
 ## Быстрый старт
 
@@ -55,9 +55,10 @@
 4. MinIO (локально): `minio.exe` + Console — [infra/minio/README.md](infra/minio/README.md), [ADR-0006](artifacts/adr/0006-minio-native-local.md).
 5. Observability (локально, по одному компоненту): Loki → Prometheus → Alloy → Grafana — [ADR-0008](artifacts/adr/0008-observability-native-local.md), каталоги `infra/loki`, `infra/prometheus`, `infra/alloy`, `infra/grafana`.
 6. Metabase (локально, JAR + Java): [infra/metabase/README.md](infra/metabase/README.md) → http://127.0.0.1:3002
-7. Архитектурная модель: `artifacts/structurizr/workspace.dsl` (Structurizr Lite или Structurizr CLI).
-8. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
-9. Игры: `cd apps/games && npm install && npm run dev` → http://localhost:3010/games (лендинг в dev проксирует `/games`).
+7. LiteLLM AI Gateway (локально, Python venv): [infra/litellm/README.md](infra/litellm/README.md) → http://127.0.0.1:8080 ([ADR-0011](artifacts/adr/0011-ai-gateway-litellm.md))
+8. Архитектурная модель: `artifacts/structurizr/workspace.dsl` (Structurizr Lite или Structurizr CLI).
+9. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
+10. Игры: `cd apps/games && npm install && npm run dev` → http://localhost:3010/games (лендинг в dev проксирует `/games`).
 
 ### Порты локальной лаборатории
 

@@ -1,0 +1,16 @@
+# LiteLLM Proxy - local AI Gateway (ADR-0011).
+# Secrets via env: DASHSCOPE_API_KEY, DEEPSEEK_API_KEY, LITELLM_MASTER_KEY, optional DASHSCOPE_API_BASE.
+
+model_list:
+  - model_name: qwen
+    litellm_params:
+      model: dashscope/qwen-plus
+      api_key: os.environ/DASHSCOPE_API_KEY
+
+  - model_name: deepseek
+    litellm_params:
+      model: deepseek/deepseek-chat
+      api_key: os.environ/DEEPSEEK_API_KEY
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
