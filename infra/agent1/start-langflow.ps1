@@ -57,4 +57,4 @@ if (-not $ok) {
 
 Write-Host "LangFlow started (PID $($proc.Id))"
 Write-Host "UI: http://${hostName}:$port"
-Write-Host "Wire LiteLLM in UI: OpenAI-compatible base URL = AI_GATEWAY_URL/v1, model = qwen, key = LITELLM_MASTER_KEY"
+Write-Host "Wire LiteLLM in UI: OpenAI-compatible base URL = AI_GATEWAY_URL/v1, model = deepseek, key = LITELLM_MASTER_KEY"

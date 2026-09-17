@@ -23,7 +23,7 @@ def _llm() -> ChatOpenAI:
         or os.environ.get("LITELLM_MASTER_KEY")
         or "sk-unset"
     )
-    model = os.environ.get("AGENT1_MODEL") or "qwen"
+    model = os.environ.get("AGENT1_MODEL") or "deepseek"
     return ChatOpenAI(model=model, api_key=api_key, base_url=base, temperature=0)
 
 

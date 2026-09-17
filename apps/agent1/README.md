@@ -17,7 +17,7 @@
 ## Графы
 
 - `graph.py` — echo без LLM (smoke Studio).
-- `graph_llm.py` — chat через LiteLLM (`AGENT1_MODEL`, по умолчанию `qwen`).
+- `graph_llm.py` — chat через LiteLLM (`AGENT1_MODEL`, по умолчанию `deepseek`).
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File infra\agent1\smoke-litellm.ps1
@@ -29,9 +29,9 @@ powershell -ExecutionPolicy Bypass -File infra\agent1\smoke-litellm.ps1
 
 - Base URL: `http://127.0.0.1:8080/v1`
 - API key: значение `LITELLM_MASTER_KEY`
-- Model: `qwen`
+- Model: `deepseek` (или `qwen`, если ключ DashScope задан)
 
-Не указывайте DashScope напрямую.
+Не указывайте DeepSeek / DashScope напрямую — только через LiteLLM.
 
 ## LangFlow → git
 

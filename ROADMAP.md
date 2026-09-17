@@ -54,7 +54,7 @@
 ## Этап 5 — AI-контур (текущий)
 
 По [CONCEPT.md](CONCEPT.md). **Redis-кеш ответов и RabbitMQ — после ИИ-блока**, не блокируют первые AI-продукты (Memurai уже стоит с этапа 2, но в AI пока не встраиваем).  
-**AI Gateway = LiteLLM** (не путать с API Gateway / IAM — этап 6). Облачные LLM: Qwen, DeepSeek, ChatGPT. Три агента подряд, у каждого свой продукт; затем RAG-продукт.  
+**AI Gateway = LiteLLM** (не путать с API Gateway / IAM — этап 6). Облачные LLM: **DeepSeek** (подключён), Qwen (в конфиге), ChatGPT (позже). Три агента подряд, у каждого свой продукт; затем RAG-продукт.  
 **LangSmith Studio** (IDE графа; бывш. LangGraph Studio) ≠ **LangSmith** (платформа трейсов/evals).
 
 **5.1 — AI Gateway + LLM**

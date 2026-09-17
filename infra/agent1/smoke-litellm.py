@@ -13,7 +13,7 @@ from graph_llm import graph  # noqa: E402
 def main() -> None:
     out = graph.invoke({"message": "Reply with exactly one word: pong", "reply": ""})
     reply = (out.get("reply") or "").strip()
-    print(f"model={os.environ.get('AGENT1_MODEL', 'qwen')} reply={reply[:200]!r}")
+    print(f"model={os.environ.get('AGENT1_MODEL', 'deepseek')} reply={reply[:200]!r}")
     if not reply:
         raise SystemExit("empty reply from LiteLLM graph")
 

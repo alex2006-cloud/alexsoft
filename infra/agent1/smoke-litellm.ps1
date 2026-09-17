@@ -1,4 +1,4 @@
-# Smoke: Agent1 graph_llm → LiteLLM (model qwen).
+# Smoke: Agent1 graph_llm → LiteLLM (model deepseek by default).
 # Requires LiteLLM running and Agent1 venv with langchain-openai.
 # powershell -ExecutionPolicy Bypass -File infra\agent1\smoke-litellm.ps1
 
@@ -27,7 +27,7 @@ if (Test-Path $envFile) {
 if (-not $env:AI_GATEWAY_URL) { $env:AI_GATEWAY_URL = "http://127.0.0.1:8080" }
 $env:OPENAI_BASE_URL = ($env:AI_GATEWAY_URL.TrimEnd("/") + "/v1")
 if ($env:LITELLM_MASTER_KEY) { $env:OPENAI_API_KEY = $env:LITELLM_MASTER_KEY }
-if (-not $env:AGENT1_MODEL) { $env:AGENT1_MODEL = "qwen" }
+if (-not $env:AGENT1_MODEL) { $env:AGENT1_MODEL = "deepseek" }
 $env:LANGSMITH_TRACING = "false"
 
 # Quick gateway check
@@ -41,7 +41,7 @@ $smoke = Join-Path $PSScriptRoot "smoke-litellm.py"
 & $script:Agent1Python $smoke
 $code = $LASTEXITCODE
 if ($code -ne 0) {
-    Write-Warning "Smoke failed (exit $code). If DashScope returns 401, fix DASHSCOPE_API_KEY / region — Agent1 wiring is still valid."
+    Write-Warning "Smoke failed (exit $code). Check DEEPSEEK_API_KEY (or AGENT1_MODEL/qwen + DASHSCOPE) and that LiteLLM is up — Agent1 wiring may still be valid."
     exit $code
 }
 Write-Host "smoke-litellm OK"
