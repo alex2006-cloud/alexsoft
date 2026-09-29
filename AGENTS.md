@@ -13,11 +13,11 @@
 
 ## Стек (не подменять без ADR)
 
-Лендинг: Next.js. Игры: Next.js в `apps/games` (`basePath: /games`), статика мержится в CI с лендингом ([ADR-0010](artifacts/adr/0010-games-static-app.md)). CI: GitHub Actions. Оркестрация: нативно → Docker Compose (VPS) → k3s. Данные: PostgreSQL, MinIO, Redis (Memurai локально). BI: Metabase ([ADR-0009](artifacts/adr/0009-metabase-native-local.md)). Брокер: RabbitMQ — **после** ИИ-блока этапа 5. Наблюдаемость инфра: Grafana, Loki, Prometheus, Alloy ([ADR-0008](artifacts/adr/0008-observability-native-local.md)). **AI Gateway (LLM): LiteLLM.** LLM: Qwen, DeepSeek, ChatGPT. Агент 1: LangGraph + LangSmith Studio (IDE) + LangFlow. Агент 2: CrewAI. Агент 3: AutoGen. ВБД: Qdrant или Weaviate. RAG: `apps/rag`. LangSmith (платформа) — LLM-трейсы/evals. Redis-кеш ответов AI — после ИИ-блока. **API Gateway** / **IAM** — этап 6, TBD. Не обходить LiteLLM.
+Лендинг: Next.js. Игры: Next.js в `apps/games` (`basePath: /games`), статика мержится в CI с лендингом ([ADR-0010](artifacts/adr/0010-games-static-app.md)). CI: GitHub Actions. Оркестрация: нативно → Docker Compose (VPS) → k3s. Данные: PostgreSQL, MinIO, Redis (Memurai локально). BI: Metabase ([ADR-0009](artifacts/adr/0009-metabase-native-local.md)). Брокер: RabbitMQ — при **целевой архитектуре** (этап 6 / облако), не в локальном ИИ-блоке этапа 5. Наблюдаемость инфра: Grafana, Loki, Prometheus, Alloy ([ADR-0008](artifacts/adr/0008-observability-native-local.md)). **AI Gateway (LLM): LiteLLM.** LLM: Qwen, DeepSeek, ChatGPT. Агент 1: LangGraph + LangSmith Studio (IDE) + LangFlow. Агент 2: CrewAI. Агент 3: AutoGen. Также в AI-контуре: n8n (native), Dify (**Docker Compose** на ноутбуке — исключение, [ADR-0014](artifacts/adr/0014-agent3-autogen-n8n-dify.md)); оба через LiteLLM. ВБД: Qdrant или Weaviate. RAG: `apps/rag`. LangSmith (платформа) — LLM-трейсы/evals. Redis-кеш ответов AI — целевая архитектура (этап 6). **API Gateway** / **IAM** — этап 6, TBD. Не обходить LiteLLM.
 
 ## Что не делать
 
 - Не коммитить `.env`, ключи, дампы БД.
 - Не класть бизнес-логику продуктов в лендинг — лендинг витрина и маршрутизация.
 - Не класть логику игр в `apps/landing` — только ссылка Lab → `/games`.
-- Не плодить второй прод-шлюз к моделям в обход **LiteLLM**; AutoGen/CrewAI — только как агент 2 после первого продукта.
+- Не плодить второй прод-шлюз к моделям в обход **LiteLLM**; CrewAI = агент 2, AutoGen = агент 3 (после продуктов предыдущих агентов по ROADMAP).

@@ -13,19 +13,39 @@ if ($env:LANGFLOW_PORT) { $port = [int]$env:LANGFLOW_PORT }
 $hostName = "127.0.0.1"
 if ($env:LANGFLOW_HOST) { $hostName = $env:LANGFLOW_HOST }
 
+$repoRoot = Get-RepoRoot
+$envFile = Join-Path $repoRoot ".env"
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        $line = $_.Trim()
+        if (-not $line -or $line.StartsWith("#") -or ($line -notmatch "=")) { return }
+        $k, $v = $line.Split("=", 2)
+        $k = $k.Trim()
+        $v = $v.Trim().Trim('"').Trim("'")
+        if ($k -in @("AI_GATEWAY_URL")) { Set-Item -Path "Env:$k" -Value $v }
+    }
+}
+if (-not $env:AI_GATEWAY_URL) { $env:AI_GATEWAY_URL = "http://127.0.0.1:8080" }
+
+# Agent1 components (Alexsoft Calculator) + LiteLLM as the "OpenAI Compatible" provider.
+# The provider's API key is a LangFlow global variable, set by langflow-build-qa-flow.ps1.
+$env:LANGFLOW_COMPONENTS_PATH = Join-Path $repoRoot "apps\agent1\langflow\components"
+$env:ALEXSOFT_AGENT1_DIR = Join-Path $repoRoot "apps\agent1"
+$env:OPENAI_COMPATIBLE_BASE_URL = ($env:AI_GATEWAY_URL.TrimEnd("/") + "/v1")
+
 Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue |
     ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
 
-$lf = Join-Path $script:LangFlowVenv "Scripts\langflow.exe"
-$pidFile = Join-Path $script:LangFlowHome "langflow.pid"
-
-if (Test-Path $lf) {
-    $filePath = $lf
-    $argList = @("run", "--host", $hostName, "--port", "$port")
-} else {
-    $filePath = $script:LangFlowPython
-    $argList = @("-m", "langflow", "run", "--host", $hostName, "--port", "$port")
+$runSrc = Join-Path $PSScriptRoot "run-langflow.py"
+$runDst = Join-Path $script:LangFlowHome "run-langflow.py"
+if (-not (Test-Path $runSrc)) {
+    Write-Error "Missing runner: $runSrc"
 }
+Copy-Item -Force $runSrc $runDst
+
+$pidFile = Join-Path $script:LangFlowHome "langflow.pid"
+$filePath = $script:LangFlowPython
+$argList = @($runDst, "run", "--host", $hostName, "--port", "$port")
 
 Write-Host "Starting LangFlow on http://${hostName}:$port ..."
 $proc = Start-Process -FilePath $filePath -ArgumentList $argList `
@@ -57,4 +77,6 @@ if (-not $ok) {
 
 Write-Host "LangFlow started (PID $($proc.Id))"
 Write-Host "UI: http://${hostName}:$port"
-Write-Host "Wire LiteLLM in UI: OpenAI-compatible base URL = AI_GATEWAY_URL/v1, model = deepseek, key = LITELLM_MASTER_KEY"
+Write-Host "LiteLLM provider: OpenAI Compatible, base URL $env:OPENAI_COMPATIBLE_BASE_URL"
+Write-Host "Agent1 components: $env:LANGFLOW_COMPONENTS_PATH"
+Write-Host "Build the agent1_qa flow: infra\agent1\langflow-build-qa-flow.ps1"

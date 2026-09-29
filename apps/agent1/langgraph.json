@@ -2,7 +2,8 @@
   "dependencies": ["."],
   "graphs": {
     "agent1": "./graph.py:graph",
-    "agent1_llm": "./graph_llm.py:graph"
+    "agent1_llm": "./graph_llm.py:graph",
+    "agent1_qa": "./graph_qa.py:graph"
   },
   "env": "../../.env"
 }

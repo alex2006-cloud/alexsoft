@@ -40,6 +40,11 @@ Studio UI: https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024
 powershell -ExecutionPolicy Bypass -File infra\agent1\stop-studio.ps1
 ```
 
+`stop-studio.ps1` снимает всё дерево сервера (воркеры раньше лаунчера) и дочищает воркеров, чей
+лаунчер уже умер: такой воркер наследует слушающий сокет 2024 и продолжает отдавать старый набор
+графов. `start-studio.ps1` вызывает ту же очистку перед запуском, поэтому новые графы из
+`langgraph.json` подхватываются без ручного вмешательства.
+
 ## Шаг 4 — LangFlow
 
 ```powershell
@@ -54,6 +59,31 @@ powershell -ExecutionPolicy Bypass -File infra\agent1\stop-langflow.ps1
 ```
 
 При ошибках сборки на Windows установите [MSVC Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
+
+## Продукт: Q&A-агент с калькулятором
+
+Граф `agent1_qa` в терминале (нужны LiteLLM и venv Agent1):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File infra\agent1\chat-qa.ps1
+powershell -ExecutionPolicy Bypass -File infra\agent1\chat-qa.ps1 --once "2^10 + sqrt(16)"
+```
+
+Тот же продукт в LangFlow — флоу `agent1_qa` с компонентом Alexsoft Calculator
+(нужен запущенный LangFlow):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File infra\agent1\langflow-build-qa-flow.ps1
+powershell -ExecutionPolicy Bypass -File infra\agent1\langflow-ask.ps1 -Ask "sqrt(144) + 2**10"
+powershell -ExecutionPolicy Bypass -File infra\agent1\langflow-ask.ps1 -Session s1 -Ask "а раздели это на 4"
+```
+
+`langflow-build-qa-flow.ps1` пересоздаёт флоу и пишет глобальные переменные LangFlow для LiteLLM.
+`langflow-ask.ps1` спрашивает флоу из терминала; `/run` требует API-ключ даже при auto-login,
+поэтому ключ создаётся один раз и кешируется в `%LOCALAPPDATA%\LangFlow\cli-api-key.txt`
+(вне репозитория). Один `-Session` = один диалог с памятью.
+
+Описание продукта: [`apps/agent1/README.md`](../../apps/agent1/README.md).
 
 ## LangFlow → git
 

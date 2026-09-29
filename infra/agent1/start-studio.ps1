@@ -51,9 +51,10 @@ if ($env:LITELLM_MASTER_KEY -and -not $env:OPENAI_API_KEY) {
 $port = 2024
 if ($env:AGENT1_STUDIO_PORT) { $port = [int]$env:AGENT1_STUDIO_PORT }
 
-# Stop previous listener on port if any
-Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue |
-    ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+# Stop a previous server, including workers whose launcher already exited and still hold the port.
+if (-not (Stop-Agent1Studio -Port $port)) {
+    Write-Error "Port $port is still in use by another process. Free it and re-run."
+}
 
 $pidFile = Join-Path $script:Agent1Home "studio.pid"
 

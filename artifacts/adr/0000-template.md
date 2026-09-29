@@ -1,7 +1,10 @@
 # ADR-XXXX: Заголовок
 
-- **Статус:** proposed | accepted | superseded
+- **Статус:** proposed | accepted | superseded by ADR-XXXX
 - **Дата:** YYYY-MM-DD
 - **Контекст:**
+- **Рассмотренные альтернативы:**
 - **Решение:**
 - **Последствия:**
+- **Ссылки:**
+

@@ -4,7 +4,7 @@
   "description": "Create, Connect, Converse.",
   "folder": "Starter Project",
   "flow_type": "workflow",
-  "updated_at": "2026-09-17 10:19:15.529885",
+  "updated_at": "2026-09-18 06:09:43.138381",
   "data": {
     "nodes": [
       {
@@ -275,16 +275,16 @@
         },
         "dragging": false,
         "id": "ChatInput-tKQ4d",
-        "measured": {
-          "height": 207,
-          "width": 320
-        },
         "position": {
           "x": 1238.5974541975052,
           "y": 737.2526297113911
         },
         "selected": false,
-        "type": "genericNode"
+        "type": "genericNode",
+        "measured": {
+          "width": 320,
+          "height": 207
+        }
       },
       {
         "data": {
@@ -560,16 +560,16 @@
         },
         "dragging": false,
         "id": "ChatOutput-KxTA8",
-        "measured": {
-          "height": 52,
-          "width": 192
-        },
         "position": {
           "x": 2087.84675652303,
           "y": 636.1861485512626
         },
         "selected": false,
-        "type": "genericNode"
+        "type": "genericNode",
+        "measured": {
+          "width": 192,
+          "height": 52
+        }
       },
       {
         "data": {
@@ -606,7 +606,7 @@
             ],
             "frozen": false,
             "icon": "bot",
-            "last_updated": "2026-09-17T10:19:11.689Z",
+            "last_updated": "2026-09-18T06:09:36.275Z",
             "legacy": false,
             "metadata": {
               "code_hash": "52a387b4d967",
@@ -642,6 +642,7 @@
                 ],
                 "selected": "Message",
                 "name": "response",
+                "hidden": null,
                 "display_name": "Response",
                 "method": "message_response",
                 "value": "__UNDEFINED__",
@@ -660,6 +661,7 @@
                 ],
                 "selected": "Data",
                 "name": "structured_response",
+                "hidden": null,
                 "display_name": "Structured Response",
                 "method": "json_response",
                 "value": "__UNDEFINED__",
@@ -966,6 +968,34 @@
                 "name": "model",
                 "options": [
                   {
+                    "name": "deepseek",
+                    "icon": "Plug",
+                    "category": "OpenAI Compatible",
+                    "provider": "OpenAI Compatible",
+                    "metadata": {
+                      "context_length": 128000,
+                      "model_class": "ChatOpenAI",
+                      "model_name_param": "model",
+                      "api_key_param": "api_key",
+                      "max_tokens_field_name": "max_tokens",
+                      "base_url_param": "base_url"
+                    }
+                  },
+                  {
+                    "name": "deepseek/deepseek-chat",
+                    "icon": "Plug",
+                    "category": "OpenAI Compatible",
+                    "provider": "OpenAI Compatible",
+                    "metadata": {
+                      "context_length": 128000,
+                      "model_class": "ChatOpenAI",
+                      "model_name_param": "model",
+                      "api_key_param": "api_key",
+                      "max_tokens_field_name": "max_tokens",
+                      "base_url_param": "base_url"
+                    }
+                  },
+                  {
                     "name": "qwen",
                     "icon": "Plug",
                     "category": "OpenAI Compatible",
@@ -991,7 +1021,21 @@
                 "trace_as_input": true,
                 "track_in_telemetry": false,
                 "type": "model",
-                "value": []
+                "value": [
+                  {
+                    "name": "deepseek",
+                    "icon": "Plug",
+                    "provider": "OpenAI Compatible",
+                    "metadata": {
+                      "context_length": 128000,
+                      "model_class": "ChatOpenAI",
+                      "model_name_param": "model",
+                      "api_key_param": "api_key",
+                      "max_tokens_field_name": "max_tokens",
+                      "base_url_param": "base_url"
+                    }
+                  }
+                ]
               },
               "n_messages": {
                 "_input_type": "IntInput",
@@ -1187,7 +1231,7 @@
                 "value": "8818713d-3991-43ed-b25a-2e0c4c65292c",
                 "input_types": []
               },
-              "is_refresh": false
+              "is_refresh": true
             },
             "tool_mode": false
           },
@@ -1197,16 +1241,16 @@
         },
         "dragging": false,
         "id": "Agent-EXpSZ",
-        "measured": {
-          "height": 431,
-          "width": 320
-        },
         "position": {
           "x": 1641.6239626366948,
           "y": 301.10345101561927
         },
         "selected": false,
-        "type": "genericNode"
+        "type": "genericNode",
+        "measured": {
+          "width": 320,
+          "height": 431
+        }
       },
       {
         "data": {
@@ -1277,7 +1321,7 @@
                 "selected": "Tool",
                 "name": "component_as_tool",
                 "hidden": null,
-                "display_name": "Toolset",
+                "display_name": "Extracted Pages",
                 "method": "to_toolkit",
                 "value": "__UNDEFINED__",
                 "cache": true,
@@ -1656,23 +1700,23 @@
               "is_refresh": false
             },
             "tool_mode": true,
-            "last_updated": "2026-09-17T10:19:11.694Z"
+            "last_updated": "2026-09-18T06:09:36.277Z"
           },
           "showNode": true,
           "type": "URLComponent"
         },
         "dragging": false,
         "id": "URLComponent-Tjh8k",
-        "measured": {
-          "width": 320,
-          "height": 295
-        },
         "position": {
           "x": 1241.645826777893,
           "y": -34.70663041492506
         },
         "selected": false,
-        "type": "genericNode"
+        "type": "genericNode",
+        "measured": {
+          "width": 320,
+          "height": 295
+        }
       },
       {
         "data": {
@@ -1702,7 +1746,7 @@
             ],
             "frozen": false,
             "icon": "search",
-            "last_updated": "2026-09-17T10:19:11.696Z",
+            "last_updated": "2026-09-18T06:09:36.280Z",
             "legacy": false,
             "metadata": {
               "code_hash": "1c34727b3206",
@@ -2074,10 +2118,6 @@
         },
         "dragging": false,
         "id": "UnifiedWebSearch-KZ8k6",
-        "measured": {
-          "height": 211,
-          "width": 320
-        },
         "position": {
           "x": 1222.0531262552197,
           "y": 449.6632062052015
@@ -2087,7 +2127,11 @@
           "y": 514.7544001650839
         },
         "selected": false,
-        "type": "genericNode"
+        "type": "genericNode",
+        "measured": {
+          "width": 320,
+          "height": 211
+        }
       },
       {
         "data": {
@@ -2243,9 +2287,9 @@
       }
     ],
     "viewport": {
-      "x": -272.0662112593444,
-      "y": 217.4682164989959,
-      "zoom": 0.48602661915279094
+      "x": -385.49929774124735,
+      "y": 129.2557053877054,
+      "zoom": 0.81412989535148
     }
   }
 }

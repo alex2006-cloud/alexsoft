@@ -91,6 +91,122 @@ function Ensure-PipReady {
     }
 }
 
+function Get-ProcessTreeIds {
+    # Children before parents, so a launcher cannot respawn workers while we kill them.
+    param([Parameter(Mandatory = $true)][int]$RootProcessId)
+
+    $all = @(Get-CimInstance Win32_Process -Property ProcessId, ParentProcessId -ErrorAction SilentlyContinue)
+    $ordered = New-Object System.Collections.Generic.List[int]
+    $pending = New-Object System.Collections.Generic.Queue[int]
+    $pending.Enqueue($RootProcessId)
+
+    while ($pending.Count -gt 0) {
+        $current = $pending.Dequeue()
+        if ($ordered.Contains($current)) { continue }
+        $ordered.Add($current)
+        foreach ($child in ($all | Where-Object {
+                    [int]$_.ParentProcessId -eq $current -and [int]$_.ProcessId -ne $current
+                })) {
+            $pending.Enqueue([int]$child.ProcessId)
+        }
+    }
+
+    $ordered.Reverse()
+    return $ordered.ToArray()
+}
+
+function Test-Agent1Process {
+    # Guards against a stale pid file or a reused PID pointing at something unrelated.
+    param([Parameter(Mandatory = $true)][int]$ProcessId)
+
+    $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction SilentlyContinue
+    if (-not $proc) { return $false }
+    if ($proc.CommandLine -and $proc.CommandLine -like "*$script:Agent1Home*") { return $true }
+
+    # Spawned workers only show a generic command line; their loaded .pyd files give them away.
+    try {
+        foreach ($m in (Get-Process -Id $ProcessId -ErrorAction Stop).Modules) {
+            if ($m.FileName -and $m.FileName.StartsWith($script:Agent1Venv, [System.StringComparison]::OrdinalIgnoreCase)) {
+                return $true
+            }
+        }
+    } catch { }
+    return $false
+}
+
+function Get-Agent1OrphanWorkerIds {
+    # Agent Server workers keep the inherited listening socket after their launcher is gone.
+    $all = @(Get-CimInstance Win32_Process -Property ProcessId, ParentProcessId, Name, CommandLine -ErrorAction SilentlyContinue)
+    $livePids = @{}
+    foreach ($p in $all) { $livePids[[int]$p.ProcessId] = $true }
+
+    $orphans = @()
+    foreach ($p in $all) {
+        if ($p.Name -notmatch '^pythonw?\.exe$') { continue }
+        if (-not $p.CommandLine -or $p.CommandLine -notmatch 'multiprocessing') { continue }
+        if ($livePids.ContainsKey([int]$p.ParentProcessId)) { continue }
+        if (-not (Test-Agent1Process -ProcessId ([int]$p.ProcessId))) { continue }
+        $orphans += [int]$p.ProcessId
+    }
+    return $orphans
+}
+
+function Test-Agent1PortBusy {
+    param([int]$Port = 2024)
+
+    foreach ($path in @("ok", "docs")) {
+        try {
+            $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/$path" -UseBasicParsing -TimeoutSec 2
+            if ($r.StatusCode -eq 200) { return $true }
+        } catch { }
+    }
+
+    # A Listen entry can outlive its owner; only a live owner means the port is really taken.
+    $conn = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($conn -and (Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue)) { return $true }
+    return $false
+}
+
+function Stop-Agent1Studio {
+    param([int]$Port = 2024)
+
+    $pidFile = Join-Path $script:Agent1Home "studio.pid"
+    $roots = @()
+
+    if (Test-Path $pidFile) {
+        $recorded = 0
+        if ([int]::TryParse((Get-Content $pidFile -Raw).Trim(), [ref]$recorded) -and $recorded -gt 0) {
+            $roots += $recorded
+        }
+    }
+    Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
+        ForEach-Object { $roots += [int]$_.OwningProcess }
+
+    foreach ($root in ($roots | Sort-Object -Unique)) {
+        if (-not (Test-Agent1Process -ProcessId $root)) { continue }
+        foreach ($procId in (Get-ProcessTreeIds -RootProcessId $root)) {
+            if (Get-Process -Id $procId -ErrorAction SilentlyContinue) {
+                Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+                Write-Host "Stopped PID $procId"
+            }
+        }
+    }
+
+    foreach ($procId in (Get-Agent1OrphanWorkerIds)) {
+        Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+        Write-Host "Stopped orphaned Agent Server worker PID $procId"
+    }
+
+    if (Test-Path $pidFile) { Remove-Item $pidFile -Force -ErrorAction SilentlyContinue }
+
+    $deadline = (Get-Date).AddSeconds(15)
+    while ((Get-Date) -lt $deadline) {
+        if (-not (Test-Agent1PortBusy -Port $Port)) { return $true }
+        Start-Sleep -Milliseconds 500
+    }
+    return (-not (Test-Agent1PortBusy -Port $Port))
+}
+
 function Get-RepoRoot {
     return (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 }

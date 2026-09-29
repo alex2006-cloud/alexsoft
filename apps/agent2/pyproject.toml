@@ -1,0 +1,15 @@
+[project]
+name = "alexsoft-agent2"
+version = "0.1.0"
+description = "Agent 2 (CrewAI) for alexsoft Personal Ecosystem Lab"
+requires-python = ">=3.11"
+dependencies = [
+  "crewai",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["llm", "prompts", "crew_post"]

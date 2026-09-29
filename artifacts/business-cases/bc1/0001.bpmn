@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_BC1" targetNamespace="https://alexsoft.local/bc1" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.30.1">
+  <bpmn:collaboration id="Collaboration_BC1">
+    <bpmn:participant id="Participant_Alexsoft" name="alexsoft — Бизнес-кейс 1 (UC-0001)" processRef="Process_BC1" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_BC1" name="Узнать о проекте alexsoft через Q&#38;A-агента" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_BC1">
+      <bpmn:lane id="Lane_User" name="Пользователь">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OpenLanding</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_UserAction</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SelectAgent</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AskQuestion</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ClickLogin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_TryOpenAgent</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_AnotherQuestion</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_System" name="Система">
+        <bpmn:flowNodeRef>Task_ShowLanding</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ShowAgents</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OpenDialog</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_AuthOk</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ShowAuthError</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_RetryAuth</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_NoAccess</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Authenticate</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OfferLogin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_AnswerFound</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SearchAnswer</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ShowNoAnswer</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ShowAnswer</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SaveSession</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_Success</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" name="Старт">
+      <bpmn:outgoing>Flow_01</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="Task_OpenLanding" name="Открыть лендинг">
+      <bpmn:incoming>Flow_01</bpmn:incoming>
+      <bpmn:outgoing>Flow_02</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Task_ShowLanding" name="Показать лендинг&#10;(описание, продукты, вход)">
+      <bpmn:incoming>Flow_02</bpmn:incoming>
+      <bpmn:outgoing>Flow_03</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_UserAction" name="Действие пользователя?">
+      <bpmn:incoming>Flow_03</bpmn:incoming>
+      <bpmn:outgoing>Flow_04_Login</bpmn:outgoing>
+      <bpmn:outgoing>Flow_04_TryAgent</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_01" sourceRef="StartEvent_1" targetRef="Task_OpenLanding" />
+    <bpmn:sequenceFlow id="Flow_02" sourceRef="Task_OpenLanding" targetRef="Task_ShowLanding" />
+    <bpmn:sequenceFlow id="Flow_03" sourceRef="Task_ShowLanding" targetRef="Gateway_UserAction" />
+    <bpmn:sequenceFlow id="Flow_04_Login" name="Войти" sourceRef="Gateway_UserAction" targetRef="Task_ClickLogin" />
+    <bpmn:sequenceFlow id="Flow_04_TryAgent" name="Открыть агента без входа (2a)" sourceRef="Gateway_UserAction" targetRef="Task_TryOpenAgent" />
+    <bpmn:sequenceFlow id="Flow_06" sourceRef="Task_OfferLogin" targetRef="Task_ClickLogin" />
+    <bpmn:sequenceFlow id="Flow_07" sourceRef="Task_ClickLogin" targetRef="Task_Authenticate" />
+    <bpmn:sequenceFlow id="Flow_08" sourceRef="Task_Authenticate" targetRef="Gateway_AuthOk" />
+    <bpmn:sequenceFlow id="Flow_11_Retry" name="да" sourceRef="Gateway_RetryAuth" targetRef="Task_ClickLogin" />
+    <bpmn:serviceTask id="Task_ShowAgents" name="Показать список агентов">
+      <bpmn:incoming>Flow_09_Ok</bpmn:incoming>
+      <bpmn:outgoing>Flow_12</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_SelectAgent" name="Выбрать Q&#38;A-агента&#10;по проекту">
+      <bpmn:incoming>Flow_12</bpmn:incoming>
+      <bpmn:outgoing>Flow_13</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Task_OpenDialog" name="Открыть диалог с агентом">
+      <bpmn:incoming>Flow_13</bpmn:incoming>
+      <bpmn:outgoing>Flow_14</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_09_Ok" name="да" sourceRef="Gateway_AuthOk" targetRef="Task_ShowAgents" />
+    <bpmn:sequenceFlow id="Flow_09_Fail" name="нет (3a)" sourceRef="Gateway_AuthOk" targetRef="Task_ShowAuthError" />
+    <bpmn:sequenceFlow id="Flow_10" sourceRef="Task_ShowAuthError" targetRef="Gateway_RetryAuth" />
+    <bpmn:sequenceFlow id="Flow_12" sourceRef="Task_ShowAgents" targetRef="Task_SelectAgent" />
+    <bpmn:sequenceFlow id="Flow_13" sourceRef="Task_SelectAgent" targetRef="Task_OpenDialog" />
+    <bpmn:sequenceFlow id="Flow_14" sourceRef="Task_OpenDialog" targetRef="Task_AskQuestion" />
+    <bpmn:exclusiveGateway id="Gateway_AuthOk" name="Вход успешен?">
+      <bpmn:incoming>Flow_08</bpmn:incoming>
+      <bpmn:outgoing>Flow_09_Ok</bpmn:outgoing>
+      <bpmn:outgoing>Flow_09_Fail</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_ShowAuthError" name="Показать ошибку входа (3a)">
+      <bpmn:incoming>Flow_09_Fail</bpmn:incoming>
+      <bpmn:outgoing>Flow_10</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_RetryAuth" name="Повторить вход?">
+      <bpmn:incoming>Flow_10</bpmn:incoming>
+      <bpmn:outgoing>Flow_11_Retry</bpmn:outgoing>
+      <bpmn:outgoing>Flow_11_Abort</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_11_Abort" name="нет" sourceRef="Gateway_RetryAuth" targetRef="EndEvent_NoAccess" />
+    <bpmn:endEvent id="EndEvent_NoAccess" name="Конец: без доступа">
+      <bpmn:incoming>Flow_11_Abort</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:userTask id="Task_AskQuestion" name="Задать вопрос о проекте">
+      <bpmn:incoming>Flow_14</bpmn:incoming>
+      <bpmn:incoming>Flow_19_Again</bpmn:incoming>
+      <bpmn:outgoing>Flow_15</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_19_Again" name="да" sourceRef="Gateway_AnotherQuestion" targetRef="Task_AskQuestion" />
+    <bpmn:sequenceFlow id="Flow_15" sourceRef="Task_AskQuestion" targetRef="Task_SearchAnswer" />
+    <bpmn:sequenceFlow id="Flow_16" sourceRef="Task_SearchAnswer" targetRef="Gateway_AnswerFound" />
+    <bpmn:sequenceFlow id="Flow_17_No" name="нет (8a)" sourceRef="Gateway_AnswerFound" targetRef="Task_ShowNoAnswer" />
+    <bpmn:sequenceFlow id="Flow_20" name="нет" sourceRef="Gateway_AnotherQuestion" targetRef="Task_SaveSession" />
+    <bpmn:userTask id="Task_ClickLogin" name="Нажать «Войти»">
+      <bpmn:incoming>Flow_04_Login</bpmn:incoming>
+      <bpmn:incoming>Flow_06</bpmn:incoming>
+      <bpmn:incoming>Flow_11_Retry</bpmn:incoming>
+      <bpmn:outgoing>Flow_07</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Task_Authenticate" name="Аутентификация&#10;и авторизация">
+      <bpmn:incoming>Flow_07</bpmn:incoming>
+      <bpmn:outgoing>Flow_08</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Task_TryOpenAgent" name="Пытается открыть агента&#10;без авторизации (2a)">
+      <bpmn:incoming>Flow_04_TryAgent</bpmn:incoming>
+      <bpmn:outgoing>Flow_05</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="Task_OfferLogin" name="Не открывать диалог,&#10;предложить войти">
+      <bpmn:incoming>Flow_05</bpmn:incoming>
+      <bpmn:outgoing>Flow_06</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_05" sourceRef="Task_TryOpenAgent" targetRef="Task_OfferLogin" />
+    <bpmn:exclusiveGateway id="Gateway_AnswerFound" name="Ответ найден?">
+      <bpmn:incoming>Flow_16</bpmn:incoming>
+      <bpmn:outgoing>Flow_17_No</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0grkplp</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_SearchAnswer" name="Искать ответ&#10;по материалам проекта">
+      <bpmn:incoming>Flow_15</bpmn:incoming>
+      <bpmn:outgoing>Flow_16</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_21" sourceRef="Task_SaveSession" targetRef="EndEvent_Success" />
+    <bpmn:exclusiveGateway id="Gateway_AnotherQuestion" name="Ещё вопрос?">
+      <bpmn:incoming>Flow_0dwt863</bpmn:incoming>
+      <bpmn:incoming>Flow_0fto1a0</bpmn:incoming>
+      <bpmn:outgoing>Flow_19_Again</bpmn:outgoing>
+      <bpmn:outgoing>Flow_20</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Task_ShowNoAnswer" name="Сообщить: ответа нет (8a)">
+      <bpmn:incoming>Flow_17_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_0fto1a0</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_0grkplp" name="Да" sourceRef="Gateway_AnswerFound" targetRef="Task_ShowAnswer" />
+    <bpmn:serviceTask id="Task_ShowAnswer" name="Показать ответ&#10;по материалам проекта">
+      <bpmn:incoming>Flow_0grkplp</bpmn:incoming>
+      <bpmn:outgoing>Flow_0dwt863</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_0dwt863" sourceRef="Task_ShowAnswer" targetRef="Gateway_AnotherQuestion" />
+    <bpmn:sequenceFlow id="Flow_0fto1a0" sourceRef="Task_ShowNoAnswer" targetRef="Gateway_AnotherQuestion" />
+    <bpmn:serviceTask id="Task_SaveSession" name="Сохранить сессию диалога">
+      <bpmn:incoming>Flow_20</bpmn:incoming>
+      <bpmn:outgoing>Flow_21</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_Success" name="Конец: успех">
+      <bpmn:incoming>Flow_21</bpmn:incoming>
+    </bpmn:endEvent>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_BC1">
+    <bpmndi:BPMNPlane id="BPMNPlane_BC1" bpmnElement="Collaboration_BC1">
+      <bpmndi:BPMNShape id="Participant_Alexsoft_di" bpmnElement="Participant_Alexsoft" isHorizontal="true">
+        <dc:Bounds x="120" y="80" width="3090" height="620" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_System_di" bpmnElement="Lane_System" isHorizontal="true">
+        <dc:Bounds x="150" y="330" width="3060" height="370" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_User_di" bpmnElement="Lane_User" isHorizontal="true">
+        <dc:Bounds x="150" y="80" width="3060" height="250" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="192" y="172" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="195" y="215" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OpenLanding_di" bpmnElement="Task_OpenLanding">
+        <dc:Bounds x="270" y="150" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ShowLanding_di" bpmnElement="Task_ShowLanding">
+        <dc:Bounds x="400" y="390" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_UserAction_di" bpmnElement="Gateway_UserAction" isMarkerVisible="true">
+        <dc:Bounds x="535" y="165" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="522" y="224.5" width="76" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ShowAgents_di" bpmnElement="Task_ShowAgents">
+        <dc:Bounds x="1660" y="390" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SelectAgent_di" bpmnElement="Task_SelectAgent">
+        <dc:Bounds x="1760" y="150" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OpenDialog_di" bpmnElement="Task_OpenDialog">
+        <dc:Bounds x="1920" y="390" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_AuthOk_di" bpmnElement="Gateway_AuthOk" isMarkerVisible="true">
+        <dc:Bounds x="1205" y="495" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1190" y="555" width="79" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ShowAuthError_di" bpmnElement="Task_ShowAuthError">
+        <dc:Bounds x="1370" y="485" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_RetryAuth_di" bpmnElement="Gateway_RetryAuth" isMarkerVisible="true">
+        <dc:Bounds x="1555" y="495" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1536.5" y="555" width="87" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_NoAccess_di" bpmnElement="EndEvent_NoAccess">
+        <dc:Bounds x="1702" y="502" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1696" y="545" width="55" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AskQuestion_di" bpmnElement="Task_AskQuestion">
+        <dc:Bounds x="2120" y="150" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ClickLogin_di" bpmnElement="Task_ClickLogin">
+        <dc:Bounds x="870" y="150" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Authenticate_di" bpmnElement="Task_Authenticate">
+        <dc:Bounds x="970" y="480" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_TryOpenAgent_di" bpmnElement="Task_TryOpenAgent">
+        <dc:Bounds x="660" y="90" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OfferLogin_di" bpmnElement="Task_OfferLogin">
+        <dc:Bounds x="660" y="390" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_AnswerFound_di" bpmnElement="Gateway_AnswerFound" isMarkerVisible="true">
+        <dc:Bounds x="2365" y="405" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2352" y="372" width="77" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SearchAnswer_di" bpmnElement="Task_SearchAnswer">
+        <dc:Bounds x="2120" y="390" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_AnotherQuestion_di" bpmnElement="Gateway_AnotherQuestion" isMarkerVisible="true">
+        <dc:Bounds x="2775" y="165" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2697" y="183" width="68" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ShowNoAnswer_di" bpmnElement="Task_ShowNoAnswer">
+        <dc:Bounds x="2520" y="395" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ShowAnswer_di" bpmnElement="Task_ShowAnswer">
+        <dc:Bounds x="2520" y="535" width="140" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SaveSession_di" bpmnElement="Task_SaveSession">
+        <dc:Bounds x="2910" y="400" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Success_di" bpmnElement="EndEvent_Success">
+        <dc:Bounds x="3152" y="412" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3137" y="455" width="66" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_01_di" bpmnElement="Flow_01">
+        <di:waypoint x="228" y="190" />
+        <di:waypoint x="270" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_02_di" bpmnElement="Flow_02">
+        <di:waypoint x="330" y="230" />
+        <di:waypoint x="330" y="430" />
+        <di:waypoint x="400" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_03_di" bpmnElement="Flow_03">
+        <di:waypoint x="470" y="390" />
+        <di:waypoint x="470" y="190" />
+        <di:waypoint x="535" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_04_Login_di" bpmnElement="Flow_04_Login">
+        <di:waypoint x="585" y="190" />
+        <di:waypoint x="870" y="190" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="736" y="172" width="31" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_04_TryAgent_di" bpmnElement="Flow_04_TryAgent">
+        <di:waypoint x="560" y="165" />
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="660" y="130" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="582" y="100" width="100" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_06_di" bpmnElement="Flow_06">
+        <di:waypoint x="800" y="430" />
+        <di:waypoint x="930" y="430" />
+        <di:waypoint x="930" y="230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_07_di" bpmnElement="Flow_07">
+        <di:waypoint x="930" y="230" />
+        <di:waypoint x="930" y="355" />
+        <di:waypoint x="1030" y="355" />
+        <di:waypoint x="1030" y="480" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_08_di" bpmnElement="Flow_08">
+        <di:waypoint x="1090" y="520" />
+        <di:waypoint x="1205" y="520" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_Retry_di" bpmnElement="Flow_11_Retry">
+        <di:waypoint x="1580" y="495" />
+        <di:waypoint x="1580" y="250" />
+        <di:waypoint x="930" y="250" />
+        <di:waypoint x="930" y="230" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1593" y="363" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_09_Ok_di" bpmnElement="Flow_09_Ok">
+        <di:waypoint x="1230" y="495" />
+        <di:waypoint x="1230" y="430" />
+        <di:waypoint x="1660" y="430" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1212" y="462" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_09_Fail_di" bpmnElement="Flow_09_Fail">
+        <di:waypoint x="1255" y="520" />
+        <di:waypoint x="1370" y="520" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1292" y="483" width="40" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_10_di" bpmnElement="Flow_10">
+        <di:waypoint x="1490" y="520" />
+        <di:waypoint x="1555" y="520" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12_di" bpmnElement="Flow_12">
+        <di:waypoint x="1720" y="390" />
+        <di:waypoint x="1720" y="230" />
+        <di:waypoint x="1760" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_13_di" bpmnElement="Flow_13">
+        <di:waypoint x="1830" y="230" />
+        <di:waypoint x="1830" y="430" />
+        <di:waypoint x="1920" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14_di" bpmnElement="Flow_14">
+        <di:waypoint x="1980" y="390" />
+        <di:waypoint x="1980" y="190" />
+        <di:waypoint x="2120" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11_Abort_di" bpmnElement="Flow_11_Abort">
+        <di:waypoint x="1605" y="520" />
+        <di:waypoint x="1702" y="520" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1639" y="502" width="17" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_19_Again_di" bpmnElement="Flow_19_Again">
+        <di:waypoint x="2800" y="165" />
+        <di:waypoint x="2800" y="120" />
+        <di:waypoint x="2190" y="120" />
+        <di:waypoint x="2190" y="150" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2443" y="102" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_15_di" bpmnElement="Flow_15">
+        <di:waypoint x="2190" y="230" />
+        <di:waypoint x="2190" y="390" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_16_di" bpmnElement="Flow_16">
+        <di:waypoint x="2260" y="430" />
+        <di:waypoint x="2365" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_17_No_di" bpmnElement="Flow_17_No">
+        <di:waypoint x="2415" y="430" />
+        <di:waypoint x="2520" y="430" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2454" y="453" width="40" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_20_di" bpmnElement="Flow_20">
+        <di:waypoint x="2825" y="190" />
+        <di:waypoint x="2860" y="190" />
+        <di:waypoint x="2860" y="430" />
+        <di:waypoint x="2910" y="430" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2866" y="306" width="17" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_05_di" bpmnElement="Flow_05">
+        <di:waypoint x="730" y="170" />
+        <di:waypoint x="730" y="390" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_21_di" bpmnElement="Flow_21">
+        <di:waypoint x="3030" y="430" />
+        <di:waypoint x="3152" y="430" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0grkplp_di" bpmnElement="Flow_0grkplp">
+        <di:waypoint x="2390" y="455" />
+        <di:waypoint x="2390" y="570" />
+        <di:waypoint x="2520" y="570" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2398" y="507.5" width="14" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0dwt863_di" bpmnElement="Flow_0dwt863">
+        <di:waypoint x="2660" y="570" />
+        <di:waypoint x="2800" y="570" />
+        <di:waypoint x="2800" y="215" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0fto1a0_di" bpmnElement="Flow_0fto1a0">
+        <di:waypoint x="2640" y="430" />
+        <di:waypoint x="2800" y="430" />
+        <di:waypoint x="2800" y="215" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

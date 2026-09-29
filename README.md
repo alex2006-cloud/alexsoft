@@ -45,7 +45,7 @@
 
 ## Текущий этап
 
-**Этап 5 — AI-контур.** LiteLLM+DeepSeek (Qwen в конфиге) → LangGraph+продукт → CrewAI+продукт → AutoGen+продукт → RAG+продукт → LangSmith; Redis-кеш и RabbitMQ — после ИИ-блока. См. [ROADMAP.md](ROADMAP.md), [CONCEPT.md](CONCEPT.md).
+**Этап 5 — AI-контур.** LiteLLM+DeepSeek → агенты 1–3 (+ n8n/Dify) → **Architecture and documentation** → RAG → LangSmith. Redis-кеш AI и RabbitMQ — при целевой архитектуре (этап 6). См. [ROADMAP.md](ROADMAP.md), [CONCEPT.md](CONCEPT.md).
 
 ## Быстрый старт
 

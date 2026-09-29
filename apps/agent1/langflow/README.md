@@ -1,4 +1,9 @@
-# LangFlow exports (git snapshots)
+# LangFlow: components (source) and flow exports (snapshots)
+
+`components/agent1/` — компоненты этого репозитория (Alexsoft Calculator), LangFlow читает их при
+старте через `LANGFLOW_COMPONENTS_PATH`. Это обычный код под git, а не снимок.
+
+
 
 JSON snapshots of **your** LangFlow workflows (Starter templates are skipped).  
 Secrets in node fields are redacted.
