@@ -54,8 +54,9 @@
 ## Этап 5 — AI-контур (текущий)
 
 По [CONCEPT.md](CONCEPT.md).  
-**AI Gateway = LiteLLM** (не путать с API Gateway / IAM — этап 6). Облачные LLM: **DeepSeek** (подключён), Qwen (в конфиге). Три агента подряд, у каждого свой продукт; затем синхронизация архитектуры/доков → RAG → LangSmith.  
-**LangSmith Studio** (IDE графа; бывш. LangGraph Studio) ≠ **LangSmith** (платформа трейсов/evals).  
+**AI Gateway = LiteLLM** (не путать с API Gateway / IAM — этап 6). Облачные LLM: **DeepSeek** (подключён), Qwen (в конфиге).  
+Порядок: 5.1–5.3 (шлюз + агенты 1–2 с продуктами) → **5.4 стек** AutoGen/n8n/Dify (**без** продукта агента 3) → **5.5** архитектура и документация → **5.6** ВБД + RAG → **5.7** первый AI-агент с RAG.  
+**LangSmith Studio** (IDE графа; бывш. LangGraph Studio) ≠ **LangSmith** (платформа трейсов/evals; в этапе 5 отдельным шагом не ведём).  
 Публичный демо-чат с лендинга **не** выкладываем до API Gateway / IAM (этап 6) — иначе расход токенов и утечка ключей.  
 **Redis-кеш ответов AI и RabbitMQ** — не в этапе 5; ставим при **целевой архитектуре** (облако / этап 6). Memurai с этапа 2 для данных остаётся как есть.
 
@@ -70,56 +71,60 @@
 **5.2 — агент 1 (LangGraph) + продукт**
 
 - [x] LangChain / LangGraph + LangSmith Studio (IDE; бывш. LangGraph Studio) + LangFlow (через LiteLLM)
-- [x] AI-продукт через агент 1: **Q&A-агент с калькулятором** (граф `agent1_qa`, tool `calculator`, память сессии) — локально (`infra/agent1/chat-qa.ps1`, Studio) — [`apps/agent1`](apps/agent1/README.md)
+- [x] AI-продукт через агент 1: **Q&A-агент с калькулятором** (граф `agent1_qa`, tool `calculator`, память сессии) — локально (`infra/agent1/chat-qa.ps1`, Studio) — `[apps/agent1](apps/agent1/README.md)`
 - [x] Тот же продукт в LangFlow: флоу `agent1_qa` + компонент Alexsoft Calculator поверх того же `calculator.py` (`infra/agent1/langflow-build-qa-flow.ps1`, `langflow-ask.ps1`)
 - [x] ADR: агент 1 = LangGraph-стек ([ADR-0012](artifacts/adr/0012-agent1-langgraph-stack.md))
 
 **5.3 — агент 2 (CrewAI) + продукт**
 
 - [x] CrewAI через LiteLLM
-- [x] AI-продукт через агент 2: **черновик поста** (Researcher → Writer → Editor) — локально (`infra/agent2/run-post.ps1`) — [`apps/agent2`](apps/agent2/README.md)
+- [x] AI-продукт через агент 2: **черновик поста** (Researcher → Writer → Editor) — локально (`infra/agent2/run-post.ps1`) — `[apps/agent2](apps/agent2/README.md)`
 - [x] ADR: CrewAI vs LangGraph ([ADR-0013](artifacts/adr/0013-agent2-crewai.md))
 
-**5.4 — AutoGen + n8n + Dify → затем агент 3 / продукт**
+**5.4 — AutoGen + n8n + Dify (стек)**
 
-Сначала стек, потом продукт агента 3 (не раньше, чем установлены AutoGen, n8n и Dify).
+Только установка и ADR. Продукт агента 3 и первый AI-агент с RAG — **не** здесь: после **5.5** → **5.6** (RAG) → **5.7** (агент с RAG).
 
-- [x] AutoGen через LiteLLM — локально (`infra/agent3/install-autogen.ps1`, `smoke-litellm.ps1`) — [`apps/agent3`](apps/agent3/README.md)
+- [x] AutoGen через LiteLLM — локально (`infra/agent3/install-autogen.ps1`, `smoke-litellm.ps1`) — `[apps/agent3](apps/agent3/README.md)`
 - [x] **n8n** (локально npm; LLM только через LiteLLM) — GUI `:5678` (`infra/n8n`)
 - [x] **Dify** (Docker Compose на ноутбуке; LLM только через LiteLLM) — GUI `:3003` (`infra/dify`)
 - [x] ADR: AutoGen vs LangGraph / CrewAI; роль n8n и Dify ([ADR-0014](artifacts/adr/0014-agent3-autogen-n8n-dify.md))
-- [ ] AI-продукт через агент 3 (только после пунктов выше)
 
 **5.5 — Architecture and documentation**
 
-Синхронизация артефактов после стека 5.1–5.4 (агент Cursor **Architecture and documentation**), **до** RAG.
+Синхронизация артефактов после стека 5.1–5.4 (агент Cursor **Architecture and documentation**), **до** RAG (**5.6**) и первого AI-агента с RAG (**5.7**).
 
-- [ ] Создать документы по бизнес кейсу 1: User Stories (Бизнес-кейс 1), Use Cases (Бизнес-кейс 1) в виде спецификации и диаграммы, BPMN (Бизнес-кейс 1), Sequence Diagram (Бизнес-кейс 1)
-- [ ] Создать документы по системе: Component Diagram всей системы, C4 — 1,2,3 уровень,  API-контракт (OpenAPI) для RAG-системы
-- [ ] Актуализировать `artifacts/structurizr/workspace.dsl` под архитектуру всей системы
-- [ ] Дописать / проверить ADR (в т.ч. пробелы относительно текущего стека)
+- [x] Создать документы по бизнес кейсу 1: User Stories (Бизнес-кейс 1), Use Cases (Бизнес-кейс 1) в виде спецификации и диаграммы, BPMN (Бизнес-кейс 1), Sequence Diagram (Бизнес-кейс 1) — [`artifacts/business-cases/bc1/`](artifacts/business-cases/bc1/)
+- [x] Создать архитектуру в drawio и утвердить стеки технологий ([`architecture-in-drawio.drawio`](artifacts/architecture/architecture-in-drawio.drawio), [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md))
+- [ ] Актуализировать `artifacts/architecture/c4-l1-l2-l3.dsl` (C4 — 1,2,3 уровень) под архитектуру всей системы
+- [ ] Создать документы по системе: Component Diagram всей системы ([`uml-component-diagram.puml`](artifacts/architecture/uml-component-diagram.puml)), API-контракт (OpenAPI) для RAG-системы
+- [x] Дописать / проверить ADR (целевая архитектура и стеки — [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md); выравнивание остальных доков — ниже)
 - [ ] Выровнять `CONCEPT.md`, `ROADMAP.md`, `AGENTS.md`, корневой `README.md` и README сервисов
-- [ ] Экспорт диаграмм / проверка, что C4 отражает фактический контур
+- [ ] Экспорт диаграмм
 
-**5.6 — векторная БД + RAG + продукт с RAG**
+**5.6 — векторная БД + RAG**
 
-- [ ] Выбор ВБД: Qdrant **или** Weaviate (ADR)
-- [ ] RAG, 3 слоя: загрузка → хранение эмбеддингов → пайплайны поиска (LangChain / LlamaIndex — ADR)
-- [ ] `apps/rag` + AI-продукт **с RAG**
-- [ ] Lab «RAG» → Live (когда есть URL)
+После закрытия **5.5**. Инфра RAG без продукта-агента.
 
-**5.7 — LangSmith (платформа, не Studio)**
+- [x] Выбор ВБД: **Qdrant** ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md); Weaviate отклонён для целевого контура)
+- [x] RAG-стек: **LlamaIndex** + hybrid в Qdrant; embedding **`text-embedding-3-small`** через LiteLLM ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md))
+- [ ] RAG, 3 слоя в коде: загрузка → хранение эмбеддингов → пайплайны поиска
+- [ ] `apps/rag` (сервис RAG)
 
-- [ ] Довести LangSmith (платформа): трейсы, анализ, оценка прогонов — не путать с LangSmith Studio
-- [ ] Зафиксировать: Loki/Grafana ≠ LangSmith (платформа) ≠ LangSmith Studio (IDE)
+**5.7 — первый AI-агент с RAG**
+
+После **5.6**. Первый AI-продукт с RAG (см. БК1); не путать с «продуктом агента 3» из старого плана 5.4.
+
+- [ ] **Первый AI-агент с RAG** (поверх `apps/rag` + LiteLLM)
+- [ ] Lab «RAG» → Live (когда есть URL; публично — только после IAM, этап 6)
 
 ## Этап 6 — облако и комплаенс (целевая архитектура)
 
 Сначала обсуждение «что переносим». Затем по CONCEPT:
 
 - [ ] Архитектура переноса (Structurizr / ADR)
-- [ ] API Gateway (инструмент — уточнить)
-- [ ] IAM (инструмент — уточнить)
+- [ ] Edge / reverse proxy: **Nginx** (+ NPM при RAM/Docker) — стек утверждён ([ADR-0007](artifacts/adr/0007-edge-nginx-npm.md), [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md)); внедрение на целевом VDS
+- [ ] IAM: **Authentik** — стек утверждён ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md)); внедрение на целевом VDS
 - [ ] SSH, Docker на VDS (+ опционально Portainer)
 - [ ] Redis вместо Memurai; **Redis-кеш ответов AI**; Postgres/MinIO в облаке; туннели к DBeaver / Console
 - [ ] **RabbitMQ** — очередь долгих AI-задач (+ ADR, порты в `.env` / README)

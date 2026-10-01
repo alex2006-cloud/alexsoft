@@ -3,11 +3,11 @@ name: Structurizr
 on:
   push:
     paths:
-      - "artifacts/structurizr/**"
+      - "artifacts/architecture/**"
       - ".github/workflows/structurizr.yml"
   pull_request:
     paths:
-      - "artifacts/structurizr/**"
+      - "artifacts/architecture/**"
       - ".github/workflows/structurizr.yml"
   workflow_dispatch:
 
@@ -25,7 +25,7 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}:/usr/local/structurizr" \
             structurizr/structurizr:2026.06.28-playwright \
-            validate -workspace artifacts/structurizr/workspace.dsl
+            validate -workspace artifacts/architecture/c4-l1-l2-l3.dsl
 
       - name: Export PNG and SVG
         run: |
@@ -33,11 +33,11 @@ jobs:
           docker run --rm \
             -v "${{ github.workspace }}:/usr/local/structurizr" \
             structurizr/structurizr:2026.06.28-playwright \
-            export -workspace artifacts/structurizr/workspace.dsl -format png -output artifacts/generated
+            export -workspace artifacts/architecture/c4-l1-l2-l3.dsl -format png -output artifacts/generated
           docker run --rm \
             -v "${{ github.workspace }}:/usr/local/structurizr" \
             structurizr/structurizr:2026.06.28-playwright \
-            export -workspace artifacts/structurizr/workspace.dsl -format svg -output artifacts/generated
+            export -workspace artifacts/architecture/c4-l1-l2-l3.dsl -format svg -output artifacts/generated
           ls -la artifacts/generated
 
       - uses: actions/upload-artifact@v4

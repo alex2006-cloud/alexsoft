@@ -3,7 +3,7 @@
 Этап **5.4**: Microsoft AutoGen AgentChat.  
 Все LLM-вызовы только через **LiteLLM** ([ADR-0011](../../artifacts/adr/0011-ai-gateway-litellm.md), [ADR-0014](../../artifacts/adr/0014-agent3-autogen-n8n-dify.md)).
 
-Локального Studio нет — smoke через CLI (`infra/agent3`). AI-продукт агента 3 — после установки AutoGen, n8n и Dify.
+Локального Studio нет — smoke через CLI (`infra/agent3`). Отдельный продукт агента 3 снят с 5.4; первый AI-агент с RAG — этап **5.7** (после **5.5** docs и **5.6** RAG).
 
 ## Локально
 
@@ -21,4 +21,4 @@ powershell -ExecutionPolicy Bypass -File infra\agent3\smoke-litellm.ps1
 
 ## Продукт
 
-Пока не реализован (ROADMAP 5.4 — стек сначала).
+Не в 5.4. Первый AI-агент с RAG — [ROADMAP](../../ROADMAP.md) **5.7** (после **5.5** docs и **5.6** RAG).

@@ -20,14 +20,14 @@
 | 5.1 | **LiteLLM** + DeepSeek (+ Qwen в конфиге) |
 | 5.2 | Агент 1 LangGraph + LangSmith Studio (IDE) + LangFlow → AI-продукт |
 | 5.3 | Агент 2 **CrewAI** → AI-продукт |
-| 5.4 | AutoGen + **n8n** + **Dify** (через LiteLLM) → затем AI-продукт агента 3 |
-| 5.5 | **Architecture and documentation** (Structurizr, ADR, CONCEPT/ROADMAP/AGENTS) |
-| 5.6 | ВБД (Qdrant\|Weaviate) + RAG (3 слоя) → продукт с RAG |
-| 5.7 | LangSmith (**платформа**, не Studio) |
+| 5.4 | AutoGen + **n8n** + **Dify** (стек через LiteLLM; **без** продукта агента 3) |
+| 5.5 | **Architecture and documentation** (БК1, draw.io, Structurizr, C4, OpenAPI RAG, ADR, sync docs) |
+| 5.6 | ВБД + RAG (`apps/rag`) |
+| 5.7 | **Первый AI-агент с RAG** |
 
 Все агенты ходят в модели **через LiteLLM**.
 
-**Статус:** 5.1 — LiteLLM + DeepSeek. 5.2 — Agent1 + продукт Q&A/калькулятор. 5.3 — Agent2 CrewAI + черновик поста. 5.4 — стек AutoGen + n8n + Dify ([ADR-0014](../../artifacts/adr/0014-agent3-autogen-n8n-dify.md): [`infra/agent3`](../../infra/agent3/), [`infra/n8n`](../../infra/n8n/), [`infra/dify`](../../infra/dify/)); продукт агента 3 ещё нет. См. [ROADMAP.md](../../ROADMAP.md).
+**Статус:** 5.1 — LiteLLM + DeepSeek. 5.2 — Agent1 + продукт Q&A/калькулятор. 5.3 — Agent2 CrewAI + черновик поста. 5.4 — стек AutoGen + n8n + Dify ([ADR-0014](../../artifacts/adr/0014-agent3-autogen-n8n-dify.md)); продукт агента 3 снят с 5.4 — RAG в **5.6**, первый AI-агент с RAG в **5.7** (после **5.5**). См. [ROADMAP.md](../../ROADMAP.md).
 
 ### Клиенты 5.4 → LiteLLM
 

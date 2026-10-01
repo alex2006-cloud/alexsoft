@@ -34,5 +34,7 @@ __pycache__/
 data/
 *.log
 
-# Structurizr Lite local state
-artifacts/structurizr/.structurizr/
+# Structurizr Local local state (+ draw.io backup files)
+artifacts/architecture/.structurizr/
+artifacts/architecture/.*.bkp
+*.drawio.bkp

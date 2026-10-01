@@ -1,7 +1,7 @@
 # Agent 3 (AutoGen)
 
 Нативная установка этапа **5.4** (Windows). LLM только через **LiteLLM** ([ADR-0011](../../artifacts/adr/0011-ai-gateway-litellm.md), [ADR-0014](../../artifacts/adr/0014-agent3-autogen-n8n-dify.md)).  
-Локального Studio нет — smoke через CLI. AI-продукт агента 3 — позже (после n8n и Dify).
+Локального Studio нет — smoke через CLI. Отдельный продукт агента 3 не в 5.4; первый AI-агент с RAG — ROADMAP **5.7** после **5.5**/**5.6**.
 
 ## Где лежит на машине
 

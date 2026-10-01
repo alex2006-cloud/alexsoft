@@ -1,0 +1,165 @@
+@startuml alexsoft-Component-Diagram
+title UML Component Diagram — alexsoft (целевая архитектура)
+caption Масштаб ≈ C4 L2. Стереотип <<planned>> — ещё не внедрено (этап 6 / 5.5+).\nСогласовано с БК 1 Sequence (0001-sequence.puml) и CONCEPT.
+
+left to right direction
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+' ========== Внешние системы ==========
+cloud "Внешние системы" {
+  [LLM API\n(DeepSeek / Qwen / ChatGPT)] as ExtLLM <<external>>
+  [Мессенджеры и почта] as ExtMsg <<external>>
+  [GitHub\n(Actions, monorepo)] as ExtGH <<external>>
+  [LangSmith\n(платформа трейсов)] as ExtLS <<external>>
+}
+
+' ========== Публичный контур ==========
+package "Public" {
+  [Landing\nNext.js] as Landing
+  [Games\nNext.js /games] as Games
+}
+
+' ========== Edge / доступ (этап 6) ==========
+package "Edge & Access <<planned>>" {
+  [API Gateway\nTBD] as APIGW <<planned>>
+  [IAM\nOIDC / TBD] as IAM <<planned>>
+}
+
+' ========== AI-контур ==========
+package "AI" {
+  [AI Gateway\nLiteLLM] as LiteLLM
+  [Agent 1\nLangGraph Q&A] as Agent1
+  [Agent 2\nCrewAI Post] as Agent2
+  [Agent 3\nAutoGen] as Agent3
+  [n8n] as N8n
+  [Dify] as Dify
+  [RAG\napps/rag] as RAG
+}
+
+' ========== Данные ==========
+package "Data" {
+  [PostgreSQL] as PG
+  [Redis / Memurai] as Redis
+  [MinIO] as MinIO
+  [Vector DB\nQdrant|Weaviate] as VDB <<planned>>
+  [Metabase] as Metabase
+  [RabbitMQ] as RMQ <<planned>>
+}
+
+' ========== Наблюдаемость ==========
+package "Observability" {
+  [Grafana] as Grafana
+  [Loki] as Loki
+  [Prometheus] as Prom
+  [Grafana Alloy] as Alloy
+}
+
+' ========== Предоставляемые интерфейсы ==========
+interface "HTTPS / Web UI" as IWeb
+interface "REST API\n(/v1/...)" as IRest
+interface "OIDC / AuthN+AuthZ" as IAuth
+interface "OpenAI-compatible\n/v1/chat/completions" as ILlmGw
+interface "Agent API\n(chat, sessions)" as IAgent
+interface "RAG Search API" as IRag
+interface "SQL" as ISql
+interface "Redis Protocol" as IRedis
+interface "S3 API" as IS3
+interface "Vector Search" as IVec
+interface "AMQP" as IAmqp
+interface "Metrics / Logs scrape" as IObs
+
+' --- provides ---
+Landing -up- IWeb
+APIGW -up- IRest
+IAM -up- IAuth
+LiteLLM -up- ILlmGw
+Agent1 -up- IAgent
+RAG -up- IRag
+PG -up- ISql
+Redis -up- IRedis
+MinIO -up- IS3
+VDB -up- IVec
+RMQ -up- IAmqp
+Alloy -up- IObs
+
+' ========== Требования / зависимости (requires) ==========
+
+' Публичный контур
+Landing ..> IRest : requires <<planned>>
+Landing ..> Games : deep-link /games
+Games ..> ISql : optional state
+Games ..> IRedis : optional cache
+
+' Edge
+APIGW ..> IAuth : requires
+APIGW ..> IAgent : route to agents
+APIGW ..> IRag : route to RAG
+
+' Агенты и low-code → только через LiteLLM
+Agent1 ..> ILlmGw : requires
+Agent2 ..> ILlmGw : requires
+Agent3 ..> ILlmGw : requires
+N8n ..> ILlmGw : requires
+Dify ..> ILlmGw : requires
+RAG ..> ILlmGw : embeddings / generation
+Agent1 ..> IRag : Q&A по проекту (БК 1)
+Agent1 ..> ISql : sessions / checkpoints
+Agent2 ..> ISql : artifacts
+Agent3 ..> ISql : artifacts
+
+' RAG ↔ данные
+RAG ..> IVec : requires <<planned>>
+RAG ..> IS3 : documents
+RAG ..> ISql : metadata
+
+' AI Gateway → внешние LLM (+ опционально очередь)
+LiteLLM ..> ExtLLM : HTTPS
+LiteLLM ..> IAmqp : long jobs <<planned>>
+LiteLLM ..> IRedis : response cache <<planned>>
+
+' Агенты → мессенджеры (не LiteLLM)
+Agent2 ..> ExtMsg : publish posts
+N8n ..> ExtMsg : workflows
+
+' BI
+Metabase ..> ISql : requires
+
+' Observability (упрощённо: сбор со всех контуров)
+Landing ..> IObs
+Games ..> IObs
+APIGW ..> IObs
+Agent1 ..> IObs
+Agent2 ..> IObs
+Agent3 ..> IObs
+RAG ..> IObs
+LiteLLM ..> IObs
+N8n ..> IObs
+Dify ..> IObs
+Alloy ..> Loki : push logs
+Alloy ..> Prom : push metrics
+Grafana ..> Loki : query
+Grafana ..> Prom : query
+
+' LLM evals
+Agent1 ..> ExtLS : traces (opt.)
+LiteLLM ..> ExtLS : traces (opt.)
+
+' CI
+ExtGH ..> Landing : build & deploy
+ExtGH ..> Games : build & merge static
+
+legend right
+  |= Стереотип |= Смысл |
+  | <<planned>> | Целевая архитектура, ещё не в проде/локалке |
+  | <<external>> | Вне системы alexsoft |
+  | Сплошная к () | component **provides** interface |
+  | Пунктир к () | component **requires** interface |
+endlegend
+
+note bottom of APIGW
+  БК 1 (Sequence): Пользователь → Landing →
+  API Gateway → IAM → Agent1 → RAG → LiteLLM → LLM
+end note
+
+@enduml

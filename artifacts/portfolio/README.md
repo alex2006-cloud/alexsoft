@@ -1,6 +1,6 @@
 # Портфолио (исходники)
 
-Схемы и документы для витрины на лендинге. **Не путать** с `artifacts/structurizr/` — там architecture-as-code платформы alexsoft.
+Схемы и документы для витрины на лендинге. **Не путать** с `artifacts/architecture/` — там architecture-as-code платформы alexsoft (C4 DSL + draw.io).
 
 ## Куда что класть
 
