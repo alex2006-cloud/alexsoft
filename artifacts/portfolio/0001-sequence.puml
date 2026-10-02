@@ -1,0 +1,117 @@
+@startuml BC1-Sequence
+title Sequence Diagram — Бизнес-кейс 1 / UC-0001\nУзнать о проекте alexsoft через Q&A-агента (happy path, целевая архитектура)
+caption Альтернативы 2a / 3a / 8a — в BPMN (0001.bpmn). Здесь только успешный основной поток.
+
+actor "Пользователь" as User
+participant "Landing\n(Next.js)" as Landing
+participant "API Gateway" as APIGW
+participant "IAM" as IAM
+participant "Q&A Agent\n(Agent 1 + RAG)" as Agent
+participant "RAG" as RAG
+participant "AI Gateway\n(LiteLLM)" as LiteLLM
+participant "LLM API\n(DeepSeek / Qwen / …)" as LLM
+
+== 1–2. Лендинг ==
+User -> Landing : открыть лендинг
+activate Landing
+Landing --> User : описание проекта,\nсписок продуктов, кнопка «Войти»
+deactivate Landing
+
+== 3–4. Вход и список агентов ==
+User -> Landing : нажать «Войти»
+activate Landing
+Landing -> APIGW : начать вход
+activate APIGW
+APIGW -> IAM : аутентификация
+activate IAM
+IAM --> APIGW : identity OK +\nтокен / сессия
+deactivate IAM
+APIGW -> IAM : авторизация\n(доступ к агентам)
+activate IAM
+IAM --> APIGW : разрешение OK
+deactivate IAM
+APIGW -> Agent : запросить список агентов\n(с токеном)
+activate Agent
+Agent --> APIGW : список агентов
+deactivate Agent
+APIGW --> Landing : сессия + список агентов
+deactivate APIGW
+Landing --> User : показать список агентов
+deactivate Landing
+
+== 5–6. Выбор Q&A-агента ==
+User -> Landing : выбрать Q&A-агента по проекту
+activate Landing
+Landing -> APIGW : открыть диалог\n(токен, agentId)
+activate APIGW
+APIGW -> IAM : проверить доступ к агенту
+activate IAM
+IAM --> APIGW : OK
+deactivate IAM
+APIGW -> Agent : создать / открыть сессию диалога
+activate Agent
+Agent --> APIGW : sessionId
+deactivate Agent
+APIGW --> Landing : диалог готов
+deactivate APIGW
+Landing --> User : UI диалога
+deactivate Landing
+
+== 7–8. Вопрос и ответ по материалам проекта ==
+User -> Landing : вопрос о проекте
+activate Landing
+Landing -> APIGW : POST /chat\n(sessionId, вопрос, токен)
+activate APIGW
+APIGW -> IAM : проверить сессию / права
+activate IAM
+IAM --> APIGW : OK
+deactivate IAM
+APIGW -> Agent : обработать вопрос
+activate Agent
+
+Agent -> RAG : поиск релевантных\nфрагментов по вопросу
+activate RAG
+RAG --> Agent : контекст (чанки /\nматериалы проекта)
+deactivate RAG
+
+Agent -> LiteLLM : completion\n(вопрос + контекст RAG)
+activate LiteLLM
+LiteLLM -> LLM : chat completion
+activate LLM
+LLM --> LiteLLM : текст ответа модели
+deactivate LLM
+LiteLLM --> Agent : ответ
+deactivate LiteLLM
+
+Agent --> APIGW : ответ, основанный\nна материалах проекта
+deactivate Agent
+APIGW --> Landing : ответ
+deactivate APIGW
+Landing --> User : показать ответ
+deactivate Landing
+
+== 9. Завершение (или повтор с шага 7) ==
+User -> Landing : завершить диалог
+activate Landing
+Landing -> APIGW : закрыть / сохранить сессию
+activate APIGW
+APIGW -> Agent : сохранить сессию диалога
+activate Agent
+Agent --> APIGW : OK
+deactivate Agent
+APIGW --> Landing : OK
+deactivate APIGW
+Landing --> User : диалог завершён
+deactivate Landing
+
+note over APIGW, IAM
+  API Gateway и IAM — целевая архитектура (этап 6).
+  Инструменты TBD (ADR).
+end note
+
+note over Agent, RAG
+  Ответ «по материалам проекта» = RAG.
+  Вызовы LLM только через LiteLLM (ADR-0011).
+end note
+
+@enduml

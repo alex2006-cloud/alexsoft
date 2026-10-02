@@ -1,0 +1,31 @@
+# Evaluation set for the project corpus (collection `project-docs`, seeded by infra/rag/seed-corpus.ps1).
+# expect_any: a retrieved chunk must come from a document whose external_id (repo path) contains
+#             ANY of these substrings -> counts as a hit. `answerable: false` = must give insufficient_context.
+questions:
+  - q: Какая векторная БД выбрана для RAG и почему не Weaviate?
+    expect_any: ["adr/0015", "CONCEPT.md", "ROADMAP.md"]
+  - q: Какая embedding-модель используется в RAG и через какой шлюз она вызывается?
+    expect_any: ["adr/0015", "adr/0017", "apps/rag/README.md", "CONCEPT.md"]
+  - q: Почему RabbitMQ не ставится на этапе 5 и когда он нужен?
+    expect_any: ["ROADMAP.md", "adr/0015"]
+  - q: Какой AI Gateway используется и можно ли ходить к провайдерам моделей напрямую?
+    expect_any: ["adr/0011", "AGENTS.md", "apps/ai-gateway/README.md"]
+  - q: На каком порту работает LiteLLM и какие модели в нём подключены?
+    expect_any: ["infra/litellm/README.md", "apps/ai-gateway/README.md", "adr/0011"]
+  - q: Чем CrewAI отличается от LangGraph и зачем второй агент?
+    expect_any: ["adr/0013", "apps/agent2/README.md"]
+  - q: Где лежит код игр и как они попадают на сайт?
+    expect_any: ["adr/0010", "apps/games/README.md"]
+  - q: Что такое Dify в проекте и как его запускать?
+    expect_any: ["adr/0014", "infra/dify/README.md"]
+  - q: Какой reverse proxy используется на границе системы?
+    expect_any: ["adr/0007", "infra/nginx/README.md", "adr/0015"]
+  - q: Какой IAM утверждён для проекта и на каком этапе его внедряют?
+    expect_any: ["adr/0015", "ROADMAP.md"]
+  - q: Какие критерии приёмки у пользовательской истории про Q&A-агента по проекту?
+    expect_any: ["business-cases/bc1/0001-user-story.md", "business-cases/bc1/0001-use-case.md"]
+  - q: Чем собираются логи и где они хранятся?
+    expect_any: ["adr/0008", "infra/loki/README.md", "infra/alloy/README.md"]
+  - q: Какой рецепт борща с говядиной?
+    answerable: false
+    expect_any: []

@@ -34,18 +34,19 @@
 |------|------------|
 | `apps/landing` | Публичный SPA (Next.js), витрина |
 | `apps/games` | Мини-игры (Next.js, `basePath: /games`) |
-| `apps/rag` | RAG-сервис |
-| `apps/ai-gateway` | Единый AI-шлюз / оркестратор |
+| `apps/rag` | RAG-сервис (FastAPI + LlamaIndex + Qdrant; контракт `artifacts/api/rag.openapi.yaml`) |
+| `apps/ai-gateway` | Документация AI-шлюза (LiteLLM) |
 | `packages/` | Общие библиотеки |
 | `infra/` | Docker Compose, позже k3s / Terraform |
-| `artifacts/architecture` | C4 DSL + draw.io (архитектура) |
+| `artifacts/architecture` | C4 DSL, draw.io, UML Component Diagram |
+| `artifacts/api` | OpenAPI-контракты (`rag.openapi.yaml`) |
 | `artifacts/adr` | Architecture Decision Records |
 | `artifacts/business-cases` | User Stories, Use Cases, BPMN, Sequence |
 | `artifacts/generated` | Экспорт PNG/SVG из CI |
 
 ## Текущий этап
 
-**Этап 5 — AI-контур.** LiteLLM+DeepSeek → агенты 1–2 с продуктами → стек AutoGen/n8n/Dify (**без** продукта агента 3) → **Architecture and documentation** → RAG → **первый AI-агент с RAG**. Redis-кеш AI и RabbitMQ — при целевой архитектуре (этап 6). См. [ROADMAP.md](ROADMAP.md), [CONCEPT.md](CONCEPT.md).
+**Этап 5 — AI-контур.** LiteLLM+DeepSeek → агенты с продуктами и стек агентов (lab, выполнено) → **Architecture and documentation** (целевая архитектура: [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md)) → RAG → **первый AI-агент с RAG**. Redis-кеш AI, RabbitMQ, FastAPI, LLM Guard, Authentik — при целевой архитектуре (этап 6); до брокера BL вызывает Agent Platform напрямую. См. [ROADMAP.md](ROADMAP.md), [CONCEPT.md](CONCEPT.md).
 
 ## Быстрый старт
 
@@ -56,7 +57,8 @@
 5. Observability (локально, по одному компоненту): Loki → Prometheus → Alloy → Grafana — [ADR-0008](artifacts/adr/0008-observability-native-local.md), каталоги `infra/loki`, `infra/prometheus`, `infra/alloy`, `infra/grafana`.
 6. Metabase (локально, JAR + Java): [infra/metabase/README.md](infra/metabase/README.md) → http://127.0.0.1:3002
 7. LiteLLM AI Gateway (локально, Python venv): [infra/litellm/README.md](infra/litellm/README.md) → http://127.0.0.1:8080 ([ADR-0011](artifacts/adr/0011-ai-gateway-litellm.md))
-8. Архитектурная модель: `artifacts/architecture/c4-l1-l2-l3.dsl` (C4 L1–L3) → Structurizr Local http://127.0.0.1:8070 (`STRUCTURIZR_PORT`; не 8080 — там LiteLLM).
+7a. Qdrant + RAG (локально): [infra/qdrant/README.md](infra/qdrant/README.md), [apps/rag/README.md](apps/rag/README.md) → http://127.0.0.1:8200/docs ([ADR-0017](artifacts/adr/0017-rag-service-implementation.md)). Для embeddings нужен `OPENAI_API_KEY` в `.env`.
+8. Архитектурная модель: правим `artifacts/architecture/c4-l1-l2-l3.dsl`, копируем в `artifacts/workspace.dsl` → Structurizr Local http://127.0.0.1:8070 (volume `artifacts/`). См. [artifacts/README.md](artifacts/README.md).
 9. Лендинг: `cd apps/landing && npm install && npm run dev` → http://localhost:3000.
 10. Игры: `cd apps/games && npm install && npm run dev` → http://localhost:3010/games (лендинг в dev проксирует `/games`).
 
@@ -74,7 +76,10 @@
 | 5432 | PostgreSQL |
 | 6379 | Redis (Memurai) |
 | 9000 / 9001 | MinIO S3 / Console |
+| 6333 / 6334 | Qdrant REST / gRPC |
+| 8200 | RAG-сервис (`apps/rag`, FastAPI) |
 | 8070 | Structurizr Local (C4 UI) |
+| 8071 | Swagger UI (контракт RAG, опционально) |
 | 8080 | LiteLLM AI Gateway |
 
 Источник правды по значениям — `.env` (шаблон `.env.example`).
@@ -95,4 +100,4 @@ powershell -ExecutionPolicy Bypass -File infra\grafana\start-grafana.ps1
 
 ## Стек (целевой)
 
-Next.js · GitHub monorepo · GitHub Actions · Docker Compose → k3s · PostgreSQL · MinIO · Redis · Metabase → Superset/ClickHouse · RabbitMQ · Grafana · Loki · Prometheus · Grafana Alloy · LangChain/LangGraph или AutoGen.
+Next.js · FastAPI · GitHub monorepo · GitHub Actions · Nginx (+NPM) · Authentik · Docker Compose → k3s · PostgreSQL · MinIO · Redis · RabbitMQ (этап 6) · Metabase · Grafana · Loki · Prometheus · Grafana Alloy · LiteLLM · LangGraph + LangSmith Studio + LangFlow · Dify · LlamaIndex · Qdrant · LLM Guard · LangSmith. Подробнее — [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md).

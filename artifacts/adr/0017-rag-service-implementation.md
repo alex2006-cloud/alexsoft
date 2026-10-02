@@ -1,0 +1,29 @@
+# ADR-0017: Реализация RAG-сервиса (`apps/rag`) и Qdrant локально
+
+- **Статус:** accepted
+- **Дата:** 2026-10-02
+- **Контекст:** Этап **5.6** ROADMAP. Стек RAG утверждён в [ADR-0015](0015-target-architecture-stacks.md): **Qdrant**, **LlamaIndex**, embedding **`text-embedding-3-small` через LiteLLM**, MinIO как источник документов, LLM Guard (целевой, этап 6). Контракт — [`artifacts/api/rag.openapi.yaml`](../api/rag.openapi.yaml) (contract-first). Нужно зафиксировать детали реализации, которые ADR-0015 оставил открытыми: как делать hybrid, где хранить состояние ingest, как ставить Qdrant на ноутбуке, что делать с LLM Guard до этапа 6.
+- **Рассмотренные альтернативы:**
+  - **Hybrid через `QdrantVectorStore(enable_hybrid=True)` из LlamaIndex** — отклонён: контракт требует выбор fusion (`rrf` / `dbsf`), фильтры по payload и `score_threshold`; это прямее выражается через `qdrant-client.query_points` с `prefetch`.
+  - **Sparse-вектор через LLM-провайдера** — отклонён: у провайдеров нет sparse API; используем локальную модель **`Qdrant/bm25`** через `fastembed` (без сети, без ключа, русский поддерживается токенизатором с отключаемыми стоп-словами).
+  - **Состояние документов и Job в Qdrant payload** — отклонено: нужны статусы, идемпотентность, списки с курсором; **PostgreSQL** уже есть (схема `rag`).
+  - **Очередь (RabbitMQ / Celery) для ingest** — отклонена на этапе 5 (ROADMAP: брокер — этап 6); ingest выполняется фоновой задачей в процессе сервиса.
+  - **Qdrant в Docker** — отклонён для ноутбука (правило «нативно на Windows»); Docker/Compose — на VPS.
+  - **LLM Guard сразу** — отложен на этап 6 (по решению владельца).
+- **Решение:**
+  - **Сервис:** Python 3.12, **FastAPI**, порт **8200**, venv `%LOCALAPPDATA%\AlexsoftRag`. Реализует контракт 1:1; изменения API — сначала в OpenAPI.
+  - **LlamaIndex** — только слой подготовки: readers (inline/MinIO → `Document`), очистка, node parsers (`MarkdownNodeParser` / `SentenceSplitter` / `TokenTextSplitter`) по `ChunkingConfig`.
+  - **Qdrant** (нативный `qdrant.exe`, `%LOCALAPPDATA%\Qdrant`, REST `127.0.0.1:6333`, gRPC `6334`): коллекция = Qdrant-коллекция с именованными векторами `dense` (1536, cosine) и `sparse` (BM25, `modifier=idf`). Поиск — `query_points` с двумя `prefetch` + `FusionQuery(RRF|DBSF)`.
+  - **Dense embedding:** `text-embedding-3-small` через LiteLLM (`/v1/embeddings`, алиас `text-embedding-3-small`); модель и размерность фиксируются в метаданных коллекции при создании, клиент модель не передаёт.
+  - **Состояние:** PostgreSQL, схема `rag` (таблицы `collections`, `documents`, `jobs`, `idempotency_keys`); создаётся самим сервисом при старте (идемпотентный DDL). Ingest — `asyncio`-задача, этапы `load → parse → chunk → embed → upsert` пишутся в `jobs.stage`.
+  - **Идентификаторы точек Qdrant:** `uuid5(document_id, position)`; повторный ingest с тем же `external_id` удаляет старые точки документа и пишет новые.
+  - **Guard:** интерфейс `GuardrailsClient`; по умолчанию `NoopGuard` (`LLM_GUARD_ENABLED=false`). Реальный LLM Guard подключается на этапе 6 без изменения контракта.
+  - **Auth этапа 5:** `X-API-Key` (`RAG_API_KEY` в `.env`); JWT Authentik — этап 6.
+  - **Модели LLM для `/v1/query`:** алиас LiteLLM (`RAG_LLM_MODEL`, по умолчанию `deepseek`); только через шлюз.
+- **Последствия:**
+  - Новые зависимости на ноутбуке: Qdrant (`infra/qdrant`), фоновая схема `rag` в БД `alexsoft`, бакет MinIO `rag-docs`.
+  - В `infra/litellm/config.yaml` добавлена embedding-модель; нужен `OPENAI_API_KEY` в `.env`.
+  - Смена embedding-модели = пересоздание коллекций (отдельный ADR).
+  - Порты: Qdrant 6333/6334, RAG 8200 — в `.env.example` и карте портов.
+  - Для этапа 6: убрать `NoopGuard`, перенести Qdrant в Compose на VPS, заменить `X-API-Key` на JWT.
+- **Ссылки:** [ADR-0015](0015-target-architecture-stacks.md), [ADR-0011](0011-ai-gateway-litellm.md), [ADR-0006](0006-minio-native-local.md), [`rag.openapi.yaml`](../api/rag.openapi.yaml), `apps/rag/README.md`

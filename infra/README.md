@@ -9,8 +9,12 @@
 - `grafana/` — Grafana OSS нативно ([ADR-0008](../artifacts/adr/0008-observability-native-local.md)): install/start/stop, provisioning, README
 - `metabase/` — Metabase OSS нативно (JAR + Java, [ADR-0009](../artifacts/adr/0009-metabase-native-local.md)): install/start/stop, README
 - `litellm/` — LiteLLM Proxy нативно (AI Gateway, [ADR-0011](../artifacts/adr/0011-ai-gateway-litellm.md)): install/start/stop, README
+- `qdrant/` — Qdrant нативно (ВБД, [ADR-0017](../artifacts/adr/0017-rag-service-implementation.md)): install/start/stop, README
+- `rag/` — сервис RAG (`apps/rag`): install/start/stop, smoke, `seed-corpus.ps1` (корпус проекта → MinIO → Qdrant)
 - `agent1/` — Agent 1 стек нативно (LangChain / LangGraph / Studio / LangFlow, [ADR-0012](../artifacts/adr/0012-agent1-langgraph-stack.md)): install/start/stop, smoke
-- `nginx/` — host Nginx для `osipcraft.ru` ([ADR-0007](../artifacts/adr/0007-edge-nginx-npm.md))
+- `agent2/`, `agent3/`, `n8n/` — lab этапа 5 (выполнено; в целевую архитектуру [ADR-0015](../artifacts/adr/0015-target-architecture-stacks.md) не входят)
+- `dify/` — Dify (Docker Compose на ноутбуке; UI-агенты, целевой стек)
+- `nginx/` — host Nginx: канон `alexsoft.space`, редирект с `osipcraft.ru` ([ADR-0007](../artifacts/adr/0007-edge-nginx-npm.md))
 - `compose/` — Docker Compose
   - `docker-compose.data.yml` — Postgres в контейнере (альтернатива, [ADR-0003](../artifacts/adr/0003-postgresql-local-docker-compose.md))
   - `docker-compose.yml` — Nginx (статика) + Nginx Proxy Manager (когда Docker и запас RAM)

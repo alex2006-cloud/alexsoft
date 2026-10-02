@@ -1,0 +1,40 @@
+@startuml UC-0001
+title UC-0001: Узнать о проекте alexsoft через Q&A-агента\n(Бизнес-кейс 1 / US-0001)
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Пользователь\n(сторонний пользователь)" as User
+
+rectangle "alexsoft" {
+  usecase "Просмотреть лендинг" as UC_Landing
+  usecase "Войти в систему" as UC_Login
+  usecase "Просмотреть список агентов" as UC_Agents
+  usecase "Задать вопрос\nQ&A-агенту по проекту" as UC_Ask
+}
+
+' Ассоциации "Актор — Прецедент" (по UML — сплошная линия без стрелок)
+User -- UC_Landing
+User -- UC_Login
+User -- UC_Agents
+User -- UC_Ask
+
+' Защищённые сценарии: список требует входа; вопрос требует списка (и через него — входа)
+UC_Agents ..> UC_Login : <<include>>
+UC_Ask ..> UC_Agents : <<include>>
+
+note right of UC_Ask
+  Основная цель (US-0001):
+  быстро понять пользу проекта,
+  не изучая репозиторий.
+  Альтернатива 8a («нет ответа») —
+  в спецификации use-case.md.
+end note
+
+note bottom of UC_Login
+  Альтернативы 2a (нет доступа без входа)
+  и 3a (ошибка аутентификации) —
+  в спецификации use-case.md.
+end note
+
+@enduml

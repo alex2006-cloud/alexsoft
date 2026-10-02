@@ -1,0 +1,38 @@
+[project]
+name = "alexsoft-rag"
+version = "0.1.0"
+description = "RAG service (LlamaIndex + Qdrant hybrid, embeddings/LLM via LiteLLM) for alexsoft"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "httpx>=0.27",
+  "asyncpg>=0.29",
+  "qdrant-client>=1.14",
+  "fastembed>=0.5",
+  "llama-index-core>=0.12",
+  "minio>=7.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.23",
+  "respx>=0.21",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["alexsoft_rag*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+  "integration: needs running Qdrant, Postgres, MinIO (and LiteLLM for live tests)",
+]

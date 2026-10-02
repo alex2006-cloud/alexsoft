@@ -67,12 +67,14 @@
   - Секреты **вне git** (локально `.env`; в CI — GitHub Secrets). В репозитории только `.env.example`.
 
   ### Потоки (канон для БК1 и целевой схемы)
-  - Пользователь → Nginx → (Authentik) → Frontend / FastAPI.
-  - FastAPI оркестрирует сценарий: Agent Platform и/или RAG; статусы долгих задач — через брокер + SSE/REST по мере реализации.
+  - Клиент → Nginx (+ Authentik: OIDC / проверка JWT) → Next.js (`reverse proxy /api`) → FastAPI (REST + SSE статуса).
+  - **Целевой (этап 6):** FastAPI публикует запуск агента в **RabbitMQ** (`publish`); **Agent Platform** забирает задачу (`consume run`) — как на схеме «Архитектура 8».
+  - **Этап 5 (решение владельца: брокер на старте не нужен):** FastAPI вызывает Agent Platform напрямую по HTTPS; RabbitMQ не ставится. Прямая связь BL → Agent Platform — временная, добавлена в C4 и Component Diagram сверх XML 8 и удаляется при внедрении брокера.
   - **RAG** читает документы из **MinIO**, пишет/ищет векторы в **Qdrant**, ходит в LiteLLM за embeddings и (при необходимости) LLM.
   - **Agent Platform** и **RAG** вызывают модели **только через LiteLLM**; прямых ключей провайдеров в агентах/RAG нет.
   - **LLM Guard** — на пути agent/RAG ↔ LiteLLM (pre/post).
-  - Связи **Broker → LiteLLM** и **BL → LiteLLM** на схеме **оставлены намеренно** (задел под будущие продукты / воркеры), не как обязательный путь БК1 day-one.
+  - Связь **BL → LiteLLM** на схеме оставлена намеренно (задел под будущие продукты), не как обязательный путь БК1 day-one. Связь **Broker → LiteLLM** заменена на **Broker → Agent Platform (`consume run`)**.
+  - Agent Platform и RAG ходят в LiteLLM напрямую (`OpenAI-compatible`, `embeddings + LLM`) и, параллельно, через LLM Guard (`sync pre/post check`).
   - Инфра-метрики/логи → Alloy / Prometheus / Loki → Grafana; LLM-прогоны → LangSmith; продуктовая аналитика БД → Metabase.
 
   ### Бизнес-кейс 1 (границы успеха)
@@ -81,7 +83,7 @@
   - Корпус для первого RAG: документы проекта (ручной / batch ingest в MinIO → LlamaIndex → Qdrant); hybrid retrieval.
 
   ### Этапность vs целевая схема
-  - Локальный этап 5 **не обязан** поднять Redis AI-cache и RabbitMQ до продуктов агентов/RAG (см. ROADMAP / user priority).
+  - Локальный этап 5 **не обязан** поднять Redis AI-cache и RabbitMQ до продуктов агентов/RAG (см. ROADMAP / user priority). В целевой схеме запуск агента идёт через RabbitMQ; до этапа 6 локально допустим прямой вызов агента без брокера.
   - **Authentik**, полноценный edge с JWT, Redis AI-cache, RabbitMQ в проде — в контуре **целевой / этап 6**, но стек уже **утверждён** этой диаграммой и ADR.
   - Лабораторные агенты CrewAI / AutoGen и n8n не отменяются предыдущими ADR; на целевой draw.io они не обязаны быть отдельными узлами.
 

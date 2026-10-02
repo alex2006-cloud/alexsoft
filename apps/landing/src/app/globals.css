@@ -493,3 +493,354 @@ body {
 .contour-shake {
   animation: contour-shake-kf 0.35s ease;
 }
+
+/* Читаемый текст документов портфолио (md -> html) */
+.prose-doc {
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: rgba(245, 245, 247, 0.86);
+  overflow-wrap: anywhere;
+}
+
+.prose-doc > :first-child {
+  margin-top: 0;
+}
+
+.prose-doc h1,
+.prose-doc h2,
+.prose-doc h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--color-ink);
+}
+
+.prose-doc h1 {
+  font-size: clamp(1.5rem, 3.4vw, 2rem);
+  margin: 0 0 1.25rem;
+}
+
+.prose-doc h2 {
+  font-size: 1.4rem;
+  margin: 2rem 0 0.75rem;
+}
+
+.prose-doc h3 {
+  font-size: 1.15rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.prose-doc p {
+  margin: 0.75rem 0;
+}
+
+.prose-doc ul,
+.prose-doc ol {
+  margin: 0.5rem 0 0.5rem 0;
+  padding-left: 1.4rem;
+}
+
+.prose-doc ul {
+  list-style: disc;
+}
+
+.prose-doc ol {
+  list-style: decimal;
+}
+
+.prose-doc li {
+  margin: 0.4rem 0;
+  padding-left: 0.2rem;
+}
+
+.prose-doc li > ul,
+.prose-doc li > ol {
+  margin: 0.35rem 0;
+}
+
+.prose-doc strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.prose-doc a {
+  color: var(--color-link);
+}
+
+.prose-doc a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.prose-doc code {
+  padding: 0.12rem 0.4rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.88em;
+}
+
+.prose-doc pre {
+  margin: 1rem 0;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  overflow-x: auto;
+}
+
+.prose-doc pre code {
+  padding: 0;
+  background: none;
+}
+
+.prose-doc blockquote {
+  margin: 1rem 0;
+  padding-left: 1rem;
+  border-left: 2px solid var(--color-line);
+  color: var(--color-ink-dim);
+}
+
+.prose-doc hr {
+  margin: 1.75rem 0;
+  border: 0;
+  height: 1px;
+  background: var(--color-line);
+}
+
+.prose-doc table {
+  display: block;
+  width: 100%;
+  margin: 1rem 0;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.prose-doc th,
+.prose-doc td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose-doc th {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-ink);
+}
+
+/* Компактный список портфолио: описание + снапшот слева/справа */
+.portfolio-groups,
+.portfolio-group-reveal,
+.portfolio-group,
+.portfolio-item-li {
+  overflow: visible;
+}
+
+.portfolio-group-reveal {
+  position: relative;
+  z-index: 1;
+}
+
+.portfolio-group-reveal:has(.portfolio-item:hover),
+.portfolio-group-reveal:has(.portfolio-item:focus-within) {
+  z-index: 40;
+}
+
+.portfolio-item-li:hover,
+.portfolio-item-li:focus-within {
+  z-index: 30;
+  position: relative;
+}
+
+.portfolio-item-tip {
+  pointer-events: none;
+  position: absolute;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem 0.85rem;
+  border-radius: 16px;
+  background: #1c1c1e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  color: rgba(245, 245, 247, 0.82);
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: normal;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    visibility 0.18s ease;
+}
+
+/* Узкая колонка: место только сверху */
+.portfolio-item-tip {
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 0.5rem);
+  top: auto;
+  width: auto;
+  transform: translateY(6px);
+}
+
+.portfolio-item:hover .portfolio-item-tip,
+.portfolio-item:focus-within .portfolio-item-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+/* md+: три панели — подсказка слева или справа от строки */
+@media (min-width: 768px) {
+  .portfolio-item-tip {
+    top: 50%;
+    bottom: auto;
+    width: 17.5rem;
+  }
+
+  .portfolio-item--tip-right .portfolio-item-tip {
+    left: calc(100% + 0.65rem);
+    right: auto;
+    transform: translate(6px, -50%);
+  }
+
+  .portfolio-item--tip-left .portfolio-item-tip {
+    right: calc(100% + 0.65rem);
+    left: auto;
+    transform: translate(-6px, -50%);
+  }
+
+  .portfolio-item:hover .portfolio-item-tip,
+  .portfolio-item:focus-within .portfolio-item-tip {
+    transform: translate(0, -50%);
+  }
+}
+
+.portfolio-item-tip-summary {
+  display: block;
+}
+
+.portfolio-item-tip-snap {
+  display: block;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0a0a0c;
+  aspect-ratio: 16 / 10;
+  position: relative;
+}
+
+.portfolio-item-tip-snap-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+  background: #fff;
+}
+
+/* Уменьшенный «лист» markdown/HTML */
+.portfolio-item-tip-snap-doc {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+  color: #1d1d1f;
+}
+
+.portfolio-item-tip-snap-doc-scale {
+  display: block;
+  width: 250%;
+  padding: 1.1rem 1.25rem;
+  transform: scale(0.4);
+  transform-origin: top left;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.portfolio-item-tip-snap-doc-scale :is(h1, h2, h3, h4) {
+  margin: 0 0 0.55em;
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #111;
+  line-height: 1.2;
+}
+
+.portfolio-item-tip-snap-doc-scale h1 {
+  font-size: 1.35rem;
+}
+
+.portfolio-item-tip-snap-doc-scale h2 {
+  font-size: 1.15rem;
+}
+
+.portfolio-item-tip-snap-doc-scale p,
+.portfolio-item-tip-snap-doc-scale li {
+  margin: 0 0 0.4em;
+  color: #333;
+}
+
+.portfolio-item-tip-snap-doc-scale ul,
+.portfolio-item-tip-snap-doc-scale ol {
+  margin: 0 0 0.5em;
+  padding-left: 1.2em;
+}
+
+.portfolio-item-tip-snap-doc-scale code {
+  font-size: 0.85em;
+  padding: 0.05em 0.3em;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.portfolio-item-tip-snap-frame {
+  display: block;
+  width: 250%;
+  height: 250%;
+  border: 0;
+  background: #fff;
+  transform: scale(0.4);
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.portfolio-item-tip-snap-file {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+}
+
+.portfolio-item-tip-snap-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.portfolio-item-tip-snap-format {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.55);
+}
+
+@media (hover: none) {
+  .portfolio-item-tip {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portfolio-item-tip {
+    transition: none;
+  }
+}

@@ -1,0 +1,179 @@
+# Индекс витрины портфолио. Читает apps/landing/scripts/collect-portfolio.mjs при сборке лендинга.
+# Все пути относительно этой папки (artifacts/portfolio/).
+#
+# view:
+#   pdf       открыть файл в браузере (новая вкладка)
+#   html      открыть готовую HTML-страницу (новая вкладка)
+#   text      читаемая страница на сайте (для .md)
+#   image     картинка на сайте с увеличением
+#   gallery   несколько картинок с вкладками (images: [{label, file}])
+#   download  только скачивание (Excel и т.п.)
+# downloads: необязательно. По умолчанию скачивается file (или первая картинка галереи).
+
+groups:
+  - { id: methods, title: "Методики и шаблоны" }
+  - { id: bc1, title: "Бизнес-кейс 1: Q&A-агент по проекту" }
+  - { id: architecture, title: "Архитектура платформы" }
+
+items:
+  # ---------------- Методики и шаблоны ----------------
+  - id: ai-project-methodology
+    group: methods
+    title: "Методика проектов с применением ИИ"
+    emoji: "📝"
+    kind: "Методика"
+    summary: "Пошаговый контур AI/ML-проекта: опросник, анализ данных и инфраструктуры, калькулятор трудозатрат, ТКП, договор, функциональная и техническая архитектура."
+    view: pdf
+    file: ai-project-methodology-v2.3.pdf
+
+  - id: ai-project-calculator
+    group: methods
+    title: "Калькулятор сметы по ИИ"
+    emoji: "🧮"
+    kind: "Калькулятор"
+    summary: "Excel-смета с драйверами сложности: этапы от инфраструктуры до сдачи, роли (PM, DS, архитектор), нормативы и ставки для расчёта ч/д и стоимости."
+    view: download
+    file: ai-project-calculator-v2.0.xlsx
+
+  - id: ai-project-estimate-pnl
+    group: methods
+    title: "Смета, PnL и опросник AI-проекта"
+    emoji: "📊"
+    kind: "Финансовая модель"
+    summary: "Пакет для оценки проекта: ставки и команда, опросник заказчика, ограничения, калькулятор бюджета, план, смета, ОПУ (P&L) и планирование ресурсов."
+    view: download
+    file: ai-project-estimate-pnl.xlsx
+
+  - id: supportai-pitch
+    group: methods
+    title: "SupportAI: цифровой ассистент поддержки"
+    emoji: "🤖"
+    kind: "Презентация"
+    summary: "Питч продукта: автоклассификация и маршрутизация обращений 1Л/2Л, консультации через RAG, типовые сценарии, архитектура, рынок и модель монетизации."
+    view: pdf
+    file: supportai-pitch.pdf
+
+  - id: tz-template
+    group: methods
+    title: "Шаблон технического задания"
+    emoji: "📋"
+    kind: "Шаблон"
+    summary: "Готовый шаблон ТЗ: структура требований, границы решения, NFR и критерии приёмки, чтобы быстро собрать постановку для AI/ИТ-проекта."
+    view: pdf
+    file: tz-template-v2.2.pdf
+
+  # ---------------- Бизнес-кейс 1 ----------------
+  - id: bc1-user-story
+    group: bc1
+    title: "User Story"
+    emoji: "📖"
+    kind: "Требования"
+    summary: "Что нужно пользователю от Q&A-агента: роль, цель, ценность и критерии приёмки от лендинга до ответа по материалам проекта."
+    view: text
+    file: 0001-user-story.md
+
+  - id: bc1-use-case-spec
+    group: bc1
+    title: "Use Case: спецификация"
+    emoji: "📑"
+    kind: "Требования"
+    summary: "Сценарий UC-0001: актор, предусловия, основной и альтернативные потоки (нет входа, ошибка аутентификации, нет ответа), постусловия."
+    view: text
+    file: 0001-use-case.md
+
+  - id: bc1-use-case-diagram
+    group: bc1
+    title: "Use Case: диаграмма"
+    emoji: "🎯"
+    kind: "Диаграмма UML"
+    summary: "Прецеденты и связи include: просмотр лендинга, вход, список агентов, вопрос Q&A-агенту."
+    view: image
+    file: 0001-use-case.svg
+    downloads:
+      - { label: "SVG", file: 0001-use-case.svg }
+      - { label: "PlantUML", file: 0001-use-case.puml }
+
+  - id: bc1-bpmn
+    group: bc1
+    title: "BPMN: процесс"
+    emoji: "🔀"
+    kind: "Диаграмма BPMN"
+    summary: "Процесс в двух дорожках, пользователь и система: вход, ветки ошибок, поиск ответа в материалах проекта, повтор вопроса, сохранение сессии."
+    view: image
+    file: 0001.svg
+    downloads:
+      - { label: "PNG", file: 0001.png }
+      - { label: "SVG", file: 0001.svg }
+      - { label: "BPMN", file: 0001.bpmn }
+
+  - id: bc1-sequence
+    group: bc1
+    title: "Sequence Diagram"
+    emoji: "🔁"
+    kind: "Диаграмма UML"
+    summary: "Основной поток целевой архитектуры: Landing, API Gateway, IAM, Q&A-агент, RAG и AI Gateway (LiteLLM) до облачной модели."
+    view: image
+    file: 0001-sequence.svg
+    downloads:
+      - { label: "SVG", file: 0001-sequence.svg }
+      - { label: "PlantUML", file: 0001-sequence.puml }
+
+  # ---------------- Архитектура ----------------
+  - id: component-diagram
+    group: architecture
+    title: "Component Diagram"
+    emoji: "🧱"
+    kind: "Диаграмма UML"
+    summary: "UML-компоненты целевой платформы: периметр, приложения, ИИ-контур, данные, шина, наблюдаемость и интерфейсы между ними."
+    view: image
+    file: architecture/component-diagram.svg
+    downloads:
+      - { label: "SVG", file: architecture/component-diagram.svg }
+      - { label: "PlantUML", file: architecture/component-diagram.puml }
+
+  - id: c4
+    group: architecture
+    title: "C4: уровни 1, 2, 3"
+    emoji: "🗺️"
+    kind: "Диаграммы C4"
+    summary: "Модель как код (Structurizr): контекст системы, контейнеры и пять диаграмм компонентов: Edge, бизнес-логика, платформа агентов, RAG, наблюдаемость."
+    view: gallery
+    images:
+      - { label: "L1 Контекст", file: architecture/c4-l1-system-context.svg }
+      - { label: "L2 Контейнеры", file: architecture/c4-l2-containers.svg }
+      - { label: "L3 Edge", file: architecture/c4-l3-edge.svg }
+      - { label: "L3 Бизнес-логика", file: architecture/c4-l3-business-logic.svg }
+      - { label: "L3 Агенты", file: architecture/c4-l3-agent-platform.svg }
+      - { label: "L3 RAG", file: architecture/c4-l3-rag.svg }
+      - { label: "L3 Наблюдаемость", file: architecture/c4-l3-observability.svg }
+    downloads:
+      - { label: "Structurizr DSL", file: architecture/c4.dsl }
+
+  - id: target-architecture
+    group: architecture
+    title: "Целевая схема архитектуры"
+    emoji: "🏗️"
+    kind: "Схема draw.io"
+    summary: "Целевая схема alexsoft: клиент, Nginx и IAM, приложения, ИИ-контур (LiteLLM, агенты, RAG, guardrails), данные, шина, мониторинг и контур поставки."
+    view: image
+    file: architecture-in-drawio.jpg
+
+  - id: rag-api
+    group: architecture
+    title: "API-контракт RAG-системы"
+    emoji: "🔌"
+    kind: "OpenAPI 3.1"
+    summary: "Contract-first для сервиса RAG: загрузка документов, коллекции и поиск (hybrid search, ответы с цитатами). Ошибки в формате problem+json."
+    view: html
+    file: architecture/rag-api.html
+    downloads:
+      - { label: "OpenAPI YAML", file: architecture/rag.openapi.yaml }
+
+  - id: adr-0007-edge
+    group: architecture
+    title: "ADR-0007: Nginx вместо Caddy"
+    emoji: "⚖️"
+    kind: "ADR"
+    summary: "Архитектурное решение: почему на edge остаётся Nginx, а GUI в Docker-контуре это Nginx Proxy Manager. Контекст, решение, последствия."
+    view: text
+    file: architecture/adr-0007-edge-nginx.md

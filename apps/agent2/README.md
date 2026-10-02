@@ -1,6 +1,8 @@
 # Agent 2 (CrewAI)
 
 Этап **5.3**: CrewAI multi-agent crew.  
+> **Lab этапа 5**, выполнено. В целевую архитектуру ([ADR-0015](../../artifacts/adr/0015-target-architecture-stacks.md)) не входит.
+
 Все LLM-вызовы только через **LiteLLM** ([ADR-0011](../../artifacts/adr/0011-ai-gateway-litellm.md), [ADR-0013](../../artifacts/adr/0013-agent2-crewai.md)).
 
 Официального локального GUI нет — продукт запускается из CLI (`infra/agent2`).

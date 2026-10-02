@@ -12,5 +12,13 @@ model_list:
       model: deepseek/deepseek-chat
       api_key: os.environ/DEEPSEEK_API_KEY
 
+  # Embedding for apps/rag (ADR-0015, ADR-0017). Needs OPENAI_API_KEY. Alias is fixed per Qdrant collection.
+  - model_name: text-embedding-3-small
+    litellm_params:
+      model: openai/text-embedding-3-small
+      api_key: os.environ/OPENAI_API_KEY
+    model_info:
+      mode: embedding
+
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

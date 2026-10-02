@@ -55,10 +55,11 @@
 
 По [CONCEPT.md](CONCEPT.md).  
 **AI Gateway = LiteLLM** (не путать с API Gateway / IAM — этап 6). Облачные LLM: **DeepSeek** (подключён), Qwen (в конфиге).  
-Порядок: 5.1–5.3 (шлюз + агенты 1–2 с продуктами) → **5.4 стек** AutoGen/n8n/Dify (**без** продукта агента 3) → **5.5** архитектура и документация → **5.6** ВБД + RAG → **5.7** первый AI-агент с RAG.  
+Порядок: 5.1–5.3 (шлюз + агенты с продуктами) → **5.4 стек агентов** (lab, **без** продукта агента 3) → **5.5** архитектура и документация → **5.6** ВБД + RAG → **5.7** первый AI-агент с RAG.  
 **LangSmith Studio** (IDE графа; бывш. LangGraph Studio) ≠ **LangSmith** (платформа трейсов/evals; в этапе 5 отдельным шагом не ведём).  
 Публичный демо-чат с лендинга **не** выкладываем до API Gateway / IAM (этап 6) — иначе расход токенов и утечка ключей.  
-**Redis-кеш ответов AI и RabbitMQ** — не в этапе 5; ставим при **целевой архитектуре** (облако / этап 6). Memurai с этапа 2 для данных остаётся как есть.
+**Redis-кеш ответов AI и RabbitMQ** — не в этапе 5; ставим при **целевой архитектуре** (облако / этап 6). Memurai с этапа 2 для данных остаётся как есть. До брокера FastAPI вызывает Agent Platform напрямую (временная связь, [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md)).  
+Агенты 2–3 и n8n (5.3–5.4) — lab этапа 5; в целевую архитектуру ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md)) не входят.
 
 **5.1 — AI Gateway + LLM**
 
@@ -75,13 +76,13 @@
 - [x] Тот же продукт в LangFlow: флоу `agent1_qa` + компонент Alexsoft Calculator поверх того же `calculator.py` (`infra/agent1/langflow-build-qa-flow.ps1`, `langflow-ask.ps1`)
 - [x] ADR: агент 1 = LangGraph-стек ([ADR-0012](artifacts/adr/0012-agent1-langgraph-stack.md))
 
-**5.3 — агент 2 (CrewAI) + продукт**
+**5.3 — второй агент + продукт (lab, выполнено)**
 
 - [x] CrewAI через LiteLLM
 - [x] AI-продукт через агент 2: **черновик поста** (Researcher → Writer → Editor) — локально (`infra/agent2/run-post.ps1`) — `[apps/agent2](apps/agent2/README.md)`
 - [x] ADR: CrewAI vs LangGraph ([ADR-0013](artifacts/adr/0013-agent2-crewai.md))
 
-**5.4 — AutoGen + n8n + Dify (стек)**
+**5.4 — стек агентов (lab, выполнено; в целевой остаётся Dify)**
 
 Только установка и ADR. Продукт агента 3 и первый AI-агент с RAG — **не** здесь: после **5.5** → **5.6** (RAG) → **5.7** (агент с RAG).
 
@@ -96,11 +97,12 @@
 
 - [x] Создать документы по бизнес кейсу 1: User Stories (Бизнес-кейс 1), Use Cases (Бизнес-кейс 1) в виде спецификации и диаграммы, BPMN (Бизнес-кейс 1), Sequence Diagram (Бизнес-кейс 1) — [`artifacts/business-cases/bc1/`](artifacts/business-cases/bc1/)
 - [x] Создать архитектуру в drawio и утвердить стеки технологий ([`architecture-in-drawio.drawio`](artifacts/architecture/architecture-in-drawio.drawio), [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md))
-- [ ] Актуализировать `artifacts/architecture/c4-l1-l2-l3.dsl` (C4 — 1,2,3 уровень) под архитектуру всей системы
-- [ ] Создать документы по системе: Component Diagram всей системы ([`uml-component-diagram.puml`](artifacts/architecture/uml-component-diagram.puml)), API-контракт (OpenAPI) для RAG-системы
+- [x] Актуализировать `artifacts/architecture/c4-l1-l2-l3.dsl` (C4 — 1,2,3 уровень) под целевую архитектуру ([`architecture-in-drawio.drawio`](artifacts/architecture/architecture-in-drawio.drawio), [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md))
+- [x] Создать Component Diagram всей системы ([`uml-component-diagram.puml`](artifacts/architecture/uml-component-diagram.puml))
+- [x] API-контракт (OpenAPI) для RAG-системы — `artifacts/api/rag.openapi.yaml`
 - [x] Дописать / проверить ADR (целевая архитектура и стеки — [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md); выравнивание остальных доков — ниже)
-- [ ] Выровнять `CONCEPT.md`, `ROADMAP.md`, `AGENTS.md`, корневой `README.md` и README сервисов
-- [ ] Экспорт диаграмм
+- [x] Выровнять `CONCEPT.md`, `ROADMAP.md`, `AGENTS.md`, корневой `README.md` и README сервисов
+- [x] Экспорт диаграмм — [`artifacts/generated/`](artifacts/generated/) (C4 PNG/SVG + UML Component)
 
 **5.6 — векторная БД + RAG**
 
@@ -108,8 +110,11 @@
 
 - [x] Выбор ВБД: **Qdrant** ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md); Weaviate отклонён для целевого контура)
 - [x] RAG-стек: **LlamaIndex** + hybrid в Qdrant; embedding **`text-embedding-3-small`** через LiteLLM ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md))
-- [ ] RAG, 3 слоя в коде: загрузка → хранение эмбеддингов → пайплайны поиска
-- [ ] `apps/rag` (сервис RAG)
+- [x] Qdrant — локально (нативный `qdrant.exe`, [`infra/qdrant`](infra/qdrant/README.md), [ADR-0017](artifacts/adr/0017-rag-service-implementation.md))
+- [x] LiteLLM: алиас `text-embedding-3-small` в `infra/litellm/config.yaml` (нужен `OPENAI_API_KEY` в `.env`)
+- [x] RAG, 3 слоя в коде: загрузка → хранение эмбеддингов → пайплайны поиска (hybrid dense+BM25, RRF/DBSF)
+- [x] `apps/rag` (сервис RAG, FastAPI, порт 8200; реализует `rag.openapi.yaml`; тесты: unit + интеграционные + контрактные) — `[apps/rag](apps/rag/README.md)`
+- [ ] Живой прогон на `text-embedding-3-small`: ключ `OPENAI_API_KEY` → `infra/litellm/smoke-embeddings.ps1` → `infra/rag/seed-corpus.ps1` → `apps/rag/eval/run_eval.py --answer`
 
 **5.7 — первый AI-агент с RAG**
 
@@ -127,7 +132,8 @@
 - [ ] IAM: **Authentik** — стек утверждён ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md)); внедрение на целевом VDS
 - [ ] SSH, Docker на VDS (+ опционально Portainer)
 - [ ] Redis вместо Memurai; **Redis-кеш ответов AI**; Postgres/MinIO в облаке; туннели к DBeaver / Console
-- [ ] **RabbitMQ** — очередь долгих AI-задач (+ ADR, порты в `.env` / README)
+- [ ] **FastAPI** — BL API (оркестрация сценариев, публикация запуска агента); **LLM Guard** — guardrails перед/после LiteLLM
+- [ ] **RabbitMQ** — очередь запуска агентов (publish от FastAPI, consume на Agent Platform) (+ ADR, порты в `.env` / README); убрать временную прямую связь BL → Agent Platform из C4 / Component Diagram / ADR-0015
 - [ ] Observability и Metabase на VDS (по необходимости)
 - [ ] k3s
 - [ ] Kafka (если понадобится сверх RabbitMQ)

@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "portfolio:collect": "node scripts/collect-portfolio.mjs",
+    "predev": "npm run portfolio:collect",
     "dev": "next dev --turbopack",
+    "prebuild": "npm run portfolio:collect",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -14,14 +17,17 @@
     "react-dom": "^19.2.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@eslint/eslintrc": "^3",
     "eslint": "^9",
     "eslint-config-next": "^16.2.10",
+    "marked": "^18.0.14",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "unpdf": "^1.8.1",
+    "yaml": "^2.9.1"
   }
 }

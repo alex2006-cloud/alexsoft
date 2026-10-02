@@ -29,10 +29,15 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+*.egg-info/
 
 # Docker / local data
 data/
 *.log
+
+# Портфолио: собирается из artifacts/portfolio (apps/landing/scripts/collect-portfolio.mjs)
+apps/landing/public/portfolio/files/
+apps/landing/src/content/portfolio.generated.json
 
 # Structurizr Local local state (+ draw.io backup files)
 artifacts/architecture/.structurizr/

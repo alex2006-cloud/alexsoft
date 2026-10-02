@@ -16,6 +16,9 @@ API: `http://127.0.0.1:8080` (порт из `.env` → `LITELLM_PORT`).
 |-------|-----------|---------------|
 | **`deepseek`** | `deepseek/deepseek-chat` | `DEEPSEEK_API_KEY` |
 | **`qwen`** | `dashscope/qwen-plus` | `DASHSCOPE_API_KEY` |
+| **`text-embedding-3-small`** | `openai/text-embedding-3-small` (embeddings, 1536) — для `apps/rag` ([ADR-0017](../../artifacts/adr/0017-rag-service-implementation.md)) | `OPENAI_API_KEY` |
+
+Проверка embeddings: `powershell -ExecutionPolicy Bypass -File infra\litellm\smoke-embeddings.ps1` (после правки `.env` — перезапуск `start-litellm.ps1`).
 
 ## Зависимости
 

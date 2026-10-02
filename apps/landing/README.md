@@ -22,11 +22,20 @@ npm run dev
 npm run build
 ```
 
-Для продакшена задайте `LANDING_URL=https://osipcraft.ru` перед `npm run build` (Open Graph и canonical).
+Для продакшена задайте `LANDING_URL=https://alexsoft.space` перед `npm run build` (Open Graph и canonical).
 
-## Деплой на VPS (osipcraft.ru)
+## Портфолио
 
-При push в `main` с изменениями в `apps/landing/` **или** `apps/games/` workflow (**Site**, файл `landing.yml`) собирает:
+Блок «Портфолио» собирается из [`artifacts/portfolio`](../../artifacts/portfolio) ([ADR-0016](../../artifacts/adr/0016-portfolio-from-artifacts.md)). Файлы вручную в лендинг не копируются.
+
+- `npm run portfolio:collect` читает `artifacts/portfolio/portfolio.yaml`, проверяет его и пишет `public/portfolio/files/` и `src/content/portfolio.generated.json` (оба в `.gitignore`).
+- Запускается автоматически перед `npm run dev` и `npm run build`.
+- Страницы просмотра: `/portfolio/<id>` (текст, картинка, галерея C4).
+- Как добавить документ: [`artifacts/portfolio/README.md`](../../artifacts/portfolio/README.md).
+
+## Деплой на VPS (alexsoft.space)
+
+При push в `main` с изменениями в `apps/landing/`, `apps/games/` **или** `artifacts/portfolio/` workflow (**Site**, файл `landing.yml`) собирает:
 
 1. статику лендинга;
 2. статику игр (`basePath: /games`);
@@ -49,6 +58,6 @@ Get-Content $env:USERPROFILE\.ssh\alexsoft_fornex -Raw | Set-Clipboard
 
 Публичный ключ с этой пары должен быть в `/root/.ssh/authorized_keys` на сервере.
 
-Проверка после push: https://osipcraft.ru и https://osipcraft.ru/games — или в Actions откройте job **deploy**.
+Проверка после push: https://alexsoft.space и https://alexsoft.space/games — или в Actions откройте job **deploy**.
 
 PR только собирают сайт, на сервер не выкладывают.

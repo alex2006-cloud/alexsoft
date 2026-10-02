@@ -1,0 +1,971 @@
+openapi: 3.1.0
+
+info:
+  title: alexsoft RAG API
+  version: 0.1.0
+  summary: Контракт RAG-сервиса (apps/rag) — три слоя - загрузка, хранение эмбеддингов, поиск.
+  description: |
+    Контракт-первый (contract-first) для сервиса `apps/rag` (LlamaIndex + Qdrant).
+    Источник архитектуры: `artifacts/architecture/c4-l1-l2-l3.dsl`, ADR-0015.
+
+    ## Три слоя
+    1. **Загрузка (ingest)** — документ из MinIO или inline-текст → Parser & Clean → Chunking →
+       embedding → upsert в Qdrant. Выполняется асинхронно, возвращается `Job`.
+    2. **Хранение эмбеддингов** — коллекции Qdrant (dense + sparse), документы и их чанки.
+    3. **Поиск (retrieval)** — hybrid search в Qdrant (dense + sparse, fusion), опционально
+       grounded-ответ с цитатами.
+
+    ## Внешние зависимости сервиса
+    - **LiteLLM** — единственный путь к моделям: embedding `text-embedding-3-small`
+      (ingest и query embedding) и LLM для `/v1/query`. Модель embedding задаётся конфигурацией
+      сервиса и **не** передаётся клиентом (иначе векторы разных моделей смешаются в одной коллекции).
+    - **LLM Guard** — синхронная проверка входа/выхода `/v1/query`; при блокировке — ошибка `guardrail_blocked`.
+    - **MinIO** — исходные документы. **Qdrant** — векторы и payload чанков.
+
+    ## Потребители
+    - Agent Platform (LangGraph / LangFlow / Dify) — `POST /v1/search`, `POST /v1/query`.
+    - FastAPI BL / админ — управление коллекциями и документами.
+
+    ## Безопасность
+    Сервис внутренний (за Nginx / во внутренней сети). Этап 5 — `X-API-Key`;
+    этап 6 — JWT от Authentik (`bearerAuth`). Публичная выдача наружу — только после IAM.
+
+    ## Соглашения
+    - Версия в пути: `/v1`. Время — RFC 3339 UTC. Идентификаторы — UUID.
+    - Ошибки — `application/problem+json` (RFC 9457).
+    - Корреляция: заголовок `X-Request-Id` принимается и возвращается; `traceparent` (W3C) пробрасывается в LangSmith / Loki.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+
+servers:
+  - url: http://localhost:8200
+    description: Локально (Windows, нативно)
+  - url: https://rag.internal.alexsoft.example
+    description: VPS (внутренний адрес за Nginx; заглушка)
+
+tags:
+  - name: Health
+    description: Служебные проверки.
+  - name: Collections
+    description: Слой хранения — коллекции в Qdrant.
+  - name: Documents
+    description: Слой загрузки — документы и ingest-задачи.
+  - name: Retrieval
+    description: Слой поиска — hybrid search и ответы с цитатами.
+
+security:
+  - apiKey: []
+  - bearerAuth: []
+
+paths:
+  /health/live:
+    get:
+      tags: [Health]
+      operationId: getLiveness
+      summary: Процесс жив
+      security: []
+      responses:
+        "200":
+          description: Сервис запущен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /health/ready:
+    get:
+      tags: [Health]
+      operationId: getReadiness
+      summary: Зависимости доступны (Qdrant, MinIO, LiteLLM)
+      security: []
+      responses:
+        "200":
+          description: Все зависимости доступны.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          description: Одна или несколько зависимостей недоступны.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /v1/collections:
+    get:
+      tags: [Collections]
+      operationId: listCollections
+      summary: Список коллекций
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Страница коллекций.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Collections]
+      operationId: createCollection
+      summary: Создать коллекцию
+      description: |
+        Создаёт коллекцию в Qdrant с dense-вектором (размерность задаёт embedding-модель сервиса)
+        и sparse-вектором для hybrid. Имя уникально.
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionCreate"
+            example:
+              name: project-docs
+              description: Документация проекта alexsoft
+      responses:
+        "201":
+          description: Коллекция создана.
+          headers:
+            Location:
+              description: URL созданной коллекции.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/collections/{collection}:
+    parameters:
+      - $ref: "#/components/parameters/CollectionName"
+      - $ref: "#/components/parameters/RequestId"
+    get:
+      tags: [Collections]
+      operationId: getCollection
+      summary: Коллекция и статистика
+      responses:
+        "200":
+          description: Коллекция.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Collections]
+      operationId: deleteCollection
+      summary: Удалить коллекцию вместе с чанками
+      description: Исходные файлы в MinIO не удаляются.
+      responses:
+        "204":
+          description: Удалена.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/collections/{collection}/documents:
+    parameters:
+      - $ref: "#/components/parameters/CollectionName"
+      - $ref: "#/components/parameters/RequestId"
+    get:
+      tags: [Documents]
+      operationId: listDocuments
+      summary: Документы коллекции
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - name: status
+          in: query
+          description: Фильтр по статусу ingest.
+          schema:
+            $ref: "#/components/schemas/DocumentStatus"
+      responses:
+        "200":
+          description: Страница документов.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentPage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Documents]
+      operationId: ingestDocument
+      summary: Загрузить документ в коллекцию (асинхронно)
+      description: |
+        Запускает ingest: Loader → Parser & Clean → Chunking → embedding (через LiteLLM) → upsert в Qdrant.
+        Повторная загрузка с тем же `external_id` заменяет чанки документа (идемпотентно).
+        Заголовок `Idempotency-Key` защищает от дублей при повторе запроса.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema:
+            type: string
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentIngest"
+            examples:
+              minio:
+                summary: Файл из MinIO
+                value:
+                  external_id: adr-0015
+                  source:
+                    type: minio
+                    bucket: rag-docs
+                    key: adr/0015-target-architecture-stacks.md
+                  metadata:
+                    kind: adr
+                    lang: ru
+              inline:
+                summary: Текст в запросе
+                value:
+                  external_id: note-001
+                  source:
+                    type: inline
+                    text: "RabbitMQ — целевой брокер, этап 6."
+                    content_type: text/plain
+      responses:
+        "202":
+          description: Задача ingest принята.
+          headers:
+            Location:
+              description: URL задачи.
+              schema:
+                type: string
+                format: uri-reference
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "422":
+          $ref: "#/components/responses/Validation"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/collections/{collection}/documents/{documentId}:
+    parameters:
+      - $ref: "#/components/parameters/CollectionName"
+      - $ref: "#/components/parameters/DocumentId"
+      - $ref: "#/components/parameters/RequestId"
+    get:
+      tags: [Documents]
+      operationId: getDocument
+      summary: Документ и статус индексации
+      responses:
+        "200":
+          description: Документ.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Documents]
+      operationId: deleteDocument
+      summary: Удалить документ и его чанки из Qdrant
+      responses:
+        "204":
+          description: Удалён.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/jobs/{jobId}:
+    parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - $ref: "#/components/parameters/RequestId"
+    get:
+      tags: [Documents]
+      operationId: getJob
+      summary: Статус ingest-задачи
+      responses:
+        "200":
+          description: Задача.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/search:
+    post:
+      tags: [Retrieval]
+      operationId: searchChunks
+      summary: Hybrid-поиск чанков
+      description: |
+        Query embedding (через LiteLLM) → hybrid search в Qdrant (dense + sparse, fusion) →
+        опциональный rerank → топ-K чанков. Без генерации и без LLM Guard.
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+            example:
+              collection: project-docs
+              query: Зачем RabbitMQ на этапе 6?
+              top_k: 5
+              filter:
+                kind: adr
+      responses:
+        "200":
+          description: Найденные чанки по убыванию релевантности.
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Validation"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /v1/query:
+    post:
+      tags: [Retrieval]
+      operationId: queryWithAnswer
+      summary: Поиск + grounded-ответ с цитатами
+      description: |
+        Вход → LLM Guard (pre-check) → search → генерация через LiteLLM → LLM Guard (post-check) →
+        ответ с цитатами. Если контекста недостаточно, `answer` может быть `null`, `insufficient_context = true`.
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QueryRequest"
+            example:
+              collection: project-docs
+              question: Какой брокер выбран и когда он нужен?
+              top_k: 5
+      responses:
+        "200":
+          description: Ответ.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Ошибка валидации или блокировка LLM Guard (`code = guardrail_blocked`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Этап 5 — ключ из `.env`.
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Этап 6 — JWT Authentik (проверяется на Edge).
+
+  parameters:
+    CollectionName:
+      name: collection
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/CollectionName"
+    DocumentId:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    Cursor:
+      name: cursor
+      in: query
+      description: Непрозрачный курсор из `next_cursor`.
+      schema:
+        type: string
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        maxLength: 128
+
+  headers:
+    RequestId:
+      description: Эхо `X-Request-Id` или сгенерированное значение.
+      schema:
+        type: string
+
+  responses:
+    Error:
+      description: Непредвиденная ошибка.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Unauthorized:
+      description: Нет или неверный `X-API-Key` / JWT. Применимо ко всем операциям, кроме `/health/*`.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Ресурс не найден.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Conflict:
+      description: Конфликт (ресурс уже существует).
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Validation:
+      description: Ошибка валидации запроса.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    PayloadTooLarge:
+      description: Документ превышает лимит размера.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UpstreamError:
+      description: Сбой зависимости (LiteLLM, Qdrant, MinIO, LLM Guard).
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, down]
+        dependencies:
+          type: object
+          description: Состояние зависимостей по имени.
+          additionalProperties:
+            type: string
+            enum: [ok, down]
+          examples:
+            - qdrant: ok
+              minio: ok
+              litellm: ok
+
+    CollectionName:
+      type: string
+      pattern: "^[a-z0-9][a-z0-9_-]{1,62}$"
+      description: Строчные латинские буквы, цифры, `_`, `-`; 2–63 символа.
+
+    CollectionCreate:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name:
+          $ref: "#/components/schemas/CollectionName"
+        description:
+          type: string
+          maxLength: 500
+        chunking:
+          $ref: "#/components/schemas/ChunkingConfig"
+
+    Collection:
+      type: object
+      required: [name, embedding_model, dense_dimensions, created_at]
+      properties:
+        name:
+          $ref: "#/components/schemas/CollectionName"
+        description:
+          type: string
+        embedding_model:
+          type: string
+          description: Модель embedding, зафиксированная при создании коллекции.
+          examples: [text-embedding-3-small]
+        dense_dimensions:
+          type: integer
+          examples: [1536]
+        chunking:
+          $ref: "#/components/schemas/ChunkingConfig"
+        documents_count:
+          type: integer
+          minimum: 0
+        chunks_count:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+
+    CollectionPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Collection"
+        next_cursor:
+          type: [string, "null"]
+
+    ChunkingConfig:
+      type: object
+      description: Параметры чанкинга (LlamaIndex node parser). Значения по умолчанию — из конфигурации сервиса.
+      additionalProperties: false
+      properties:
+        strategy:
+          type: string
+          enum: [sentence, markdown, token]
+          default: markdown
+        chunk_size:
+          type: integer
+          minimum: 64
+          maximum: 8192
+          default: 512
+          description: Размер чанка в токенах.
+        chunk_overlap:
+          type: integer
+          minimum: 0
+          maximum: 1024
+          default: 64
+
+    Metadata:
+      type: object
+      description: Плоские метаданные для фильтрации (строки, числа, булевы, массивы строк).
+      maxProperties: 32
+      additionalProperties:
+        oneOf:
+          - type: string
+          - type: number
+          - type: boolean
+          - type: array
+            items:
+              type: string
+
+    DocumentStatus:
+      type: string
+      enum: [queued, processing, indexed, failed]
+
+    DocumentIngest:
+      type: object
+      required: [source]
+      additionalProperties: false
+      properties:
+        external_id:
+          type: string
+          maxLength: 256
+          description: Ваш стабильный идентификатор; повторная загрузка заменяет документ.
+        source:
+          $ref: "#/components/schemas/DocumentSource"
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        chunking:
+          $ref: "#/components/schemas/ChunkingConfig"
+
+    DocumentSource:
+      oneOf:
+        - $ref: "#/components/schemas/MinioSource"
+        - $ref: "#/components/schemas/InlineSource"
+      discriminator:
+        propertyName: type
+        mapping:
+          minio: "#/components/schemas/MinioSource"
+          inline: "#/components/schemas/InlineSource"
+
+    MinioSource:
+      type: object
+      required: [type, bucket, key]
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          const: minio
+        bucket:
+          type: string
+        key:
+          type: string
+        version_id:
+          type: string
+
+    InlineSource:
+      type: object
+      required: [type, text]
+      additionalProperties: false
+      properties:
+        type:
+          type: string
+          const: inline
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000000
+        content_type:
+          type: string
+          enum: [text/plain, text/markdown]
+          default: text/plain
+
+    Document:
+      type: object
+      required: [id, collection, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        collection:
+          $ref: "#/components/schemas/CollectionName"
+        external_id:
+          type: string
+        source:
+          $ref: "#/components/schemas/DocumentSource"
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+        status:
+          $ref: "#/components/schemas/DocumentStatus"
+        chunks_count:
+          type: integer
+          minimum: 0
+        error:
+          type: [string, "null"]
+          description: Причина `failed`.
+        created_at:
+          type: string
+          format: date-time
+        indexed_at:
+          type: [string, "null"]
+          format: date-time
+
+    DocumentPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
+        next_cursor:
+          type: [string, "null"]
+
+    Job:
+      type: object
+      required: [id, type, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [ingest]
+        status:
+          type: string
+          enum: [queued, running, succeeded, failed]
+        document_id:
+          type: string
+          format: uuid
+        stage:
+          type: string
+          enum: [load, parse, chunk, embed, upsert]
+          description: Текущий этап пайплайна.
+        error:
+          type: [string, "null"]
+        created_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: [string, "null"]
+          format: date-time
+
+    MetadataFilter:
+      type: object
+      description: |
+        Фильтр по payload чанка. Значение — скаляр (равенство) или массив (любое из).
+        Все условия объединяются по AND.
+      maxProperties: 16
+      additionalProperties:
+        oneOf:
+          - type: string
+          - type: number
+          - type: boolean
+          - type: array
+            items:
+              type: string
+
+    SearchParams:
+      type: object
+      required: [collection]
+      properties:
+        collection:
+          $ref: "#/components/schemas/CollectionName"
+        top_k:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 5
+        fusion:
+          type: string
+          enum: [rrf, dbsf]
+          default: rrf
+          description: Способ слияния dense и sparse результатов в Qdrant.
+        score_threshold:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Отсечь чанки ниже порога (нормализованный score).
+        filter:
+          $ref: "#/components/schemas/MetadataFilter"
+
+    SearchRequest:
+      allOf:
+        - $ref: "#/components/schemas/SearchParams"
+        - type: object
+          required: [query]
+          properties:
+            query:
+              type: string
+              minLength: 1
+              maxLength: 4000
+
+    Chunk:
+      type: object
+      required: [id, document_id, text, score]
+      properties:
+        id:
+          type: string
+          description: Идентификатор точки в Qdrant.
+        document_id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        text:
+          type: string
+        score:
+          type: number
+          description: Релевантность после fusion (больше — лучше).
+        position:
+          type: integer
+          minimum: 0
+          description: Порядковый номер чанка в документе.
+        metadata:
+          $ref: "#/components/schemas/Metadata"
+
+    SearchResponse:
+      type: object
+      required: [chunks]
+      properties:
+        chunks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Chunk"
+        timings_ms:
+          $ref: "#/components/schemas/Timings"
+
+    QueryRequest:
+      allOf:
+        - $ref: "#/components/schemas/SearchParams"
+        - type: object
+          required: [question]
+          properties:
+            question:
+              type: string
+              minLength: 1
+              maxLength: 4000
+            model:
+              type: string
+              description: Алиас LLM в LiteLLM. По умолчанию — из конфигурации сервиса.
+            temperature:
+              type: number
+              minimum: 0
+              maximum: 2
+              default: 0.1
+            max_output_tokens:
+              type: integer
+              minimum: 1
+              maximum: 8192
+              default: 1024
+
+    Citation:
+      type: object
+      required: [chunk_id, document_id]
+      properties:
+        chunk_id:
+          type: string
+        document_id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        quote:
+          type: string
+          description: Фрагмент чанка, использованный в ответе.
+
+    QueryResponse:
+      type: object
+      required: [insufficient_context, citations, chunks]
+      properties:
+        answer:
+          type: [string, "null"]
+        insufficient_context:
+          type: boolean
+          description: "`true`, если найденного контекста недостаточно для ответа."
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Citation"
+        chunks:
+          type: array
+          description: Использованный контекст.
+          items:
+            $ref: "#/components/schemas/Chunk"
+        model:
+          type: string
+          description: Фактическая модель, отвечавшая через LiteLLM.
+        usage:
+          $ref: "#/components/schemas/Usage"
+        trace_id:
+          type: string
+          description: Идентификатор трейса в LangSmith (если включён).
+        timings_ms:
+          $ref: "#/components/schemas/Timings"
+
+    Usage:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+        completion_tokens:
+          type: integer
+
+    Timings:
+      type: object
+      description: Длительности этапов, мс.
+      properties:
+        embed:
+          type: number
+        search:
+          type: number
+        guard:
+          type: number
+        generate:
+          type: number
+        total:
+          type: number
+
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          default: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          enum:
+            - validation_error
+            - not_found
+            - already_exists
+            - payload_too_large
+            - guardrail_blocked
+            - embedding_unavailable
+            - vector_store_unavailable
+            - object_store_unavailable
+            - llm_unavailable
+            - internal_error
+        request_id:
+          type: string
+        errors:
+          type: array
+          description: Ошибки по полям (для `validation_error`).
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field:
+                type: string
+              message:
+                type: string

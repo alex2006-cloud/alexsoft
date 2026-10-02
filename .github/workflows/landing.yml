@@ -5,16 +5,18 @@ on:
     paths:
       - "apps/landing/**"
       - "apps/games/**"
+      - "artifacts/portfolio/**"
       - ".github/workflows/landing.yml"
   pull_request:
     paths:
       - "apps/landing/**"
       - "apps/games/**"
+      - "artifacts/portfolio/**"
       - ".github/workflows/landing.yml"
   workflow_dispatch:
 
 env:
-  LANDING_URL: https://osipcraft.ru
+  LANDING_URL: https://alexsoft.space
   DEPLOY_HOST: 130.17.1.193
   DEPLOY_USER: root
   DEPLOY_PATH: /var/www/osipcraft
