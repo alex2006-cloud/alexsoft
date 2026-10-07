@@ -8,116 +8,76 @@
 
 **Основные функции:**
 
-Публичный лэндинг-визитка с портфолио продуктов и живыми демо
-
-Несколько независимых микросервисов-продуктов (инструменты/боты/утилиты)
-
-Единая платформа данных: БД, BI-дашборды
-
-Слой AI-агентов (единый AI-шлюз/оркестратор для разных сервисов)
-
-RAG слой
-
-Инфраструктурный контур: логирование, мониторинг, версионирование, CI/CD
-
-Автоматически обновляемая архитектурная документация (артефакты C4/UML генерируются или синхронизируются из кода/конфигов)
+- Публичный лэндинг-визитка с портфолио продуктов и живыми демо
+- Несколько независимых микросервисов-продуктов (инструменты/боты/утилиты)
+- Единая платформа данных: БД, BI-дашборды
+- Слой AI-агентов (единый AI-шлюз/оркестратор для разных сервисов)
+- RAG слой
+- Инфраструктурный контур: логирование, мониторинг, версионирование, CI/CD
+- Автоматически обновляемая архитектурная документация (артефакты C4/UML генерируются или синхронизируются из кода/конфигов)
 
 **Артефакты:**
 
- User Stories (Бизнес-кейс 1)
-
- Use Cases (Бизнес-кейс 1) в виде спецификации и диаграммы
-
- BPMN (Бизнес-кейс 1)
-
- Sequence Diagram (Бизнес-кейс 1)
-
- Component Diagram (`artifacts/architecture/uml-component-diagram.puml`)
-
- C4 — 1,2,3 уровень (`artifacts/architecture/c4-l1-l2-l3.dsl`)
-
- Целевая схема архитектуры (`artifacts/architecture/architecture-in-drawio.drawio`, ADR-0015)
-
- API-контракт (OpenAPI) для RAG-системы (`artifacts/api/rag.openapi.yaml`)
-
- ADR
+- User Stories (Бизнес-кейс 1)
+- Use Cases (Бизнес-кейс 1) в виде спецификации и диаграммы
+- BPMN (Бизнес-кейс 1)
+- Sequence Diagram (Бизнес-кейс 1)
+- Component Diagram (`artifacts/architecture/uml-component-diagram.puml`)
+- C4 — 1,2,3 уровень (`artifacts/architecture/c4-l1-l2-l3.dsl`)
+- Целевая схема архитектуры (`artifacts/architecture/architecture-in-drawio.drawio`, ADR-0015)
+- API-контракт (OpenAPI) для RAG-системы (`artifacts/api/rag.openapi.yaml`)
+- ADR
 
 заложить architecture-as-code, чтобы артефакты собирались и обновлялись автоматически из репозитория и конфигов.
 
 **Из каких микросервисов состоит система:**
 
- Лэндинг с кнопка с переходом в микросервис и портфолио
-
- Мини игры
-
- RAG
-
- AI агенты
-
- Другие микросервисы, которые будут дополняться со временем
+- Лэндинг с кнопка с переходом в микросервис и портфолио
+- Мини игры
+- RAG
+- AI агенты
+- Другие микросервисы, которые будут дополняться со временем
 
 **IDE, Репозиторий, CICD, инфраструктура:**
+
 Cursor на ноутбуке меняет код. Репозиторий - GitHub. CICD - GitHub Actions. Проект развернут на инфраструктуре облака/VDS. VPD только исполняет то, что пришло из репозитория через CI. На сервере ничего не правят руками. Секреты хранятся вне git, а локально в ".env"
 
 **Технологический стек:**
 
- Домен и DNS
-
- Лэндинг (SPA): Next.js
-
- Версионность/Репо: GitHub Monorepo
-
- CI/CD: GitHub Actions
-
- Edge / API Gateway: Nginx + Nginx Proxy Manager
-
- IAM: Authentik
-
- BL API (целевой): FastAPI
-
- Контейнеризация и оркестрация: Нативная установка > Docker Compose + Docker Desktop > k3s (облегченный K8s) + опционально Portainer в далеком будущем
-
- БД: PostgreSQL, MinIO (для файлов) + встроенная Console
-
- Приложение для работы с базами данных: DBeaver
-
- Системы кеширования: Memurai (Redis-совместимый сервер под Windows) + Redis Insight > Redis
-
- BI: Metabase > Apache Superset или ClickHouse
-
- Брокер сообщений: RabbitMQ
-
- Мониторинг системы: Grafana
-
- Мониторинг логов: Loki (Хранилище логов), Prometheus (собирает метрики), Grafana Alloy (агент для сбора логов)
-
- AI Gateway: LiteLLM
-
- Облачная LLM: Qwen, DeepSeek, ChatGPT, Claude, Gemini
-
- AI-агент платформа 1 (Серьёзные агенты кодом) — фреймворк LangGraph + LangSmith Studio (IDE графа; бывш. LangGraph Studio) + LangFlow (drag-and-drop агентов)
-
- AI-агент платформа 2 (Агенты через UI без кода) — Dify
-
- Guardrails (целевой): LLM Guard
-
- Векторная БД: Qdrant
-
- RAG сервис: LlamaIndex (Loaders, Parser  Clean, Chunking), text-embedding-3-small (облачная embedding-модель через LiteLLM для: Эмбеддинг в ВБД, Query embedding), Qdrant (Retrieval - hybrid)
-
- Мониторинг, логирование и аналитика LLM: LangSmith (платформа — трейсы, анализ и оценка прогонов; не путать с LangSmith Studio)
+- Домен и DNS
+- Лэндинг (SPA): Next.js
+- Версионность/Репо: GitHub Monorepo
+- CI/CD: GitHub Actions
+- Edge / API Gateway: Nginx + Nginx Proxy Manager
+- IAM: Authentik
+- BL API (целевой): FastAPI
+- Контейнеризация и оркестрация: Нативная установка > Docker Compose + Docker Desktop > k3s (облегченный K8s) + опционально Portainer в далеком будущем
+- БД: PostgreSQL, MinIO (для файлов) + встроенная Console
+- Приложение для работы с базами данных: DBeaver
+- Системы кеширования: Memurai (Redis-совместимый сервер под Windows) + Redis Insight > Redis
+- BI: Metabase > Apache Superset или ClickHouse
+- Брокер сообщений: RabbitMQ
+- Мониторинг системы: Grafana
+- Мониторинг логов: Loki (Хранилище логов), Prometheus (собирает метрики), Grafana Alloy (агент для сбора логов)
+- AI Gateway: LiteLLM
+- Облачная LLM: Qwen, DeepSeek, ChatGPT, Claude, Gemini
+- AI-агент платформа 1 (Серьёзные агенты кодом) — фреймворк LangGraph + LangSmith Studio (IDE графа; бывш. LangGraph Studio) + LangFlow (drag-and-drop агентов)
+- AI-агент платформа 2 (Агенты через UI без кода) — Dify
+- Guardrails (целевой): LLM Guard
+- Векторная БД: Qdrant
+- RAG сервис: LlamaIndex (Loaders, Parser Clean, Chunking), text-embedding-3-small (облачная embedding-модель через LiteLLM для: Эмбеддинг в ВБД, Query embedding), Qdrant (Retrieval - hybrid)
+- Мониторинг, логирование и аналитика LLM: LangSmith (платформа — трейсы, анализ и оценка прогонов; не путать с LangSmith Studio)
 
 **Инфраструктура:**
 
- Сервер: в начале свой ноутбук далее облако
+- Сервер: в начале свой ноутбук далее облако
 
 **Роли:**
 
-Администратор - Владелец системы (Я)
-
-Пользователь - Сторонний пользователь системы
-
-Service Account - Машинная учётная запись для CI/CD, интеграций, фоновых задач и сервис-сервисных вызовов
+- anonymous - лендинг, портфолио, публичные страницы
+- Администратор - Владелец системы (Я)
+- Пользователь - Сторонний пользователь системы
+- Service Account - Машинная учётная запись для CI/CD, интеграций, фоновых задач и сервис-сервисных вызовов
 
 **Бизнес кейсы:**
 
@@ -125,42 +85,23 @@ Service Account - Машинная учётная запись для CI/CD, и�
 
 **Оставшиеся этапы реализации:**
 
-Подключить векторную БД: Qdrant
-
-Подключить и настроить RAG-сервис (3 слоя: загрузка в ВБД; хранение эмбеддингов; RAG-пайплайны поиска — LlamaIndex; контракт — `artifacts/api/rag.openapi.yaml`)
-
-Первый AI-агент с RAG. Собрать RAG и AI-агент по БП1
-
-Переход в облако - обсудить что переносим из локалки в VDS. Далее шаги для облака:
-
-API Gateway (Уточнить конкретный инструмент)
-
-IAM
-
-SSH подключение
-
-Docker/ Научиться делать Контейнеры и запускать их
-
-Создать Redis вместо Memurai, подключить к нему Redis Insight через SSH-туннель из Ноутбука
-
-Мигрировать БД Memurai на Redis
-
-Создать БД: PostgreSQL, MinIO  и подключить к ним DBeaver через SSH-туннель из Ноутбука
-
-Мигрировать БД с локалки на облако
-
-Создать MinIO в облаке (mc mirror) / Yandex Object Storage и создать SSH-туннель из Ноутбука до облачного MinIO Console
-
-Мигрировать БД с локалки на облако
-
-Docker + опционально Portainer
-
-Установить Loki + Prometheus + Grafana Alloy и собрать некоторые логи и метрики, например посещение лэндинга и нагрузка на VPS + Grafana и визуализировать логи и метрики
-
-Установить Metabase и подключить к БД PostgreSQL
-
-k3s
-
-Kafka
-
-Подать заявку в РКН как оператор ПД
+- Подключить векторную БД: Qdrant
+- Подключить и настроить RAG-сервис (3 слоя: загрузка в ВБД; хранение эмбеддингов; RAG-пайплайны поиска — LlamaIndex; контракт — `artifacts/api/rag.openapi.yaml`)
+- Первый AI-агент с RAG. Собрать RAG и AI-агент по БП1
+- Переход в облако - обсудить что переносим из локалки в VDS. Далее шаги для облака:
+- API Gateway (Уточнить конкретный инструмент)
+- IAM
+- SSH подключение
+- Docker/ Научиться делать Контейнеры и запускать их
+- Создать Redis вместо Memurai, подключить к нему Redis Insight через SSH-туннель из Ноутбука
+- Мигрировать БД Memurai на Redis
+- Создать БД: PostgreSQL, MinIO и подключить к ним DBeaver через SSH-туннель из Ноутбука
+- Мигрировать БД с локалки на облако
+- Создать MinIO в облаке (mc mirror) / Yandex Object Storage и создать SSH-туннель из Ноутбука до облачного MinIO Console
+- Мигрировать БД с локалки на облако
+- Docker + опционально Portainer
+- Установить Loki + Prometheus + Grafana Alloy и собрать некоторые логи и метрики, например посещение лэндинга и нагрузка на VPS + Grafana и визуализировать логи и метрики
+- Установить Metabase и подключить к БД PostgreSQL
+- k3s
+- Kafka
+- Подать заявку в РКН как оператор ПД

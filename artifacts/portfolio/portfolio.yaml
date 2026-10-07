@@ -169,6 +169,17 @@ items:
     downloads:
       - { label: "OpenAPI YAML", file: architecture/rag.openapi.yaml }
 
+  - id: bl-api
+    group: architecture
+    title: "API-контракт бизнес-логики (BL)"
+    emoji: "🧩"
+    kind: "OpenAPI 3.1"
+    summary: "Contract-first для BL (FastAPI): профиль, реестр агентов, запуски со стримингом событий (SSE), админские эндпоинты и квоты. Аутентификация — JWT Authentik, ошибки в формате problem+json."
+    view: html
+    file: architecture/bl-api.html
+    downloads:
+      - { label: "OpenAPI YAML", file: architecture/bl.openapi.yaml }
+
   - id: adr-0007-edge
     group: architecture
     title: "ADR-0007: Nginx вместо Caddy"

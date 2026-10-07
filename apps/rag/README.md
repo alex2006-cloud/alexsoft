@@ -37,8 +37,8 @@ query ─► embed(dense+sparse) ─► Qdrant query_points(prefetch dense & spa
 - **Локатор:** каждый `Chunk`/`Citation` несёт `locator` (`path`, `page`, `sheet`+`range`, `line_start/line_end`+`symbol`, `section`) — по нему агент указывает точное место источника.
 - **`content_hash`:** если документ с тем же `external_id` уже проиндексирован с таким же хешем, метаданными и чанкингом, ingest возвращает готовый Job и ничего не пересчитывает (экономия токенов embedding).
 - **BM25:** язык на коллекцию (`sparse_language`: `russian` для документов, `english` для кода); идентификаторы `snake_case`/`camelCase` разворачиваются в слова.
-- **Auth этапа 5:** заголовок `X-API-Key` = `RAG_API_KEY`; пустой ключ = все защищённые методы отвечают 401 (fail closed). JWT Authentik — этап 6.
-- **LLM Guard:** интерфейс `GuardrailsClient`; сейчас `NoopGuard` (`LLM_GUARD_ENABLED=false`). Реальный Guard — этап 6.
+- **Auth этапа 5:** заголовок `X-API-Key` = `RAG_API_KEY`; пустой ключ = все защищённые методы отвечают 401 (fail closed). JWT Authentik — по архитектуре (локально), не ждать VPS.
+- **LLM Guard:** интерфейс `GuardrailsClient`; сейчас `NoopGuard` (`LLM_GUARD_ENABLED=false`). Реальный Guard — целевой контур (после планирования этапа 6).
 - **Ошибки:** `application/problem+json` (RFC 9457) с `code`; `X-Request-Id` принимается и возвращается.
 - **Не включено в 5.6:** LangSmith-трейсы (`trace_id` в ответе пока не заполняется), rerank, Redis-кеш, RabbitMQ.
 
@@ -90,7 +90,7 @@ powershell -ExecutionPolicy Bypass -File infra\rag\kb-sync.ps1 -DryRun -VerboseS
 powershell -ExecutionPolicy Bypass -File infra\rag\kb-sync.ps1 -Only "apps/rag/**" -Force
 ```
 
-> Доступ к `project-code` — только по `X-API-Key` на localhost; публично — после IAM (этап 6).
+> Доступ к `project-code` — только по `X-API-Key` на localhost; публично — после IAM / личного кабинета.
 
 ## Тесты
 

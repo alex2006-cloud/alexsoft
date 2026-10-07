@@ -1,0 +1,1459 @@
+{
+  "configuration" : { },
+  "description" : "Personal Ecosystem Lab — целевая архитектура (C4 L1–L3)",
+  "documentation" : { },
+  "id" : 1,
+  "lastModifiedDate" : "2026-10-07T17:13:47Z",
+  "model" : {
+    "people" : [ {
+      "description" : "Лендинг (без входа); после логина — личный кабинет: список агентов, Q&A по проекту (БК1).",
+      "id" : "1",
+      "name" : "Пользователь",
+      "properties" : {
+        "structurizr.dsl.identifier" : "user"
+      },
+      "relationships" : [ {
+        "description" : "HTTPS: лендинг, логин, кабинет, агенты, Q&A",
+        "destinationId" : "7",
+        "id" : "40",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      }, {
+        "description" : "HTTPS",
+        "destinationId" : "8",
+        "id" : "47",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    }, {
+      "description" : "Владелец платформы: админ-панель в кабинете, разработка, деплой, эксплуатация, BI и метрики.",
+      "id" : "2",
+      "name" : "Администратор",
+      "properties" : {
+        "structurizr.dsl.identifier" : "admin"
+      },
+      "relationships" : [ {
+        "description" : "HTTPS: админ-панель; эксплуатация, BI, деплой через delivery",
+        "destinationId" : "7",
+        "id" : "41",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Разрабатывает",
+        "destinationId" : "5",
+        "id" : "42",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "HTTPS",
+        "destinationId" : "8",
+        "id" : "48",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Дашборды BI",
+        "destinationId" : "39",
+        "id" : "76",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Дашборды и алерты",
+        "destinationId" : "33",
+        "id" : "77",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    } ],
+    "softwareSystems" : [ {
+      "description" : "Облачные модели DeepSeek, Qwen, ChatGPT, Claude, Gemini.",
+      "documentation" : { },
+      "id" : "3",
+      "name" : "ИИ модели",
+      "properties" : {
+        "structurizr.dsl.identifier" : "llmProviders"
+      },
+      "tags" : "Element,Software System,External"
+    }, {
+      "description" : "text-embedding-3-small (облачная); вызывается только через AI Gateway.",
+      "documentation" : { },
+      "id" : "4",
+      "name" : "Embedding",
+      "properties" : {
+        "structurizr.dsl.identifier" : "embeddingModel"
+      },
+      "tags" : "Element,Software System,External"
+    }, {
+      "description" : "IDE на ноутбуке: изменение кода целевой платформы.",
+      "documentation" : { },
+      "id" : "5",
+      "name" : "Cursor",
+      "properties" : {
+        "structurizr.dsl.identifier" : "cursor"
+      },
+      "relationships" : [ {
+        "description" : "Пуш кода",
+        "destinationId" : "6",
+        "id" : "43",
+        "sourceId" : "5",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Software System,External"
+    }, {
+      "description" : "Монорепозиторий и GitHub Actions (CI/CD); секреты CI в GitHub Secrets, не в git.",
+      "documentation" : { },
+      "id" : "6",
+      "name" : "GitHub",
+      "properties" : {
+        "structurizr.dsl.identifier" : "github"
+      },
+      "relationships" : [ {
+        "description" : "GitHub Actions деплоит на VDS/VPS",
+        "destinationId" : "7",
+        "id" : "44",
+        "sourceId" : "6",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Software System,External"
+    }, {
+      "containers" : [ {
+        "components" : [ {
+          "description" : "Терминация HTTPS, маршруты /app, /api к кабинету, вход к IAM.",
+          "documentation" : { },
+          "id" : "9",
+          "name" : "Reverse proxy / TLS",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.edge.reverseProxy"
+          },
+          "relationships" : [ {
+            "description" : "reverse proxy /app (+ /app/api)",
+            "destinationId" : "13",
+            "id" : "90",
+            "sourceId" : "9",
+            "tags" : "Relationship"
+          }, {
+            "description" : "reverse proxy: вход / OIDC",
+            "destinationId" : "11",
+            "id" : "91",
+            "sourceId" : "9",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Nginx"
+        }, {
+          "description" : "Отдача готовых файлов лендинга, портфолио и игр с диска.",
+          "documentation" : { },
+          "id" : "10",
+          "name" : "Раздача статики",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.edge.staticServe"
+          },
+          "relationships" : [ {
+            "description" : "раздача файлов",
+            "destinationId" : "12",
+            "id" : "89",
+            "sourceId" : "10",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Nginx"
+        } ],
+        "description" : "API Gateway / веб-сервер: TLS, раздача статики лендинга и игр, reverse proxy на кабинет (/app, /api) и на страницу входа IAM. JWT сам не проверяет (ADR-0019).",
+        "documentation" : { },
+        "id" : "8",
+        "name" : "Edge",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.edge"
+        },
+        "relationships" : [ {
+          "description" : "раздача файлов",
+          "destinationId" : "12",
+          "id" : "49",
+          "sourceId" : "8",
+          "tags" : "Relationship"
+        }, {
+          "description" : "reverse proxy: вход / OIDC",
+          "destinationId" : "11",
+          "id" : "50",
+          "sourceId" : "8",
+          "tags" : "Relationship"
+        }, {
+          "description" : "reverse proxy /app (+ /app/api)",
+          "destinationId" : "13",
+          "id" : "51",
+          "sourceId" : "8",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "78",
+          "sourceId" : "8",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "Nginx"
+      }, {
+        "description" : "Аутентификация и авторизация (OIDC): вход, группы user / admin, выдача JWT.",
+        "documentation" : { },
+        "id" : "11",
+        "name" : "IAM",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.iam"
+        },
+        "tags" : "Element,Container",
+        "technology" : "Authentik"
+      }, {
+        "description" : "Лендинг, портфолио, игры. Статика (SSG), без входа и без серверного процесса: раздаёт Edge.",
+        "documentation" : { },
+        "id" : "12",
+        "name" : "Frontend лендинга и игр",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.landing"
+        },
+        "tags" : "Element,Container",
+        "technology" : "Next.js (output: export)"
+      }, {
+        "description" : "Личный кабинет и админ-панель: вход через IAM, список агентов, чат, управление. SSR (Node) и BFF: токены остаются на сервере, в браузер идёт cookie сессии.",
+        "documentation" : { },
+        "id" : "13",
+        "name" : "Frontend кабинета",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.cabinet"
+        },
+        "relationships" : [ {
+          "description" : "OIDC (обмен кода)",
+          "destinationId" : "11",
+          "id" : "52",
+          "sourceId" : "13",
+          "tags" : "Relationship"
+        }, {
+          "description" : "HTTPS REST (+ SSE статуса), JWT",
+          "destinationId" : "14",
+          "id" : "53",
+          "sourceId" : "13",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "79",
+          "sourceId" : "13",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "Next.js (SSR)"
+      }, {
+        "components" : [ {
+          "description" : "Проверка подписи JWT по JWKS IAM, claims, роли user / admin и ACL на агента или коллекцию.",
+          "documentation" : { },
+          "id" : "15",
+          "name" : "JWT и роли",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.businessLogic.authz"
+          },
+          "relationships" : [ {
+            "description" : "JWKS (проверка JWT)",
+            "destinationId" : "11",
+            "id" : "92",
+            "sourceId" : "15",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "FastAPI"
+        }, {
+          "description" : "REST API: список агентов, запуск Q&A, статус (SSE).",
+          "documentation" : { },
+          "id" : "16",
+          "name" : "API",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.businessLogic.apiOrchestration"
+          },
+          "relationships" : [ {
+            "description" : "SQL",
+            "destinationId" : "28",
+            "id" : "93",
+            "sourceId" : "16",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Файлы / артефакты",
+            "destinationId" : "29",
+            "id" : "94",
+            "sourceId" : "16",
+            "tags" : "Relationship"
+          }, {
+            "description" : "запуск агента, квота",
+            "destinationId" : "17",
+            "id" : "95",
+            "sourceId" : "16",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "FastAPI"
+        }, {
+          "description" : "Реестр агентов (bl.agents), запуски и события (bl.runs), адаптеры echo / LangGraph Agent Server; суточная квота запусков на пользователя.",
+          "documentation" : { },
+          "id" : "17",
+          "name" : "Реестр агентов и адаптеры",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.businessLogic.agentRegistry"
+          },
+          "relationships" : [ {
+            "description" : "SQL (схема bl)",
+            "destinationId" : "28",
+            "id" : "96",
+            "sourceId" : "17",
+            "tags" : "Relationship"
+          }, {
+            "description" : "HTTPS run (этап 5, без брокера)",
+            "destinationId" : "19",
+            "id" : "97",
+            "sourceId" : "17",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "FastAPI"
+        }, {
+          "description" : "Публикация запуска агента в брокер (publish); кэш get/set.",
+          "documentation" : { },
+          "id" : "18",
+          "name" : "Async bridge",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.businessLogic.workersBridge"
+          },
+          "relationships" : [ {
+            "description" : "publish",
+            "destinationId" : "32",
+            "id" : "98",
+            "sourceId" : "18",
+            "tags" : "Relationship"
+          }, {
+            "description" : "cache get/set",
+            "destinationId" : "31",
+            "id" : "99",
+            "sourceId" : "18",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "FastAPI"
+        } ],
+        "description" : "REST API для кабинета: проверка JWT (JWKS IAM) и ролей user / admin, список агентов, запуск Q&A, статус (SSE); публикация запусков в RabbitMQ; БД, файлы, кэш.",
+        "documentation" : { },
+        "id" : "14",
+        "name" : "Business Logic",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.businessLogic"
+        },
+        "relationships" : [ {
+          "description" : "JWKS (проверка JWT)",
+          "destinationId" : "11",
+          "id" : "54",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        }, {
+          "description" : "SQL",
+          "destinationId" : "28",
+          "id" : "55",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Файлы / артефакты",
+          "destinationId" : "29",
+          "id" : "56",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        }, {
+          "description" : "cache get/set",
+          "destinationId" : "31",
+          "id" : "57",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        }, {
+          "description" : "publish (целевой, этап 6)",
+          "destinationId" : "32",
+          "id" : "58",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        }, {
+          "description" : "HTTPS run (этап 5, без брокера)",
+          "destinationId" : "19",
+          "id" : "59",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        }, {
+          "description" : "HTTPS",
+          "destinationId" : "27",
+          "id" : "60",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "80",
+          "sourceId" : "14",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "FastAPI (Python)"
+      }, {
+        "components" : [ {
+          "description" : "Серьёзные агенты кодом: граф состояний, IDE, drag-and-drop.",
+          "documentation" : { },
+          "id" : "20",
+          "name" : "Code agents",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.agentPlatform.codeAgents"
+          },
+          "relationships" : [ {
+            "description" : "retrieve",
+            "destinationId" : "22",
+            "id" : "100",
+            "sourceId" : "20",
+            "tags" : "Relationship"
+          }, {
+            "description" : "pre/post",
+            "destinationId" : "26",
+            "id" : "102",
+            "sourceId" : "20",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "LangGraph + LangSmith Studio + LangFlow"
+        }, {
+          "description" : "Агенты через UI без кода.",
+          "documentation" : { },
+          "id" : "21",
+          "name" : "UI agents",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.agentPlatform.uiAgents"
+          },
+          "relationships" : [ {
+            "description" : "retrieve",
+            "destinationId" : "22",
+            "id" : "101",
+            "sourceId" : "21",
+            "tags" : "Relationship"
+          }, {
+            "description" : "pre/post",
+            "destinationId" : "26",
+            "id" : "103",
+            "sourceId" : "21",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Dify"
+        } ],
+        "description" : "Платформы агентов: код и UI без кода.",
+        "documentation" : { },
+        "id" : "19",
+        "name" : "Agent Platform",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.agentPlatform"
+        },
+        "relationships" : [ {
+          "description" : "HTTPS search/retrieve",
+          "destinationId" : "22",
+          "id" : "62",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        }, {
+          "description" : "sync pre/post check",
+          "destinationId" : "26",
+          "id" : "63",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        }, {
+          "description" : "OpenAI-compatible HTTPS",
+          "destinationId" : "27",
+          "id" : "64",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        }, {
+          "description" : "граф, инструменты, ошибки шагов (LangSmith)",
+          "destinationId" : "33",
+          "id" : "71",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "81",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Трейсы агентных прогонов",
+          "destinationId" : "38",
+          "id" : "112",
+          "sourceId" : "19",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "LangGraph + LangSmith Studio + LangFlow; Dify"
+      }, {
+        "components" : [ {
+          "description" : "Загрузка документов, очистка, чанкинг.",
+          "documentation" : { },
+          "id" : "23",
+          "name" : "Load / clean / chunk",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.rag.ingest"
+          },
+          "relationships" : [ {
+            "description" : "read documents",
+            "destinationId" : "29",
+            "id" : "104",
+            "sourceId" : "23",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "LlamaIndex"
+        }, {
+          "description" : "Query и index embeddings через AI Gateway (text-embedding-3-small).",
+          "documentation" : { },
+          "id" : "24",
+          "name" : "Embedding client",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.rag.embedClient"
+          },
+          "relationships" : [ {
+            "description" : "embeddings + LLM",
+            "destinationId" : "27",
+            "id" : "105",
+            "sourceId" : "24",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "LlamaIndex → LiteLLM"
+        }, {
+          "description" : "Hybrid search / upsert в векторной БД.",
+          "documentation" : { },
+          "id" : "25",
+          "name" : "Hybrid retrieve",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.rag.retrieve"
+          },
+          "relationships" : [ {
+            "description" : "hybrid upsert / search",
+            "destinationId" : "30",
+            "id" : "106",
+            "sourceId" : "25",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "LlamaIndex + Qdrant"
+        } ],
+        "description" : "Слой загрузки, очистки, чанкинга и retrieval по корпусу проекта.",
+        "documentation" : { },
+        "id" : "22",
+        "name" : "RAG",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.rag"
+        },
+        "relationships" : [ {
+          "description" : "sync",
+          "destinationId" : "26",
+          "id" : "65",
+          "sourceId" : "22",
+          "tags" : "Relationship"
+        }, {
+          "description" : "embeddings + LLM",
+          "destinationId" : "27",
+          "id" : "66",
+          "sourceId" : "22",
+          "tags" : "Relationship"
+        }, {
+          "description" : "read documents",
+          "destinationId" : "29",
+          "id" : "73",
+          "sourceId" : "22",
+          "tags" : "Relationship"
+        }, {
+          "description" : "upsert / search",
+          "destinationId" : "30",
+          "id" : "74",
+          "sourceId" : "22",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "82",
+          "sourceId" : "22",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "LlamaIndex"
+      }, {
+        "description" : "Синхронные pre/post проверки вокруг вызовов моделей.",
+        "documentation" : { },
+        "id" : "26",
+        "name" : "Guardrails",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.guardrails"
+        },
+        "relationships" : [ {
+          "description" : "OpenAI-compatible HTTPS",
+          "destinationId" : "27",
+          "id" : "67",
+          "sourceId" : "26",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "LLM Guard"
+      }, {
+        "description" : "Единый OpenAI-compatible шлюз к облачным LLM и embeddings; единственный путь к провайдерам.",
+        "documentation" : { },
+        "id" : "27",
+        "name" : "AI Gateway",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.aiGateway"
+        },
+        "relationships" : [ {
+          "description" : "HTTPS + ключ провайдера",
+          "destinationId" : "3",
+          "id" : "68",
+          "sourceId" : "27",
+          "tags" : "Relationship"
+        }, {
+          "description" : "HTTPS + ключ провайдера",
+          "destinationId" : "4",
+          "id" : "69",
+          "sourceId" : "27",
+          "tags" : "Relationship"
+        }, {
+          "description" : "LiteLLM пишет трейс (LangSmith)",
+          "destinationId" : "33",
+          "id" : "70",
+          "sourceId" : "27",
+          "tags" : "Relationship"
+        }, {
+          "description" : "LLM response cache (sync)",
+          "destinationId" : "31",
+          "id" : "72",
+          "sourceId" : "27",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "83",
+          "sourceId" : "27",
+          "tags" : "Relationship"
+        }, {
+          "description" : "LiteLLM пишет трейс",
+          "destinationId" : "38",
+          "id" : "111",
+          "sourceId" : "27",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "LiteLLM"
+      }, {
+        "description" : "Реляционное хранилище приложения и метаданных.",
+        "documentation" : { },
+        "id" : "28",
+        "name" : "PostgreSQL",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.postgres"
+        },
+        "relationships" : [ {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "84",
+          "sourceId" : "28",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "PostgreSQL"
+      }, {
+        "description" : "Объектное хранилище документов корпуса.",
+        "documentation" : { },
+        "id" : "29",
+        "name" : "MinIO",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.minio"
+        },
+        "relationships" : [ {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "85",
+          "sourceId" : "29",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "MinIO"
+      }, {
+        "description" : "Векторная БД; hybrid retrieval.",
+        "documentation" : { },
+        "id" : "30",
+        "name" : "Qdrant",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.qdrant"
+        },
+        "relationships" : [ {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "86",
+          "sourceId" : "30",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "Qdrant"
+      }, {
+        "description" : "Кэш (в т.ч. ответов AI).",
+        "documentation" : { },
+        "id" : "31",
+        "name" : "Redis",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.redis"
+        },
+        "relationships" : [ {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "87",
+          "sourceId" : "31",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "Redis"
+      }, {
+        "description" : "Брокер сообщений: запуски агентов (publish от BL, consume run на Agent Platform) — целевой, этап 6; на этапе 5 BL вызывает Agent Platform напрямую.",
+        "documentation" : { },
+        "id" : "32",
+        "name" : "RabbitMQ",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.rabbitmq"
+        },
+        "relationships" : [ {
+          "description" : "consume run (целевой, этап 6)",
+          "destinationId" : "19",
+          "id" : "61",
+          "sourceId" : "32",
+          "tags" : "Relationship"
+        }, {
+          "description" : "Метрики и логи",
+          "destinationId" : "33",
+          "id" : "88",
+          "sourceId" : "32",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "RabbitMQ"
+      }, {
+        "components" : [ {
+          "description" : "Сбор логов и метрик с хоста/сервисов.",
+          "documentation" : { },
+          "id" : "34",
+          "name" : "Log/metrics agent",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.observability.alloy"
+          },
+          "relationships" : [ {
+            "description" : "Пишет логи",
+            "destinationId" : "35",
+            "id" : "107",
+            "sourceId" : "34",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Скрейп / remote write",
+            "destinationId" : "36",
+            "id" : "108",
+            "sourceId" : "34",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Grafana Alloy"
+        }, {
+          "description" : "Хранилище логов.",
+          "documentation" : { },
+          "id" : "35",
+          "name" : "Log store",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.observability.loki"
+          },
+          "tags" : "Element,Component",
+          "technology" : "Loki"
+        }, {
+          "description" : "Сбор и хранение метрик.",
+          "documentation" : { },
+          "id" : "36",
+          "name" : "Metrics store",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.observability.prometheus"
+          },
+          "tags" : "Element,Component",
+          "technology" : "Prometheus"
+        }, {
+          "description" : "Анализ метрик и логов.",
+          "documentation" : { },
+          "id" : "37",
+          "name" : "Dashboards",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.observability.grafana"
+          },
+          "relationships" : [ {
+            "description" : "Запросы логов",
+            "destinationId" : "35",
+            "id" : "109",
+            "sourceId" : "37",
+            "tags" : "Relationship"
+          }, {
+            "description" : "Запросы метрик",
+            "destinationId" : "36",
+            "id" : "110",
+            "sourceId" : "37",
+            "tags" : "Relationship"
+          } ],
+          "tags" : "Element,Component",
+          "technology" : "Grafana"
+        }, {
+          "description" : "Хранение и мониторинг LLM-прогонов (не путать с LangSmith Studio в Agent Platform).",
+          "documentation" : { },
+          "id" : "38",
+          "name" : "LLM traces / evals",
+          "properties" : {
+            "structurizr.dsl.identifier" : "alexsoft.observability.langSmith"
+          },
+          "tags" : "Element,Component",
+          "technology" : "LangSmith"
+        } ],
+        "description" : "Логи, метрики инфры и аналитика LLM-прогонов (как на draw.io: Loki/Alloy/Prometheus/Grafana + LangSmith).",
+        "documentation" : { },
+        "id" : "33",
+        "name" : "Observability",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.observability"
+        },
+        "tags" : "Element,Container",
+        "technology" : "Grafana + Loki + Prometheus + Alloy; LangSmith"
+      }, {
+        "description" : "BI-дашборды поверх PostgreSQL.",
+        "documentation" : { },
+        "id" : "39",
+        "name" : "Metabase",
+        "properties" : {
+          "structurizr.dsl.identifier" : "alexsoft.metabase"
+        },
+        "relationships" : [ {
+          "description" : "read-only SQL",
+          "destinationId" : "28",
+          "id" : "75",
+          "sourceId" : "39",
+          "tags" : "Relationship"
+        } ],
+        "tags" : "Element,Container",
+        "technology" : "Metabase"
+      } ],
+      "description" : "Персональная мультисервисная платформа на VPS/VDS: edge, приложения, данные, ИИ-контур, observability, BI. Секреты хранятся вне git (.env / GitHub Secrets).",
+      "documentation" : { },
+      "id" : "7",
+      "name" : "alexsoft",
+      "properties" : {
+        "structurizr.dsl.identifier" : "alexsoft"
+      },
+      "relationships" : [ {
+        "description" : "Вызовы LLM (только через AI Gateway)",
+        "destinationId" : "3",
+        "id" : "45",
+        "sourceId" : "7",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Embeddings (только через AI Gateway)",
+        "destinationId" : "4",
+        "id" : "46",
+        "sourceId" : "7",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Software System"
+    } ]
+  },
+  "name" : "alexsoft",
+  "properties" : {
+    "structurizr.inspection.error" : "76",
+    "structurizr.dsl" : "d29ya3NwYWNlICJhbGV4c29mdCIgIlBlcnNvbmFsIEVjb3N5c3RlbSBMYWIg4oCUINGG0LXQu9C10LLQsNGPINCw0YDRhdC40YLQtdC60YLRg9GA0LAgKEM0IEwx4oCTTDMpIiB7CgogICAgIWlkZW50aWZpZXJzIGhpZXJhcmNoaWNhbAoKICAgIG1vZGVsIHsKICAgICAgICB1c2VyID0gcGVyc29uICLQn9C+0LvRjNC30L7QstCw0YLQtdC70YwiICLQm9C10L3QtNC40L3QsyAo0LHQtdC3INCy0YXQvtC00LApOyDQv9C+0YHQu9C1INC70L7Qs9C40L3QsCDigJQg0LvQuNGH0L3Ri9C5INC60LDQsdC40L3QtdGCOiDRgdC/0LjRgdC+0Log0LDQs9C10L3RgtC+0LIsIFEmQSDQv9C+INC/0YDQvtC10LrRgtGDICjQkdCaMSkuIgogICAgICAgIGFkbWluID0gcGVyc29uICLQkNC00LzQuNC90LjRgdGC0YDQsNGC0L7RgCIgItCS0LvQsNC00LXQu9C10YYg0L/Qu9Cw0YLRhNC+0YDQvNGLOiDQsNC00LzQuNC9LdC/0LDQvdC10LvRjCDQsiDQutCw0LHQuNC90LXRgtC1LCDRgNCw0LfRgNCw0LHQvtGC0LrQsCwg0LTQtdC/0LvQvtC5LCDRjdC60YHQv9C70YPQsNGC0LDRhtC40Y8sIEJJINC4INC80LXRgtGA0LjQutC4LiIKCiAgICAgICAgbGxtUHJvdmlkZXJzID0gc29mdHdhcmVTeXN0ZW0gItCY0Jgg0LzQvtC00LXQu9C4IiAi0J7QsdC70LDRh9C90YvQtSDQvNC+0LTQtdC70LggRGVlcFNlZWssIFF3ZW4sIENoYXRHUFQsIENsYXVkZSwgR2VtaW5pLiIgIkV4dGVybmFsIgogICAgICAgIGVtYmVkZGluZ01vZGVsID0gc29mdHdhcmVTeXN0ZW0gIkVtYmVkZGluZyIgInRleHQtZW1iZWRkaW5nLTMtc21hbGwgKNC+0LHQu9Cw0YfQvdCw0Y8pOyDQstGL0LfRi9Cy0LDQtdGC0YHRjyDRgtC+0LvRjNC60L4g0YfQtdGA0LXQtyBBSSBHYXRld2F5LiIgIkV4dGVybmFsIgogICAgICAgIGN1cnNvciA9IHNvZnR3YXJlU3lzdGVtICJDdXJzb3IiICJJREUg0L3QsCDQvdC+0YPRgtCx0YPQutC1OiDQuNC30LzQtdC90LXQvdC40LUg0LrQvtC00LAg0YbQtdC70LXQstC+0Lkg0L/Qu9Cw0YLRhNC+0YDQvNGLLiIgIkV4dGVybmFsIgogICAgICAgIGdpdGh1YiA9IHNvZnR3YXJlU3lzdGVtICJHaXRIdWIiICLQnNC+0L3QvtGA0LXQv9C+0LfQuNGC0L7RgNC40Lkg0LggR2l0SHViIEFjdGlvbnMgKENJL0NEKTsg0YHQtdC60YDQtdGC0YsgQ0kg0LIgR2l0SHViIFNlY3JldHMsINC90LUg0LIgZ2l0LiIgIkV4dGVybmFsIgoKICAgICAgICBhbGV4c29mdCA9IHNvZnR3YXJlU3lzdGVtICJhbGV4c29mdCIgItCf0LXRgNGB0L7QvdCw0LvRjNC90LDRjyDQvNGD0LvRjNGC0LjRgdC10YDQstC40YHQvdCw0Y8g0L/Qu9Cw0YLRhNC+0YDQvNCwINC90LAgVlBTL1ZEUzogZWRnZSwg0L/RgNC40LvQvtC20LXQvdC40Y8sINC00LDQvdC90YvQtSwg0JjQmC3QutC+0L3RgtGD0YAsIG9ic2VydmFiaWxpdHksIEJJLiDQodC10LrRgNC10YLRiyDRhdGA0LDQvdGP0YLRgdGPINCy0L3QtSBnaXQgKC5lbnYgLyBHaXRIdWIgU2VjcmV0cykuIiB7CgogICAgICAgICAgICBlZGdlID0gY29udGFpbmVyICJFZGdlIiAiQVBJIEdhdGV3YXkgLyDQstC10LEt0YHQtdGA0LLQtdGAOiBUTFMsINGA0LDQt9C00LDRh9CwINGB0YLQsNGC0LjQutC4INC70LXQvdC00LjQvdCz0LAg0Lgg0LjQs9GALCByZXZlcnNlIHByb3h5INC90LAg0LrQsNCx0LjQvdC10YIgKC9hcHAsIC9hcGkpINC4INC90LAg0YHRgtGA0LDQvdC40YbRgyDQstGF0L7QtNCwIElBTS4gSldUINGB0LDQvCDQvdC1INC/0YDQvtCy0LXRgNGP0LXRgiAoQURSLTAwMTkpLiIgIk5naW54IiB7CiAgICAgICAgICAgICAgICByZXZlcnNlUHJveHkgPSBjb21wb25lbnQgIlJldmVyc2UgcHJveHkgLyBUTFMiICLQotC10YDQvNC40L3QsNGG0LjRjyBIVFRQUywg0LzQsNGA0YjRgNGD0YLRiyAvYXBwLCAvYXBpINC6INC60LDQsdC40L3QtdGC0YMsINCy0YXQvtC0INC6IElBTS4iICJOZ2lueCIKICAgICAgICAgICAgICAgIHN0YXRpY1NlcnZlID0gY29tcG9uZW50ICLQoNCw0LfQtNCw0YfQsCDRgdGC0LDRgtC40LrQuCIgItCe0YLQtNCw0YfQsCDQs9C+0YLQvtCy0YvRhSDRhNCw0LnQu9C+0LIg0LvQtdC90LTQuNC90LPQsCwg0L/QvtGA0YLRhNC+0LvQuNC+INC4INC40LPRgCDRgSDQtNC40YHQutCwLiIgIk5naW54IgogICAgICAgICAgICB9CgogICAgICAgICAgICBpYW0gPSBjb250YWluZXIgIklBTSIgItCQ0YPRgtC10L3RgtC40YTQuNC60LDRhtC40Y8g0Lgg0LDQstGC0L7RgNC40LfQsNGG0LjRjyAoT0lEQyk6INCy0YXQvtC0LCDQs9GA0YPQv9C/0YsgdXNlciAvIGFkbWluLCDQstGL0LTQsNGH0LAgSldULiIgIkF1dGhlbnRpayIKCiAgICAgICAgICAgIGxhbmRpbmcgPSBjb250YWluZXIgIkZyb250ZW5kINC70LXQvdC00LjQvdCz0LAg0Lgg0LjQs9GAIiAi0JvQtdC90LTQuNC90LMsINC/0L7RgNGC0YTQvtC70LjQviwg0LjQs9GA0YsuINCh0YLQsNGC0LjQutCwIChTU0cpLCDQsdC10Lcg0LLRhdC+0LTQsCDQuCDQsdC10Lcg0YHQtdGA0LLQtdGA0L3QvtCz0L4g0L/RgNC+0YbQtdGB0YHQsDog0YDQsNC30LTQsNGR0YIgRWRnZS4iICJOZXh0LmpzIChvdXRwdXQ6IGV4cG9ydCkiCgogICAgICAgICAgICBjYWJpbmV0ID0gY29udGFpbmVyICJGcm9udGVuZCDQutCw0LHQuNC90LXRgtCwIiAi0JvQuNGH0L3Ri9C5INC60LDQsdC40L3QtdGCINC4INCw0LTQvNC40L0t0L/QsNC90LXQu9GMOiDQstGF0L7QtCDRh9C10YDQtdC3IElBTSwg0YHQv9C40YHQvtC6INCw0LPQtdC90YLQvtCyLCDRh9Cw0YIsINGD0L/RgNCw0LLQu9C10L3QuNC1LiBTU1IgKE5vZGUpINC4IEJGRjog0YLQvtC60LXQvdGLINC+0YHRgtCw0Y7RgtGB0Y8g0L3QsCDRgdC10YDQstC10YDQtSwg0LIg0LHRgNCw0YPQt9C10YAg0LjQtNGR0YIgY29va2llINGB0LXRgdGB0LjQuC4iICJOZXh0LmpzIChTU1IpIgoKICAgICAgICAgICAgYnVzaW5lc3NMb2dpYyA9IGNvbnRhaW5lciAiQnVzaW5lc3MgTG9naWMiICJSRVNUIEFQSSDQtNC70Y8g0LrQsNCx0LjQvdC10YLQsDog0L/RgNC+0LLQtdGA0LrQsCBKV1QgKEpXS1MgSUFNKSDQuCDRgNC+0LvQtdC5IHVzZXIgLyBhZG1pbiwg0YHQv9C40YHQvtC6INCw0LPQtdC90YLQvtCyLCDQt9Cw0L/Rg9GB0LogUSZBLCDRgdGC0LDRgtGD0YEgKFNTRSk7INC/0YPQsdC70LjQutCw0YbQuNGPINC30LDQv9GD0YHQutC+0LIg0LIgUmFiYml0TVE7INCR0JQsINGE0LDQudC70YssINC60Y3RiC4iICJGYXN0QVBJIChQeXRob24pIiB7CiAgICAgICAgICAgICAgICBhdXRoeiA9IGNvbXBvbmVudCAiSldUINC4INGA0L7Qu9C4IiAi0J/RgNC+0LLQtdGA0LrQsCDQv9C+0LTQv9C40YHQuCBKV1Qg0L/QviBKV0tTIElBTSwgY2xhaW1zLCDRgNC+0LvQuCB1c2VyIC8gYWRtaW4g0LggQUNMINC90LAg0LDQs9C10L3RgtCwINC40LvQuCDQutC+0LvQu9C10LrRhtC40Y4uIiAiRmFzdEFQSSIKICAgICAgICAgICAgICAgIGFwaU9yY2hlc3RyYXRpb24gPSBjb21wb25lbnQgIkFQSSIgIlJFU1QgQVBJOiDRgdC/0LjRgdC+0Log0LDQs9C10L3RgtC+0LIsINC30LDQv9GD0YHQuiBRJkEsINGB0YLQsNGC0YPRgSAoU1NFKS4iICJGYXN0QVBJIgogICAgICAgICAgICAgICAgYWdlbnRSZWdpc3RyeSA9IGNvbXBvbmVudCAi0KDQtdC10YHRgtGAINCw0LPQtdC90YLQvtCyINC4INCw0LTQsNC/0YLQtdGA0YsiICLQoNC10LXRgdGC0YAg0LDQs9C10L3RgtC+0LIgKGJsLmFnZW50cyksINC30LDQv9GD0YHQutC4INC4INGB0L7QsdGL0YLQuNGPIChibC5ydW5zKSwg0LDQtNCw0L/RgtC10YDRiyBlY2hvIC8gTGFuZ0dyYXBoIEFnZW50IFNlcnZlcjsg0YHRg9GC0L7Rh9C90LDRjyDQutCy0L7RgtCwINC30LDQv9GD0YHQutC+0LIg0L3QsCDQv9C+0LvRjNC30L7QstCw0YLQtdC70Y8uIiAiRmFzdEFQSSIKICAgICAgICAgICAgICAgIHdvcmtlcnNCcmlkZ2UgPSBjb21wb25lbnQgIkFzeW5jIGJyaWRnZSIgItCf0YPQsdC70LjQutCw0YbQuNGPINC30LDQv9GD0YHQutCwINCw0LPQtdC90YLQsCDQsiDQsdGA0L7QutC10YAgKHB1Ymxpc2gpOyDQutGN0YggZ2V0L3NldC4iICJGYXN0QVBJIgogICAgICAgICAgICB9CgogICAgICAgICAgICBhZ2VudFBsYXRmb3JtID0gY29udGFpbmVyICJBZ2VudCBQbGF0Zm9ybSIgItCf0LvQsNGC0YTQvtGA0LzRiyDQsNCz0LXQvdGC0L7Qsjog0LrQvtC0INC4IFVJINCx0LXQtyDQutC+0LTQsC4iICJMYW5nR3JhcGggKyBMYW5nU21pdGggU3R1ZGlvICsgTGFuZ0Zsb3c7IERpZnkiIHsKICAgICAgICAgICAgICAgIGNvZGVBZ2VudHMgPSBjb21wb25lbnQgIkNvZGUgYWdlbnRzIiAi0KHQtdGA0YzRkdC30L3Ri9C1INCw0LPQtdC90YLRiyDQutC+0LTQvtC8OiDQs9GA0LDRhCDRgdC+0YHRgtC+0Y/QvdC40LksIElERSwgZHJhZy1hbmQtZHJvcC4iICJMYW5nR3JhcGggKyBMYW5nU21pdGggU3R1ZGlvICsgTGFuZ0Zsb3ciCiAgICAgICAgICAgICAgICB1aUFnZW50cyA9IGNvbXBvbmVudCAiVUkgYWdlbnRzIiAi0JDQs9C10L3RgtGLINGH0LXRgNC10LcgVUkg0LHQtdC3INC60L7QtNCwLiIgIkRpZnkiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHJhZyA9IGNvbnRhaW5lciAiUkFHIiAi0KHQu9C+0Lkg0LfQsNCz0YDRg9C30LrQuCwg0L7Rh9C40YHRgtC60LgsINGH0LDQvdC60LjQvdCz0LAg0LggcmV0cmlldmFsINC/0L4g0LrQvtGA0L/Rg9GB0YMg0L/RgNC+0LXQutGC0LAuIiAiTGxhbWFJbmRleCIgewogICAgICAgICAgICAgICAgaW5nZXN0ID0gY29tcG9uZW50ICJMb2FkIC8gY2xlYW4gLyBjaHVuayIgItCX0LDQs9GA0YPQt9C60LAg0LTQvtC60YPQvNC10L3RgtC+0LIsINC+0YfQuNGB0YLQutCwLCDRh9Cw0L3QutC40L3Qsy4iICJMbGFtYUluZGV4IgogICAgICAgICAgICAgICAgZW1iZWRDbGllbnQgPSBjb21wb25lbnQgIkVtYmVkZGluZyBjbGllbnQiICJRdWVyeSDQuCBpbmRleCBlbWJlZGRpbmdzINGH0LXRgNC10LcgQUkgR2F0ZXdheSAodGV4dC1lbWJlZGRpbmctMy1zbWFsbCkuIiAiTGxhbWFJbmRleCDihpIgTGl0ZUxMTSIKICAgICAgICAgICAgICAgIHJldHJpZXZlID0gY29tcG9uZW50ICJIeWJyaWQgcmV0cmlldmUiICJIeWJyaWQgc2VhcmNoIC8gdXBzZXJ0INCyINCy0LXQutGC0L7RgNC90L7QuSDQkdCULiIgIkxsYW1hSW5kZXggKyBRZHJhbnQiCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGd1YXJkcmFpbHMgPSBjb250YWluZXIgIkd1YXJkcmFpbHMiICLQodC40L3RhdGA0L7QvdC90YvQtSBwcmUvcG9zdCDQv9GA0L7QstC10YDQutC4INCy0L7QutGA0YPQsyDQstGL0LfQvtCy0L7QsiDQvNC+0LTQtdC70LXQuS4iICJMTE0gR3VhcmQiCgogICAgICAgICAgICBhaUdhdGV3YXkgPSBjb250YWluZXIgIkFJIEdhdGV3YXkiICLQldC00LjQvdGL0LkgT3BlbkFJLWNvbXBhdGlibGUg0YjQu9GO0Lcg0Log0L7QsdC70LDRh9C90YvQvCBMTE0g0LggZW1iZWRkaW5nczsg0LXQtNC40L3RgdGC0LLQtdC90L3Ri9C5INC/0YPRgtGMINC6INC/0YDQvtCy0LDQudC00LXRgNCw0LwuIiAiTGl0ZUxMTSIKCiAgICAgICAgICAgIHBvc3RncmVzID0gY29udGFpbmVyICJQb3N0Z3JlU1FMIiAi0KDQtdC70Y/RhtC40L7QvdC90L7QtSDRhdGA0LDQvdC40LvQuNGJ0LUg0L/RgNC40LvQvtC20LXQvdC40Y8g0Lgg0LzQtdGC0LDQtNCw0L3QvdGL0YUuIiAiUG9zdGdyZVNRTCIKICAgICAgICAgICAgbWluaW8gPSBjb250YWluZXIgIk1pbklPIiAi0J7QsdGK0LXQutGC0L3QvtC1INGF0YDQsNC90LjQu9C40YnQtSDQtNC+0LrRg9C80LXQvdGC0L7QsiDQutC+0YDQv9GD0YHQsC4iICJNaW5JTyIKICAgICAgICAgICAgcWRyYW50ID0gY29udGFpbmVyICJRZHJhbnQiICLQktC10LrRgtC+0YDQvdCw0Y8g0JHQlDsgaHlicmlkIHJldHJpZXZhbC4iICJRZHJhbnQiCiAgICAgICAgICAgIHJlZGlzID0gY29udGFpbmVyICJSZWRpcyIgItCa0Y3RiCAo0LIg0YIu0YcuINC+0YLQstC10YLQvtCyIEFJKS4iICJSZWRpcyIKICAgICAgICAgICAgcmFiYml0bXEgPSBjb250YWluZXIgIlJhYmJpdE1RIiAi0JHRgNC+0LrQtdGAINGB0L7QvtCx0YnQtdC90LjQuTog0LfQsNC/0YPRgdC60Lgg0LDQs9C10L3RgtC+0LIgKHB1Ymxpc2gg0L7RgiBCTCwgY29uc3VtZSBydW4g0L3QsCBBZ2VudCBQbGF0Zm9ybSkg4oCUINGG0LXQu9C10LLQvtC5LCDRjdGC0LDQvyA2OyDQvdCwINGN0YLQsNC/0LUgNSBCTCDQstGL0LfRi9Cy0LDQtdGCIEFnZW50IFBsYXRmb3JtINC90LDQv9GA0Y/QvNGD0Y4uIiAiUmFiYml0TVEiCgogICAgICAgICAgICBvYnNlcnZhYmlsaXR5ID0gY29udGFpbmVyICJPYnNlcnZhYmlsaXR5IiAi0JvQvtCz0LgsINC80LXRgtGA0LjQutC4INC40L3RhNGA0Ysg0Lgg0LDQvdCw0LvQuNGC0LjQutCwIExMTS3Qv9GA0L7Qs9C+0L3QvtCyICjQutCw0Log0L3QsCBkcmF3LmlvOiBMb2tpL0FsbG95L1Byb21ldGhldXMvR3JhZmFuYSArIExhbmdTbWl0aCkuIiAiR3JhZmFuYSArIExva2kgKyBQcm9tZXRoZXVzICsgQWxsb3k7IExhbmdTbWl0aCIgewogICAgICAgICAgICAgICAgYWxsb3kgPSBjb21wb25lbnQgIkxvZy9tZXRyaWNzIGFnZW50IiAi0KHQsdC+0YAg0LvQvtCz0L7QsiDQuCDQvNC10YLRgNC40Log0YEg0YXQvtGB0YLQsC/RgdC10YDQstC40YHQvtCyLiIgIkdyYWZhbmEgQWxsb3kiCiAgICAgICAgICAgICAgICBsb2tpID0gY29tcG9uZW50ICJMb2cgc3RvcmUiICLQpdGA0LDQvdC40LvQuNGJ0LUg0LvQvtCz0L7Qsi4iICJMb2tpIgogICAgICAgICAgICAgICAgcHJvbWV0aGV1cyA9IGNvbXBvbmVudCAiTWV0cmljcyBzdG9yZSIgItCh0LHQvtGAINC4INGF0YDQsNC90LXQvdC40LUg0LzQtdGC0YDQuNC6LiIgIlByb21ldGhldXMiCiAgICAgICAgICAgICAgICBncmFmYW5hID0gY29tcG9uZW50ICJEYXNoYm9hcmRzIiAi0JDQvdCw0LvQuNC3INC80LXRgtGA0LjQuiDQuCDQu9C+0LPQvtCyLiIgIkdyYWZhbmEiCiAgICAgICAgICAgICAgICBsYW5nU21pdGggPSBjb21wb25lbnQgIkxMTSB0cmFjZXMgLyBldmFscyIgItCl0YDQsNC90LXQvdC40LUg0Lgg0LzQvtC90LjRgtC+0YDQuNC90LMgTExNLdC/0YDQvtCz0L7QvdC+0LIgKNC90LUg0L/Rg9GC0LDRgtGMINGBIExhbmdTbWl0aCBTdHVkaW8g0LIgQWdlbnQgUGxhdGZvcm0pLiIgIkxhbmdTbWl0aCIKICAgICAgICAgICAgfQoKICAgICAgICAgICAgbWV0YWJhc2UgPSBjb250YWluZXIgIk1ldGFiYXNlIiAiQkkt0LTQsNGI0LHQvtGA0LTRiyDQv9C+0LLQtdGA0YUgUG9zdGdyZVNRTC4iICJNZXRhYmFzZSIKICAgICAgICB9CgogICAgICAgICMgLS0tIEwxIC0tLQogICAgICAgIHVzZXIgLT4gYWxleHNvZnQgIkhUVFBTOiDQu9C10L3QtNC40L3Qsywg0LvQvtCz0LjQvSwg0LrQsNCx0LjQvdC10YIsINCw0LPQtdC90YLRiywgUSZBIgogICAgICAgIGFkbWluIC0+IGFsZXhzb2Z0ICJIVFRQUzog0LDQtNC80LjQvS3Qv9Cw0L3QtdC70Yw7INGN0LrRgdC/0LvRg9Cw0YLQsNGG0LjRjywgQkksINC00LXQv9C70L7QuSDRh9C10YDQtdC3IGRlbGl2ZXJ5IgogICAgICAgIGFkbWluIC0+IGN1cnNvciAi0KDQsNC30YDQsNCx0LDRgtGL0LLQsNC10YIiCiAgICAgICAgY3Vyc29yIC0+IGdpdGh1YiAi0J/Rg9GIINC60L7QtNCwIgogICAgICAgIGdpdGh1YiAtPiBhbGV4c29mdCAiR2l0SHViIEFjdGlvbnMg0LTQtdC/0LvQvtC40YIg0L3QsCBWRFMvVlBTIgogICAgICAgIGFsZXhzb2Z0IC0+IGxsbVByb3ZpZGVycyAi0JLRi9C30L7QstGLIExMTSAo0YLQvtC70YzQutC+INGH0LXRgNC10LcgQUkgR2F0ZXdheSkiCiAgICAgICAgYWxleHNvZnQgLT4gZW1iZWRkaW5nTW9kZWwgIkVtYmVkZGluZ3MgKNGC0L7Qu9GM0LrQviDRh9C10YDQtdC3IEFJIEdhdGV3YXkpIgoKICAgICAgICAjIC0tLSBMMjogcGVyaW1ldGVyICYgYXBwcyAtLS0KICAgICAgICB1c2VyIC0+IGFsZXhzb2Z0LmVkZ2UgIkhUVFBTIgogICAgICAgIGFkbWluIC0+IGFsZXhzb2Z0LmVkZ2UgIkhUVFBTIgogICAgICAgIGFsZXhzb2Z0LmVkZ2UgLT4gYWxleHNvZnQubGFuZGluZyAi0YDQsNC30LTQsNGH0LAg0YTQsNC50LvQvtCyIgogICAgICAgIGFsZXhzb2Z0LmVkZ2UgLT4gYWxleHNvZnQuaWFtICJyZXZlcnNlIHByb3h5OiDQstGF0L7QtCAvIE9JREMiCiAgICAgICAgYWxleHNvZnQuZWRnZSAtPiBhbGV4c29mdC5jYWJpbmV0ICJyZXZlcnNlIHByb3h5IC9hcHAgKCsgL2FwcC9hcGkpIgogICAgICAgIGFsZXhzb2Z0LmNhYmluZXQgLT4gYWxleHNvZnQuaWFtICJPSURDICjQvtCx0LzQtdC9INC60L7QtNCwKSIKICAgICAgICBhbGV4c29mdC5jYWJpbmV0IC0+IGFsZXhzb2Z0LmJ1c2luZXNzTG9naWMgIkhUVFBTIFJFU1QgKCsgU1NFINGB0YLQsNGC0YPRgdCwKSwgSldUIgogICAgICAgIGFsZXhzb2Z0LmJ1c2luZXNzTG9naWMgLT4gYWxleHNvZnQuaWFtICJKV0tTICjQv9GA0L7QstC10YDQutCwIEpXVCkiCgogICAgICAgICMgLS0tIEwyOiBCTCAtLS0KICAgICAgICBhbGV4c29mdC5idXNpbmVzc0xvZ2ljIC0+IGFsZXhzb2Z0LnBvc3RncmVzICJTUUwiCiAgICAgICAgYWxleHNvZnQuYnVzaW5lc3NMb2dpYyAtPiBhbGV4c29mdC5taW5pbyAi0KTQsNC50LvRiyAvINCw0YDRgtC10YTQsNC60YLRiyIKICAgICAgICBhbGV4c29mdC5idXNpbmVzc0xvZ2ljIC0+IGFsZXhzb2Z0LnJlZGlzICJjYWNoZSBnZXQvc2V0IgogICAgICAgIGFsZXhzb2Z0LmJ1c2luZXNzTG9naWMgLT4gYWxleHNvZnQucmFiYml0bXEgInB1Ymxpc2ggKNGG0LXQu9C10LLQvtC5LCDRjdGC0LDQvyA2KSIKICAgICAgICBhbGV4c29mdC5idXNpbmVzc0xvZ2ljIC0+IGFsZXhzb2Z0LmFnZW50UGxhdGZvcm0gIkhUVFBTIHJ1biAo0Y3RgtCw0L8gNSwg0LHQtdC3INCx0YDQvtC60LXRgNCwKSIKICAgICAgICBhbGV4c29mdC5idXNpbmVzc0xvZ2ljIC0+IGFsZXhzb2Z0LmFpR2F0ZXdheSAiSFRUUFMiCgogICAgICAgICMgLS0tIEwyOiBBSSBjb250b3VyIC0tLQogICAgICAgIGFsZXhzb2Z0LnJhYmJpdG1xIC0+IGFsZXhzb2Z0LmFnZW50UGxhdGZvcm0gImNvbnN1bWUgcnVuICjRhtC10LvQtdCy0L7QuSwg0Y3RgtCw0L8gNikiCiAgICAgICAgYWxleHNvZnQuYWdlbnRQbGF0Zm9ybSAtPiBhbGV4c29mdC5yYWcgIkhUVFBTIHNlYXJjaC9yZXRyaWV2ZSIKICAgICAgICBhbGV4c29mdC5hZ2VudFBsYXRmb3JtIC0+IGFsZXhzb2Z0Lmd1YXJkcmFpbHMgInN5bmMgcHJlL3Bvc3QgY2hlY2siCiAgICAgICAgYWxleHNvZnQuYWdlbnRQbGF0Zm9ybSAtPiBhbGV4c29mdC5haUdhdGV3YXkgIk9wZW5BSS1jb21wYXRpYmxlIEhUVFBTIgogICAgICAgIGFsZXhzb2Z0LnJhZyAtPiBhbGV4c29mdC5ndWFyZHJhaWxzICJzeW5jIgogICAgICAgIGFsZXhzb2Z0LnJhZyAtPiBhbGV4c29mdC5haUdhdGV3YXkgImVtYmVkZGluZ3MgKyBMTE0iCiAgICAgICAgYWxleHNvZnQuZ3VhcmRyYWlscyAtPiBhbGV4c29mdC5haUdhdGV3YXkgIk9wZW5BSS1jb21wYXRpYmxlIEhUVFBTIgogICAgICAgIGFsZXhzb2Z0LmFpR2F0ZXdheSAtPiBsbG1Qcm92aWRlcnMgIkhUVFBTICsg0LrQu9GO0Ycg0L/RgNC+0LLQsNC50LTQtdGA0LAiCiAgICAgICAgYWxleHNvZnQuYWlHYXRld2F5IC0+IGVtYmVkZGluZ01vZGVsICJIVFRQUyArINC60LvRjtGHINC/0YDQvtCy0LDQudC00LXRgNCwIgogICAgICAgIGFsZXhzb2Z0LmFpR2F0ZXdheSAtPiBhbGV4c29mdC5vYnNlcnZhYmlsaXR5ICJMaXRlTExNINC/0LjRiNC10YIg0YLRgNC10LnRgSAoTGFuZ1NtaXRoKSIKICAgICAgICBhbGV4c29mdC5hZ2VudFBsYXRmb3JtIC0+IGFsZXhzb2Z0Lm9ic2VydmFiaWxpdHkgItCz0YDQsNGELCDQuNC90YHRgtGA0YPQvNC10L3RgtGLLCDQvtGI0LjQsdC60Lgg0YjQsNCz0L7QsiAoTGFuZ1NtaXRoKSIKICAgICAgICBhbGV4c29mdC5haUdhdGV3YXkgLT4gYWxleHNvZnQucmVkaXMgIkxMTSByZXNwb25zZSBjYWNoZSAoc3luYykiCgogICAgICAgIGFsZXhzb2Z0LnJhZyAtPiBhbGV4c29mdC5taW5pbyAicmVhZCBkb2N1bWVudHMiCiAgICAgICAgYWxleHNvZnQucmFnIC0+IGFsZXhzb2Z0LnFkcmFudCAidXBzZXJ0IC8gc2VhcmNoIgoKICAgICAgICAjIC0tLSBMMjogQkkgJiBvYnNlcnZhYmlsaXR5IC0tLQogICAgICAgIGFsZXhzb2Z0Lm1ldGFiYXNlIC0+IGFsZXhzb2Z0LnBvc3RncmVzICJyZWFkLW9ubHkgU1FMIgogICAgICAgIGFkbWluIC0+IGFsZXhzb2Z0Lm1ldGFiYXNlICLQlNCw0YjQsdC+0YDQtNGLIEJJIgogICAgICAgIGFkbWluIC0+IGFsZXhzb2Z0Lm9ic2VydmFiaWxpdHkgItCU0LDRiNCx0L7RgNC00Ysg0Lgg0LDQu9C10YDRgtGLIgogICAgICAgIGFsZXhzb2Z0LmVkZ2UgLT4gYWxleHNvZnQub2JzZXJ2YWJpbGl0eSAi0JzQtdGC0YDQuNC60Lgg0Lgg0LvQvtCz0LgiCiAgICAgICAgYWxleHNvZnQuY2FiaW5ldCAtPiBhbGV4c29mdC5vYnNlcnZhYmlsaXR5ICLQnNC10YLRgNC40LrQuCDQuCDQu9C+0LPQuCIKICAgICAgICBhbGV4c29mdC5idXNpbmVzc0xvZ2ljIC0+IGFsZXhzb2Z0Lm9ic2VydmFiaWxpdHkgItCc0LXRgtGA0LjQutC4INC4INC70L7Qs9C4IgogICAgICAgIGFsZXhzb2Z0LmFnZW50UGxhdGZvcm0gLT4gYWxleHNvZnQub2JzZXJ2YWJpbGl0eSAi0JzQtdGC0YDQuNC60Lgg0Lgg0LvQvtCz0LgiCiAgICAgICAgYWxleHNvZnQucmFnIC0+IGFsZXhzb2Z0Lm9ic2VydmFiaWxpdHkgItCc0LXRgtGA0LjQutC4INC4INC70L7Qs9C4IgogICAgICAgIGFsZXhzb2Z0LmFpR2F0ZXdheSAtPiBhbGV4c29mdC5vYnNlcnZhYmlsaXR5ICLQnNC10YLRgNC40LrQuCDQuCDQu9C+0LPQuCIKICAgICAgICBhbGV4c29mdC5wb3N0Z3JlcyAtPiBhbGV4c29mdC5vYnNlcnZhYmlsaXR5ICLQnNC10YLRgNC40LrQuCDQuCDQu9C+0LPQuCIKICAgICAgICBhbGV4c29mdC5taW5pbyAtPiBhbGV4c29mdC5vYnNlcnZhYmlsaXR5ICLQnNC10YLRgNC40LrQuCDQuCDQu9C+0LPQuCIKICAgICAgICBhbGV4c29mdC5xZHJhbnQgLT4gYWxleHNvZnQub2JzZXJ2YWJpbGl0eSAi0JzQtdGC0YDQuNC60Lgg0Lgg0LvQvtCz0LgiCiAgICAgICAgYWxleHNvZnQucmVkaXMgLT4gYWxleHNvZnQub2JzZXJ2YWJpbGl0eSAi0JzQtdGC0YDQuNC60Lgg0Lgg0LvQvtCz0LgiCiAgICAgICAgYWxleHNvZnQucmFiYml0bXEgLT4gYWxleHNvZnQub2JzZXJ2YWJpbGl0eSAi0JzQtdGC0YDQuNC60Lgg0Lgg0LvQvtCz0LgiCgogICAgICAgICMgLS0tIEwzIHJlbGF0aW9uc2hpcHMgLS0tCiAgICAgICAgYWxleHNvZnQuZWRnZS5zdGF0aWNTZXJ2ZSAtPiBhbGV4c29mdC5sYW5kaW5nICLRgNCw0LfQtNCw0YfQsCDRhNCw0LnQu9C+0LIiCiAgICAgICAgYWxleHNvZnQuZWRnZS5yZXZlcnNlUHJveHkgLT4gYWxleHNvZnQuY2FiaW5ldCAicmV2ZXJzZSBwcm94eSAvYXBwICgrIC9hcHAvYXBpKSIKICAgICAgICBhbGV4c29mdC5lZGdlLnJldmVyc2VQcm94eSAtPiBhbGV4c29mdC5pYW0gInJldmVyc2UgcHJveHk6INCy0YXQvtC0IC8gT0lEQyIKCiAgICAgICAgYWxleHNvZnQuYnVzaW5lc3NMb2dpYy5hdXRoeiAtPiBhbGV4c29mdC5pYW0gIkpXS1MgKNC/0YDQvtCy0LXRgNC60LAgSldUKSIKICAgICAgICBhbGV4c29mdC5idXNpbmVzc0xvZ2ljLmFwaU9yY2hlc3RyYXRpb24gLT4gYWxleHNvZnQucG9zdGdyZXMgIlNRTCIKICAgICAgICBhbGV4c29mdC5idXNpbmVzc0xvZ2ljLmFwaU9yY2hlc3RyYXRpb24gLT4gYWxleHNvZnQubWluaW8gItCk0LDQudC70YsgLyDQsNGA0YLQtdGE0LDQutGC0YsiCiAgICAgICAgYWxleHNvZnQuYnVzaW5lc3NMb2dpYy5hcGlPcmNoZXN0cmF0aW9uIC0+IGFsZXhzb2Z0LmJ1c2luZXNzTG9naWMuYWdlbnRSZWdpc3RyeSAi0LfQsNC/0YPRgdC6INCw0LPQtdC90YLQsCwg0LrQstC+0YLQsCIKICAgICAgICBhbGV4c29mdC5idXNpbmVzc0xvZ2ljLmFnZW50UmVnaXN0cnkgLT4gYWxleHNvZnQucG9zdGdyZXMgIlNRTCAo0YHRhdC10LzQsCBibCkiCiAgICAgICAgYWxleHNvZnQuYnVzaW5lc3NMb2dpYy5hZ2VudFJlZ2lzdHJ5IC0+IGFsZXhzb2Z0LmFnZW50UGxhdGZvcm0gIkhUVFBTIHJ1biAo0Y3RgtCw0L8gNSwg0LHQtdC3INCx0YDQvtC60LXRgNCwKSIKICAgICAgICBhbGV4c29mdC5idXNpbmVzc0xvZ2ljLndvcmtlcnNCcmlkZ2UgLT4gYWxleHNvZnQucmFiYml0bXEgInB1Ymxpc2giCiAgICAgICAgYWxleHNvZnQuYnVzaW5lc3NMb2dpYy53b3JrZXJzQnJpZGdlIC0+IGFsZXhzb2Z0LnJlZGlzICJjYWNoZSBnZXQvc2V0IgoKICAgICAgICBhbGV4c29mdC5hZ2VudFBsYXRmb3JtLmNvZGVBZ2VudHMgLT4gYWxleHNvZnQucmFnICJyZXRyaWV2ZSIKICAgICAgICBhbGV4c29mdC5hZ2VudFBsYXRmb3JtLnVpQWdlbnRzIC0+IGFsZXhzb2Z0LnJhZyAicmV0cmlldmUiCiAgICAgICAgYWxleHNvZnQuYWdlbnRQbGF0Zm9ybS5jb2RlQWdlbnRzIC0+IGFsZXhzb2Z0Lmd1YXJkcmFpbHMgInByZS9wb3N0IgogICAgICAgIGFsZXhzb2Z0LmFnZW50UGxhdGZvcm0udWlBZ2VudHMgLT4gYWxleHNvZnQuZ3VhcmRyYWlscyAicHJlL3Bvc3QiCgogICAgICAgIGFsZXhzb2Z0LnJhZy5pbmdlc3QgLT4gYWxleHNvZnQubWluaW8gInJlYWQgZG9jdW1lbnRzIgogICAgICAgIGFsZXhzb2Z0LnJhZy5lbWJlZENsaWVudCAtPiBhbGV4c29mdC5haUdhdGV3YXkgImVtYmVkZGluZ3MgKyBMTE0iCiAgICAgICAgYWxleHNvZnQucmFnLnJldHJpZXZlIC0+IGFsZXhzb2Z0LnFkcmFudCAiaHlicmlkIHVwc2VydCAvIHNlYXJjaCIKCiAgICAgICAgYWxleHNvZnQub2JzZXJ2YWJpbGl0eS5hbGxveSAtPiBhbGV4c29mdC5vYnNlcnZhYmlsaXR5Lmxva2kgItCf0LjRiNC10YIg0LvQvtCz0LgiCiAgICAgICAgYWxleHNvZnQub2JzZXJ2YWJpbGl0eS5hbGxveSAtPiBhbGV4c29mdC5vYnNlcnZhYmlsaXR5LnByb21ldGhldXMgItCh0LrRgNC10LnQvyAvIHJlbW90ZSB3cml0ZSIKICAgICAgICBhbGV4c29mdC5vYnNlcnZhYmlsaXR5LmdyYWZhbmEgLT4gYWxleHNvZnQub2JzZXJ2YWJpbGl0eS5sb2tpICLQl9Cw0L/RgNC+0YHRiyDQu9C+0LPQvtCyIgogICAgICAgIGFsZXhzb2Z0Lm9ic2VydmFiaWxpdHkuZ3JhZmFuYSAtPiBhbGV4c29mdC5vYnNlcnZhYmlsaXR5LnByb21ldGhldXMgItCX0LDQv9GA0L7RgdGLINC80LXRgtGA0LjQuiIKICAgICAgICBhbGV4c29mdC5haUdhdGV3YXkgLT4gYWxleHNvZnQub2JzZXJ2YWJpbGl0eS5sYW5nU21pdGggIkxpdGVMTE0g0L/QuNGI0LXRgiDRgtGA0LXQudGBIgogICAgICAgIGFsZXhzb2Z0LmFnZW50UGxhdGZvcm0gLT4gYWxleHNvZnQub2JzZXJ2YWJpbGl0eS5sYW5nU21pdGggItCi0YDQtdC50YHRiyDQsNCz0LXQvdGC0L3Ri9GFINC/0YDQvtCz0L7QvdC+0LIiCiAgICB9CgogICAgdmlld3MgewogICAgICAgIHN5c3RlbUxhbmRzY2FwZSAiU3lzdGVtTGFuZHNjYXBlIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0IGxyCiAgICAgICAgICAgIGRlc2NyaXB0aW9uICJDNCDigJQgbGFuZHNjYXBlINGG0LXQu9C10LLQvtC5INGN0LrQvtGB0LjRgdGC0LXQvNGLIGFsZXhzb2Z0IChkcmF3LmlvIC8gQURSLTAwMTUpLiIKICAgICAgICB9CgogICAgICAgIHN5c3RlbUNvbnRleHQgYWxleHNvZnQgIlN5c3RlbUNvbnRleHQiIHsKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9MYXlvdXQgbHIKICAgICAgICAgICAgZGVzY3JpcHRpb24gIkM0IExldmVsIDEg4oCUINGB0LjRgdGC0LXQvNC90YvQuSDQutC+0L3RgtC10LrRgdGCINGG0LXQu9C10LLQvtC5INCw0YDRhdC40YLQtdC60YLRg9GA0YsuIgogICAgICAgIH0KCiAgICAgICAgY29udGFpbmVyIGFsZXhzb2Z0ICJDb250YWluZXJzIiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0IHRiCiAgICAgICAgICAgIGRlc2NyaXB0aW9uICJDNCBMZXZlbCAyIOKAlCDQutC+0L3RgtC10LnQvdC10YDRiyDRhtC10LvQtdCy0L7QuSDQsNGA0YXQuNGC0LXQutGC0YPRgNGLIChhcmNoaXRlY3R1cmUtaW4tZHJhd2lvKS4iCiAgICAgICAgfQoKICAgICAgICBjb21wb25lbnQgYWxleHNvZnQuZWRnZSAiQ29tcG9uZW50c0VkZ2UiIHsKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9MYXlvdXQgdGIKICAgICAgICAgICAgZGVzY3JpcHRpb24gIkM0IExldmVsIDMg4oCUIEVkZ2UgKE5naW54KTog0YHRgtCw0YLQuNC60LAg0LggcmV2ZXJzZSBwcm94eSwg0LHQtdC3INC/0YDQvtCy0LXRgNC60LggSldULiIKICAgICAgICB9CgogICAgICAgIGNvbXBvbmVudCBhbGV4c29mdC5idXNpbmVzc0xvZ2ljICJDb21wb25lbnRzQnVzaW5lc3NMb2dpYyIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dCB0YgogICAgICAgICAgICBkZXNjcmlwdGlvbiAiQzQgTGV2ZWwgMyDigJQgQnVzaW5lc3MgTG9naWMgKEZhc3RBUEkpOiBKV1Qg0Lgg0YDQvtC70LgsIEFQSSwgYXN5bmMgYnJpZGdlLiIKICAgICAgICB9CgogICAgICAgIGNvbXBvbmVudCBhbGV4c29mdC5hZ2VudFBsYXRmb3JtICJDb21wb25lbnRzQWdlbnRQbGF0Zm9ybSIgewogICAgICAgICAgICBpbmNsdWRlICoKICAgICAgICAgICAgYXV0b0xheW91dCB0YgogICAgICAgICAgICBkZXNjcmlwdGlvbiAiQzQgTGV2ZWwgMyDigJQgQWdlbnQgUGxhdGZvcm0gKExhbmdHcmFwaCBzdGFjayArIERpZnkpLiIKICAgICAgICB9CgogICAgICAgIGNvbXBvbmVudCBhbGV4c29mdC5yYWcgIkNvbXBvbmVudHNSQUciIHsKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9MYXlvdXQgdGIKICAgICAgICAgICAgZGVzY3JpcHRpb24gIkM0IExldmVsIDMg4oCUIFJBRyAoTGxhbWFJbmRleCkuIgogICAgICAgIH0KCiAgICAgICAgY29tcG9uZW50IGFsZXhzb2Z0Lm9ic2VydmFiaWxpdHkgIkNvbXBvbmVudHNPYnNlcnZhYmlsaXR5IiB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0IHRiCiAgICAgICAgICAgIGRlc2NyaXB0aW9uICJDNCBMZXZlbCAzIOKAlCBPYnNlcnZhYmlsaXR5IChBbGxveSwgTG9raSwgUHJvbWV0aGV1cywgR3JhZmFuYSkuIgogICAgICAgIH0KCiAgICAgICAgc3R5bGVzIHsKICAgICAgICAgICAgZWxlbWVudCAiUGVyc29uIiB7CiAgICAgICAgICAgICAgICBzaGFwZSBQZXJzb24KICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzA4NDI3YgogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIlNvZnR3YXJlIFN5c3RlbSIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjMTE2OGJkCiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiQ29udGFpbmVyIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM0MzhkZDUKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJDb21wb25lbnQiIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzg1YmJmMAogICAgICAgICAgICAgICAgY29sb3IgIzAwMDAwMAogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkV4dGVybmFsIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM5OTk5OTkKICAgICAgICAgICAgICAgIGNvbG9yICNmZmZmZmYKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH0KfQ==",
+    "structurizr.inspection.info" : "0",
+    "structurizr.inspection.ignore" : "0",
+    "structurizr.inspection.warning" : "0"
+  },
+  "views" : {
+    "componentViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "8",
+      "description" : "C4 Level 3 — Edge (Nginx): статика и reverse proxy, без проверки JWT.",
+      "elements" : [ {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "12",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "ComponentsEdge",
+      "name" : "Component View: alexsoft - Edge",
+      "order" : 4,
+      "relationships" : [ {
+        "id" : "52"
+      }, {
+        "id" : "89"
+      }, {
+        "id" : "90"
+      }, {
+        "id" : "91"
+      } ]
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "14",
+      "description" : "C4 Level 3 — Business Logic (FastAPI): JWT и роли, API, async bridge.",
+      "elements" : [ {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "15",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "16",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "17",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "18",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "28",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "29",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "31",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "32",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "ComponentsBusinessLogic",
+      "name" : "Component View: alexsoft - Business Logic",
+      "order" : 5,
+      "relationships" : [ {
+        "id" : "61"
+      }, {
+        "id" : "92"
+      }, {
+        "id" : "93"
+      }, {
+        "id" : "94"
+      }, {
+        "id" : "95"
+      }, {
+        "id" : "96"
+      }, {
+        "id" : "97"
+      }, {
+        "id" : "98"
+      }, {
+        "id" : "99"
+      } ]
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "19",
+      "description" : "C4 Level 3 — Agent Platform (LangGraph stack + Dify).",
+      "elements" : [ {
+        "id" : "20",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "21",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "22",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "26",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "ComponentsAgentPlatform",
+      "name" : "Component View: alexsoft - Agent Platform",
+      "order" : 6,
+      "relationships" : [ {
+        "id" : "100"
+      }, {
+        "id" : "101"
+      }, {
+        "id" : "102"
+      }, {
+        "id" : "103"
+      }, {
+        "id" : "65"
+      } ]
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "22",
+      "description" : "C4 Level 3 — RAG (LlamaIndex).",
+      "elements" : [ {
+        "id" : "23",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "24",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "25",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "27",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "29",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "30",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "ComponentsRAG",
+      "name" : "Component View: alexsoft - RAG",
+      "order" : 7,
+      "relationships" : [ {
+        "id" : "104"
+      }, {
+        "id" : "105"
+      }, {
+        "id" : "106"
+      } ]
+    }, {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "containerId" : "33",
+      "description" : "C4 Level 3 — Observability (Alloy, Loki, Prometheus, Grafana).",
+      "elements" : [ {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "27",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "34",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "35",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "36",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "37",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "38",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalContainerBoundariesVisible" : false,
+      "key" : "ComponentsObservability",
+      "name" : "Component View: alexsoft - Observability",
+      "order" : 8,
+      "relationships" : [ {
+        "id" : "107"
+      }, {
+        "id" : "108"
+      }, {
+        "id" : "109"
+      }, {
+        "id" : "110"
+      }, {
+        "id" : "111"
+      }, {
+        "id" : "112"
+      }, {
+        "id" : "64"
+      } ]
+    } ],
+    "configuration" : {
+      "styles" : {
+        "elements" : [ {
+          "background" : "#85bbf0",
+          "color" : "#000000",
+          "tag" : "Component"
+        }, {
+          "background" : "#438dd5",
+          "color" : "#ffffff",
+          "tag" : "Container"
+        }, {
+          "background" : "#999999",
+          "color" : "#ffffff",
+          "tag" : "External"
+        }, {
+          "background" : "#08427b",
+          "color" : "#ffffff",
+          "shape" : "Person",
+          "tag" : "Person"
+        }, {
+          "background" : "#1168bd",
+          "color" : "#ffffff",
+          "tag" : "Software System"
+        } ]
+      },
+      "terminology" : { }
+    },
+    "containerViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "C4 Level 2 — контейнеры целевой архитектуры (architecture-in-drawio).",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "8",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "11",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "12",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "14",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "19",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "22",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "26",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "27",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "28",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "29",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "30",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "31",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "32",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "33",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "39",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "key" : "Containers",
+      "name" : "Container View: alexsoft",
+      "order" : 3,
+      "relationships" : [ {
+        "id" : "47"
+      }, {
+        "id" : "48"
+      }, {
+        "id" : "49"
+      }, {
+        "id" : "50"
+      }, {
+        "id" : "51"
+      }, {
+        "id" : "52"
+      }, {
+        "id" : "53"
+      }, {
+        "id" : "54"
+      }, {
+        "id" : "55"
+      }, {
+        "id" : "56"
+      }, {
+        "id" : "57"
+      }, {
+        "id" : "58"
+      }, {
+        "id" : "59"
+      }, {
+        "id" : "60"
+      }, {
+        "id" : "61"
+      }, {
+        "id" : "62"
+      }, {
+        "id" : "63"
+      }, {
+        "id" : "64"
+      }, {
+        "id" : "65"
+      }, {
+        "id" : "66"
+      }, {
+        "id" : "67"
+      }, {
+        "id" : "68"
+      }, {
+        "id" : "69"
+      }, {
+        "id" : "70"
+      }, {
+        "id" : "71"
+      }, {
+        "id" : "72"
+      }, {
+        "id" : "73"
+      }, {
+        "id" : "74"
+      }, {
+        "id" : "75"
+      }, {
+        "id" : "76"
+      }, {
+        "id" : "77"
+      }, {
+        "id" : "78"
+      }, {
+        "id" : "79"
+      }, {
+        "id" : "80"
+      }, {
+        "id" : "81"
+      }, {
+        "id" : "82"
+      }, {
+        "id" : "83"
+      }, {
+        "id" : "84"
+      }, {
+        "id" : "85"
+      }, {
+        "id" : "86"
+      }, {
+        "id" : "87"
+      }, {
+        "id" : "88"
+      } ],
+      "softwareSystemId" : "7"
+    } ],
+    "systemContextViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "C4 Level 1 — системный контекст целевой архитектуры.",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "key" : "SystemContext",
+      "name" : "System Context View: alexsoft",
+      "order" : 2,
+      "relationships" : [ {
+        "id" : "40"
+      }, {
+        "id" : "41"
+      }, {
+        "id" : "44"
+      }, {
+        "id" : "45"
+      }, {
+        "id" : "46"
+      } ],
+      "softwareSystemId" : "7"
+    } ],
+    "systemLandscapeViews" : [ {
+      "automaticLayout" : {
+        "edgeSeparation" : 50,
+        "nodeSeparation" : 50,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 100,
+        "vertices" : true
+      },
+      "description" : "C4 — landscape целевой экосистемы alexsoft (draw.io / ADR-0015).",
+      "elements" : [ {
+        "id" : "1",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "3",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "4",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "key" : "SystemLandscape",
+      "name" : "System Landscape View",
+      "order" : 1,
+      "relationships" : [ {
+        "id" : "40"
+      }, {
+        "id" : "41"
+      }, {
+        "id" : "42"
+      }, {
+        "id" : "43"
+      }, {
+        "id" : "44"
+      }, {
+        "id" : "45"
+      }, {
+        "id" : "46"
+      } ]
+    } ]
+  }
+}

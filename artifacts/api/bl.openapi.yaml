@@ -1,0 +1,783 @@
+openapi: 3.1.0
+
+info:
+  title: alexsoft BL API
+  version: 0.1.0
+  summary: Контракт Business Logic (apps/api) — кабинет, реестр агентов, запуски, админка.
+  description: |
+    Контракт-первый (contract-first) для сервиса `apps/api` (FastAPI).
+    Источники: ADR-0019 (кабинет SSR/BFF, JWT проверяет FastAPI), ADR-0020 (локальная топология),
+    `artifacts/architecture/c4-l1-l2-l3.dsl`.
+
+    ## Потребитель
+    Единственный клиент — BFF кабинета (`apps/cabinet`). Браузер в BL напрямую не ходит,
+    BL наружу не публикуется.
+
+    ## Безопасность
+    `Authorization: Bearer <JWT Authentik>`. FastAPI проверяет подпись по JWKS Authentik,
+    `iss`, `aud` (client_id приложения `alexsoft-cabinet`), `exp`. Роль выводится из claim `groups`:
+    `alexsoft-users` → `user`, `alexsoft-admins` → `admin` (admin включает права user).
+    Nginx JWT не проверяет.
+
+    ## Агенты
+    Реестр агентов лежит в BL (`bl.agents`). Тип запуска (`kind`): `echo` (заглушка без LLM),
+    `langgraph` (LangGraph Agent Server). Агент БП1 добавляется записью в реестр — контракт не меняется.
+
+    ## Запуски и квота
+    `POST /v1/agents/{agentId}/runs` создаёт запуск и сразу отвечает `202`. Ход выполнения —
+    Server-Sent Events `GET /v1/runs/{runId}/events` (повтор с начала + продолжение до `done`/`error`).
+    На пользователя действует суточная квота запусков; при превышении — `429`.
+
+    ## Соглашения
+    - Версия в пути: `/v1`. Время — RFC 3339 UTC. Идентификаторы запусков — UUID.
+    - Ошибки — `application/problem+json` (RFC 9457).
+    - Корреляция: `X-Request-Id` принимается и возвращается.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+
+servers:
+  - url: http://127.0.0.1:8100
+    description: Локально (Windows, нативно); доступен только кабинету
+
+tags:
+  - name: Health
+  - name: Me
+  - name: Agents
+  - name: Runs
+  - name: Admin
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health/live:
+    get:
+      tags: [Health]
+      operationId: getLiveness
+      summary: Процесс жив
+      security: []
+      responses:
+        "200":
+          description: Сервис запущен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /health/ready:
+    get:
+      tags: [Health]
+      operationId: getReadiness
+      summary: Зависимости доступны (Postgres, JWKS Authentik)
+      security: []
+      responses:
+        "200":
+          description: Готов.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          description: Зависимость недоступна.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /v1/me:
+    get:
+      tags: [Me]
+      operationId: getMe
+      summary: Профиль, роли и остаток квоты текущего пользователя
+      responses:
+        "200":
+          description: Профиль.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/agents:
+    get:
+      tags: [Agents]
+      operationId: listAgents
+      summary: Агенты, доступные пользователю (включённые в реестре)
+      responses:
+        "200":
+          description: Список агентов.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Agent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/agents/{agentId}/runs:
+    post:
+      tags: [Runs]
+      operationId: createRun
+      summary: Запустить агента
+      description: |
+        Создаёт запуск и возвращает его сразу (`202`). Выполнение идёт асинхронно;
+        следите за ним через `GET /v1/runs/{runId}/events`.
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunCreate"
+      responses:
+        "202":
+          description: Запуск принят.
+          headers:
+            X-Quota-Remaining:
+              description: Остаток запусков на сегодня после этого.
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Invalid"
+        "429":
+          $ref: "#/components/responses/QuotaExceeded"
+
+  /v1/runs:
+    get:
+      tags: [Runs]
+      operationId: listRuns
+      summary: История запусков текущего пользователя (новые первыми)
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Страница запусков.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/runs/{runId}:
+    get:
+      tags: [Runs]
+      operationId: getRun
+      summary: Запуск (только свой; админ видит любой)
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "200":
+          description: Запуск.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Run"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/runs/{runId}/events:
+    get:
+      tags: [Runs]
+      operationId: streamRunEvents
+      summary: Ход запуска (SSE)
+      description: |
+        `text/event-stream`. Сначала воспроизводятся накопленные события, затем поток продолжается
+        до терминального события (`done` или `error`), после чего соединение закрывается.
+        Поле `id` события — порядковый номер; `Last-Event-ID` поддерживается для переподключения.
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+        - name: Last-Event-ID
+          in: header
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Поток событий.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  Кадры вида `id: N`, `event: <status|step|message|done|error>`, `data: <json RunEvent.data>`.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/admin/users:
+    get:
+      tags: [Admin]
+      operationId: adminListUsers
+      summary: Пользователи (из Authentik, только чтение)
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Страница пользователей.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "502":
+          $ref: "#/components/responses/Upstream"
+
+  /v1/admin/users/{userId}:
+    patch:
+      tags: [Admin]
+      operationId: adminUpdateUser
+      summary: Деактивировать / активировать пользователя в Authentik
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_active]
+              properties:
+                is_active:
+                  type: boolean
+      responses:
+        "200":
+          description: Обновлённый пользователь.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "502":
+          $ref: "#/components/responses/Upstream"
+
+  /v1/admin/runs:
+    get:
+      tags: [Admin]
+      operationId: adminListRuns
+      summary: Все запуски (фильтры по пользователю, агенту, статусу)
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - name: user_sub
+          in: query
+          schema:
+            type: string
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/RunStatus"
+      responses:
+        "200":
+          description: Страница запусков.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/admin/stats:
+    get:
+      tags: [Admin]
+      operationId: adminStats
+      summary: Сводка по запускам
+      responses:
+        "200":
+          description: Сводка.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stats"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/admin/agents:
+    get:
+      tags: [Admin]
+      operationId: adminListAgents
+      summary: Реестр агентов целиком (включая выключенные)
+      responses:
+        "200":
+          description: Список агентов.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Agent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /v1/admin/agents/{agentId}:
+    patch:
+      tags: [Admin]
+      operationId: adminUpdateAgent
+      summary: Изменить агента в реестре (включить/выключить, название, описание)
+      parameters:
+        - $ref: "#/components/parameters/AgentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentUpdate"
+      responses:
+        "200":
+          description: Обновлённый агент.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/Invalid"
+
+  /v1/admin/settings:
+    get:
+      tags: [Admin]
+      operationId: adminGetSettings
+      summary: Настройки BL (суточная квота)
+      responses:
+        "200":
+          description: Настройки.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      tags: [Admin]
+      operationId: adminPutSettings
+      summary: Изменить настройки BL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Settings"
+      responses:
+        "200":
+          description: Настройки.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/Invalid"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Authentik; подпись проверяется по JWKS на стороне FastAPI (ADR-0019).
+
+  parameters:
+    AgentId:
+      name: agentId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-z0-9][a-z0-9-]{1,62}$"
+    RunId:
+      name: runId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+  responses:
+    Unauthorized:
+      description: Нет или недействителен JWT.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Forbidden:
+      description: Недостаточно прав (нет нужной группы).
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: Не найдено (или чужой запуск).
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Invalid:
+      description: Ошибка валидации.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    QuotaExceeded:
+      description: Суточная квота исчерпана.
+      headers:
+        Retry-After:
+          description: Секунд до сброса квоты (00:00 UTC).
+          schema:
+            type: integer
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    Upstream:
+      description: Внешняя система (Authentik API) недоступна.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        checks:
+          type: object
+          additionalProperties:
+            type: string
+
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        request_id:
+          type: string
+
+    Role:
+      type: string
+      enum: [user, admin]
+
+    Quota:
+      type: object
+      required: [daily_limit, used_today, remaining, resets_at]
+      properties:
+        daily_limit:
+          type: integer
+        used_today:
+          type: integer
+        remaining:
+          type: integer
+        resets_at:
+          type: string
+          format: date-time
+
+    Me:
+      type: object
+      required: [sub, roles, groups, quota]
+      properties:
+        sub:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+        groups:
+          type: array
+          items:
+            type: string
+        quota:
+          $ref: "#/components/schemas/Quota"
+
+    AgentKind:
+      type: string
+      enum: [echo, langgraph]
+
+    Agent:
+      type: object
+      required: [id, title, description, kind, enabled]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        kind:
+          $ref: "#/components/schemas/AgentKind"
+        enabled:
+          type: boolean
+        input_hint:
+          type: string
+          description: Подсказка в поле ввода.
+
+    AgentUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        enabled:
+          type: boolean
+        title:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 1000
+
+    RunCreate:
+      type: object
+      required: [input]
+      properties:
+        input:
+          type: string
+          minLength: 1
+          maxLength: 8000
+        thread_id:
+          type: string
+          description: Продолжить беседу (thread_id предыдущего запуска этого пользователя и агента).
+
+    RunStatus:
+      type: string
+      enum: [queued, running, succeeded, failed]
+
+    Run:
+      type: object
+      required: [id, agent_id, user_sub, status, input, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        agent_id:
+          type: string
+        user_sub:
+          type: string
+        username:
+          type: string
+        status:
+          $ref: "#/components/schemas/RunStatus"
+        input:
+          type: string
+        output:
+          type: [string, "null"]
+        error:
+          type: [string, "null"]
+        thread_id:
+          type: [string, "null"]
+        trace_id:
+          type: [string, "null"]
+          description: Идентификатор трейса (LangSmith / OTel) — критерий успеха БП1.
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: [string, "null"]
+          format: date-time
+        finished_at:
+          type: [string, "null"]
+          format: date-time
+
+    RunPage:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Run"
+        total:
+          type: integer
+
+    RunEventType:
+      type: string
+      enum: [status, step, message, done, error]
+
+    RunEvent:
+      type: object
+      description: Содержимое `data` SSE-кадра (имя кадра — `type`).
+      required: [seq, type, data]
+      properties:
+        seq:
+          type: integer
+        type:
+          $ref: "#/components/schemas/RunEventType"
+        data:
+          type: object
+          description: |
+            status: `{status}`; step: `{name, detail?}`; message: `{content}` (ответ или его часть);
+            done: `{run: Run}`; error: `{message}`.
+          additionalProperties: true
+
+    User:
+      type: object
+      required: [id, username, is_active, groups]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        is_active:
+          type: boolean
+        groups:
+          type: array
+          items:
+            type: string
+        date_joined:
+          type: [string, "null"]
+          format: date-time
+        last_login:
+          type: [string, "null"]
+          format: date-time
+
+    UserPage:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+
+    Stats:
+      type: object
+      required: [runs_total, runs_today, active_users_today, by_agent]
+      properties:
+        runs_total:
+          type: integer
+        runs_today:
+          type: integer
+        failed_today:
+          type: integer
+        active_users_today:
+          type: integer
+        by_agent:
+          type: array
+          items:
+            type: object
+            required: [agent_id, runs]
+            properties:
+              agent_id:
+                type: string
+              runs:
+                type: integer
+
+    Settings:
+      type: object
+      required: [daily_run_quota]
+      properties:
+        daily_run_quota:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Запусков в сутки на пользователя (0 = запуски запрещены).

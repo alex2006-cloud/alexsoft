@@ -1,0 +1,62 @@
+# Authentik for the local alexsoft stack (ADR-0020).
+# Database: native PostgreSQL 16 on the host (db/role "authentik"), reached via host.docker.internal.
+# No Redis (removed in authentik 2025.10). Run through start-authentik.ps1:
+#   docker compose --env-file ..\..\.env -f compose.yml up -d
+name: alexsoft-authentik
+
+x-authentik-env: &authentik-env
+  AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?run infra/authentik/init-env.ps1}
+  AUTHENTIK_POSTGRESQL__HOST: host.docker.internal
+  AUTHENTIK_POSTGRESQL__PORT: ${POSTGRES_PORT:-5432}
+  AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_DB_NAME:-authentik}
+  AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_DB_USER:-authentik}
+  AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_DB_PASSWORD:?run infra/authentik/init-env.ps1}
+  AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+  AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
+  AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
+  # Public URL of Authentik behind the gateway (seeds Tenant.base_url on first start, 2026.8+)
+  AUTHENTIK_WEB__BASE_URL: ${AUTH_PUBLIC_URL:-http://auth.alexsoft.localhost:8000}
+  # Values read by the blueprint (!Env)
+  PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://alexsoft.localhost:8000}
+  AUTH_PUBLIC_URL: ${AUTH_PUBLIC_URL:-http://auth.alexsoft.localhost:8000}
+  OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-alexsoft-cabinet}
+  OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?run infra/authentik/init-env.ps1}
+  AUTHENTIK_BL_TOKEN: ${AUTHENTIK_BL_TOKEN:?run infra/authentik/init-env.ps1}
+
+services:
+  server:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.8.3}
+    command: server
+    restart: unless-stopped
+    environment:
+      <<: *authentik-env
+      # First start only: password of the "akadmin" user
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:-}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@alexsoft.localhost}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:${AUTHENTIK_PORT_HTTP:-9100}:9000"
+      - "127.0.0.1:${AUTHENTIK_PORT_HTTPS:-9143}:9443"
+    shm_size: 512mb
+    volumes:
+      - authentik_data:/data
+      - ./blueprints:/blueprints/custom:ro
+
+  worker:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.8.3}
+    command: worker
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      <<: *authentik-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    shm_size: 512mb
+    volumes:
+      - authentik_data:/data
+      - ./blueprints:/blueprints/custom:ro
+
+volumes:
+  authentik_data:

@@ -1,0 +1,253 @@
+# Authentik blueprint for alexsoft (ADR-0019 / ADR-0020). Applied automatically by the worker
+# (mounted at /blueprints/custom). Idempotent. Values come from environment (see compose.yml):
+#   PUBLIC_SITE_URL, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, AUTHENTIK_BL_TOKEN
+version: 1
+metadata:
+  name: alexsoft - groups, cabinet OIDC, self-registration, BL service account
+entries:
+  # ---------------------------------------------------------------- groups
+  - model: authentik_core.group
+    id: group-users
+    identifiers:
+      name: alexsoft-users
+    attrs:
+      is_superuser: false
+
+  - model: authentik_core.group
+    id: group-admins
+    identifiers:
+      name: alexsoft-admins
+    attrs:
+      is_superuser: false
+
+  # ---------------------------------------------------------------- OIDC provider + application (cabinet)
+  - model: authentik_providers_oauth2.oauth2provider
+    id: provider-cabinet
+    identifiers:
+      name: alexsoft-cabinet
+    attrs:
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      client_type: confidential
+      client_id: !Env [OIDC_CLIENT_ID, alexsoft-cabinet]
+      client_secret: !Env OIDC_CLIENT_SECRET
+      redirect_uris:
+        - matching_mode: strict
+          url: !Format ["%s/app/api/auth/callback", !Env [PUBLIC_SITE_URL, "http://alexsoft.localhost:8000"]]
+        - matching_mode: strict
+          url: !Format ["%s/app", !Env [PUBLIC_SITE_URL, "http://alexsoft.localhost:8000"]]
+        - matching_mode: strict
+          url: !Format ["%s/app/", !Env [PUBLIC_SITE_URL, "http://alexsoft.localhost:8000"]]
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, "authentik Self-signed Certificate"]]
+      sub_mode: user_uuid
+      issuer_mode: per_provider
+      access_token_validity: minutes=10
+      refresh_token_validity: days=30
+      include_claims_in_id_token: true
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
+
+  - model: authentik_core.application
+    id: app-cabinet
+    identifiers:
+      slug: alexsoft-cabinet
+    attrs:
+      name: Кабинет alexsoft
+      provider: !KeyOf provider-cabinet
+      meta_launch_url: !Format ["%s/app", !Env [PUBLIC_SITE_URL, "http://alexsoft.localhost:8000"]]
+      policy_engine_mode: any
+
+  # ---------------------------------------------------------------- self-registration (enrollment flow)
+  - model: authentik_policies_password.passwordpolicy
+    id: policy-password
+    identifiers:
+      name: alexsoft-password-min-length
+    attrs:
+      password_field: password
+      length_min: 8
+      error_message: Пароль должен быть не короче 8 символов.
+
+  - model: authentik_policies_expression.expressionpolicy
+    id: policy-username-unique
+    identifiers:
+      name: alexsoft-username-unique
+    attrs:
+      expression: |
+        from authentik.core.models import User
+        data = request.context.get("prompt_data") or {}
+        username = data.get("username")
+        if username and User.objects.filter(username__iexact=username).exists():
+            ak_message("Это имя пользователя уже занято.")
+            return False
+        return True
+
+  - model: authentik_policies_expression.expressionpolicy
+    id: policy-email-unique
+    identifiers:
+      name: alexsoft-email-unique
+    attrs:
+      expression: |
+        from authentik.core.models import User
+        data = request.context.get("prompt_data") or {}
+        email = data.get("email")
+        if email and User.objects.filter(email__iexact=email).exists():
+            ak_message("Пользователь с таким email уже зарегистрирован.")
+            return False
+        return True
+
+  - model: authentik_stages_prompt.prompt
+    id: prompt-username
+    identifiers:
+      name: alexsoft-enroll-username
+    attrs:
+      field_key: username
+      label: Имя пользователя
+      type: username
+      required: true
+      placeholder: username
+      order: 0
+
+  - model: authentik_stages_prompt.prompt
+    id: prompt-name
+    identifiers:
+      name: alexsoft-enroll-name
+    attrs:
+      field_key: name
+      label: Имя
+      type: text
+      required: true
+      placeholder: Как к вам обращаться
+      order: 1
+
+  - model: authentik_stages_prompt.prompt
+    id: prompt-email
+    identifiers:
+      name: alexsoft-enroll-email
+    attrs:
+      field_key: email
+      label: Email
+      type: email
+      required: true
+      placeholder: name@example.com
+      order: 2
+
+  - model: authentik_stages_prompt.prompt
+    id: prompt-password
+    identifiers:
+      name: alexsoft-enroll-password
+    attrs:
+      field_key: password
+      label: Пароль
+      type: password
+      required: true
+      placeholder: Пароль
+      order: 3
+
+  - model: authentik_stages_prompt.prompt
+    id: prompt-password-repeat
+    identifiers:
+      name: alexsoft-enroll-password-repeat
+    attrs:
+      field_key: password_repeat
+      label: Повторите пароль
+      type: password
+      required: true
+      placeholder: Повторите пароль
+      order: 4
+
+  - model: authentik_stages_prompt.promptstage
+    id: stage-enroll-prompt
+    identifiers:
+      name: alexsoft-enrollment-prompt
+    attrs:
+      fields:
+        - !KeyOf prompt-username
+        - !KeyOf prompt-name
+        - !KeyOf prompt-email
+        - !KeyOf prompt-password
+        - !KeyOf prompt-password-repeat
+      validation_policies:
+        - !KeyOf policy-password
+        - !KeyOf policy-username-unique
+        - !KeyOf policy-email-unique
+
+  - model: authentik_stages_user_write.userwritestage
+    id: stage-enroll-write
+    identifiers:
+      name: alexsoft-enrollment-write
+    attrs:
+      user_creation_mode: always_create
+      create_users_as_inactive: false
+      create_users_group: !KeyOf group-users
+      user_type: internal
+
+  - model: authentik_stages_user_login.userloginstage
+    id: stage-enroll-login
+    identifiers:
+      name: alexsoft-enrollment-login
+    attrs:
+      session_duration: seconds=0
+
+  - model: authentik_flows.flow
+    id: flow-enrollment
+    identifiers:
+      slug: alexsoft-enrollment
+    attrs:
+      name: alexsoft-enrollment
+      title: Регистрация в alexsoft
+      designation: enrollment
+      authentication: require_unauthenticated
+
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf flow-enrollment
+      stage: !KeyOf stage-enroll-prompt
+      order: 10
+
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf flow-enrollment
+      stage: !KeyOf stage-enroll-write
+      order: 20
+
+  - model: authentik_flows.flowstagebinding
+    identifiers:
+      target: !KeyOf flow-enrollment
+      stage: !KeyOf stage-enroll-login
+      order: 30
+
+  # "Need an account? Sign up." link on the login page
+  - model: authentik_stages_identification.identificationstage
+    identifiers:
+      name: default-authentication-identification
+    attrs:
+      # user_fields is required by the serializer when the stage is patched (same as the default blueprint)
+      user_fields:
+        - email
+        - username
+      enrollment_flow: !KeyOf flow-enrollment
+
+  # ---------------------------------------------------------------- BL service account (Authentik API: users)
+  - model: authentik_core.user
+    id: user-bl
+    identifiers:
+      username: alexsoft-bl
+    attrs:
+      name: alexsoft BL service account
+      type: service_account
+      path: goauthentik.io/service-accounts
+      groups:
+        # Least privilege (view/deactivate users only) is a later hardening step; local use for now.
+        - !Find [authentik_core.group, [name, authentik Admins]]
+
+  - model: authentik_core.token
+    identifiers:
+      identifier: alexsoft-bl-api
+    attrs:
+      user: !KeyOf user-bl
+      intent: api
+      expiring: false
+      key: !Env AUTHENTIK_BL_TOKEN

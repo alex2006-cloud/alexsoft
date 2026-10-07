@@ -1,0 +1,29 @@
+# ADR-0020: Локальная топология IAM и gateway — Authentik в Compose с БД в нативном Postgres, нативный Nginx, BL закрыт
+
+- **Статус:** accepted
+- **Дата:** 2026-10-07
+- **Контекст:** По [ADR-0019](0019-cabinet-ssr-bff-authentik.md) нужны Nginx-gateway, Authentik и кабинет **локально сейчас**. Нужно зафиксировать, как это запускается на ноутбуке (Windows), какие порты и хосты, и где живут данные. Ограничения: у Authentik нет нативной сборки под Windows; порт 9000 (значение Authentik по умолчанию) занят MinIO; cookie не различают порты, поэтому сервисы на `localhost:*` делят cookie.
+- **Рассмотренные альтернативы:**
+  - **Authentik нативно в WSL2 из исходников** (Python 3.14, Go, Node, Rust, libxmlsec1…): без поддержки проекта, ручные обновления. Не выбрано.
+  - **Docker Compose со своим Postgres внутри:** проще сеть, но второй Postgres рядом с нативным. Остаётся запасным вариантом, если доступ контейнера к хостовой БД окажется болезненным.
+  - **Всё на `localhost` с разными портами:** cookie Authentik и кабинета пересекаются, схема отличается от прода. Не выбрано.
+- **Решение:**
+  - **Authentik** — Docker Compose в `infra/authentik` (`server` + `worker`; Redis не нужен с версии 2025.10), **БД `authentik` в уже установленном нативном PostgreSQL 16** (образец — LiteLLM). Порт HTTP **9100**, HTTPS **9143**. Конфигурация — blueprints (`infra/authentik/blueprints/`): группы `alexsoft-users` / `alexsoft-admins`, OIDC-приложение `alexsoft-cabinet`, саморегистрация (enrollment flow, сразу в `alexsoft-users`).
+  - **Nginx gateway** — нативный (`nginx.org` zip в `%LOCALAPPDATA%\AlexsoftNginx`), порт **8000**, конфиг `infra/nginx/local/`. Хосты: `alexsoft.localhost:8000` (сайт + кабинет) и `auth.alexsoft.localhost:8000` (Authentik). Прод: `alexsoft.space` и `auth.alexsoft.space`. Gateway: маршрутизация, лимиты запросов, security-заголовки, лимит тела, `X-Request-Id`; **JWT не проверяет**.
+  - **Кабинет** — `apps/cabinet`, порт **3020**, `basePath: /app`; BFF — `/app/api/*`.
+  - **BL** — `apps/api` (FastAPI), порт **8100**, слушает только `127.0.0.1`, наружу не публикуется; контракт — [`bl.openapi.yaml`](../api/bl.openapi.yaml). Данные — схема `bl` в БД `alexsoft`.
+  - **Агенты:** BL вызывает Agent Platform напрямую (до появления RabbitMQ, временная связь). Реестр агентов в BL; адаптеры `echo` (заглушка) и `langgraph` (Agent Server `:2024`). Агент БП1 подключается записью в реестр.
+  - **Регистрация:** открытая саморегистрация; защита расхода токенов — суточная квота запусков на пользователя (по умолчанию 20), настраивается админом.
+  - Порты: 8000 gateway, 3020 cabinet, 8100 BL, 9100/9143 Authentik.
+  - **Реализационные уточнения (отклонения от наброска):**
+    - Кабинет использует собственный тонкий OIDC-слой на `openid-client` v6 (Authorization Code + PKCE на сервере), а не Auth.js: нужны серверный refresh с ротацией токенов и хранение токенов только на сервере. Сессия — серверная, в Postgres (`cabinet.sessions`); в cookie `alexsoft_session` лежит непрозрачный id. Logout — только POST с проверкой Origin плюс RP-initiated end-session.
+    - BL создаёт схему `bl` через DDL при старте (как `apps/rag`), без Alembic; при появлении миграций данных — перейти на Alembic отдельным решением.
+    - Доступ к ролям — по claim `groups` (`alexsoft-users` → user, `alexsoft-admins` → user+admin).
+- **Последствия:**
+  - Authentik требует запущенного Docker Desktop (исключение из «нативно», как Dify); контейнер ходит в хостовый Postgres через `host.docker.internal`: нужны `listen_addresses`, `pg_hba.conf` и правило firewall (скрипт-помощник в `infra/authentik`).
+  - Для резолва `*.alexsoft.localhost` могут понадобиться записи в `hosts` (скрипт в `infra/nginx/local`, нужен администратор).
+  - Перед публичным открытием регистрации — email-подтверждение и captcha (вне этого ADR).
+  - Деплой на VPS и CI кабинета — отдельный шаг.
+- **Ссылки:**
+  - [ADR-0019](0019-cabinet-ssr-bff-authentik.md), [ADR-0015](0015-target-architecture-stacks.md), [ADR-0007](0007-edge-nginx-npm.md)
+  - Контракт: [`bl.openapi.yaml`](../api/bl.openapi.yaml)

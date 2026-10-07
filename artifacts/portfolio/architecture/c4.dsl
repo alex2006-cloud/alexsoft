@@ -3,8 +3,8 @@ workspace "alexsoft" "Personal Ecosystem Lab — целевая архитект
     !identifiers hierarchical
 
     model {
-        user = person "Пользователь" "Сторонний пользователь: лендинг, логин, список агентов, Q&A по проекту (БК1)."
-        admin = person "Администратор" "Владелец платформы: разработка, деплой, эксплуатация, BI и метрики."
+        user = person "Пользователь" "Лендинг (без входа); после логина — личный кабинет: список агентов, Q&A по проекту (БК1)."
+        admin = person "Администратор" "Владелец платформы: админ-панель в кабинете, разработка, деплой, эксплуатация, BI и метрики."
 
         llmProviders = softwareSystem "ИИ модели" "Облачные модели DeepSeek, Qwen, ChatGPT, Claude, Gemini." "External"
         embeddingModel = softwareSystem "Embedding" "text-embedding-3-small (облачная); вызывается только через AI Gateway." "External"
@@ -13,17 +13,21 @@ workspace "alexsoft" "Personal Ecosystem Lab — целевая архитект
 
         alexsoft = softwareSystem "alexsoft" "Персональная мультисервисная платформа на VPS/VDS: edge, приложения, данные, ИИ-контур, observability, BI. Секреты хранятся вне git (.env / GitHub Secrets)." {
 
-            edge = container "Edge" "API Gateway / веб-сервер: TLS, reverse proxy, маршрутизация к Frontend и Business Logic." "Nginx" {
-                reverseProxy = component "Reverse proxy / TLS" "Терминация HTTPS, маршруты к приложениям." "Nginx"
-                jwtCheck = component "JWT check" "Проверка JWT / OIDC совместно с IAM." "Nginx + Authentik"
+            edge = container "Edge" "API Gateway / веб-сервер: TLS, раздача статики лендинга и игр, reverse proxy на кабинет (/app, /api) и на страницу входа IAM. JWT сам не проверяет (ADR-0019)." "Nginx" {
+                reverseProxy = component "Reverse proxy / TLS" "Терминация HTTPS, маршруты /app, /api к кабинету, вход к IAM." "Nginx"
+                staticServe = component "Раздача статики" "Отдача готовых файлов лендинга, портфолио и игр с диска." "Nginx"
             }
 
-            iam = container "IAM" "Аутентификация и авторизация (OIDC)." "Authentik"
+            iam = container "IAM" "Аутентификация и авторизация (OIDC): вход, группы user / admin, выдача JWT." "Authentik"
 
-            frontend = container "Frontend" "Лендинг, Lab, UI списка агентов и чата." "Next.js"
+            landing = container "Frontend лендинга и игр" "Лендинг, портфолио, игры. Статика (SSG), без входа и без серверного процесса: раздаёт Edge." "Next.js (output: export)"
 
-            businessLogic = container "Business Logic" "REST API для UI: список агентов, запуск Q&A, статус (SSE); публикация запусков в RabbitMQ; БД, файлы, кэш." "FastAPI (Python)" {
+            cabinet = container "Frontend кабинета" "Личный кабинет и админ-панель: вход через IAM, список агентов, чат, управление. SSR (Node) и BFF: токены остаются на сервере, в браузер идёт cookie сессии." "Next.js (SSR)"
+
+            businessLogic = container "Business Logic" "REST API для кабинета: проверка JWT (JWKS IAM) и ролей user / admin, список агентов, запуск Q&A, статус (SSE); публикация запусков в RabbitMQ; БД, файлы, кэш." "FastAPI (Python)" {
+                authz = component "JWT и роли" "Проверка подписи JWT по JWKS IAM, claims, роли user / admin и ACL на агента или коллекцию." "FastAPI"
                 apiOrchestration = component "API" "REST API: список агентов, запуск Q&A, статус (SSE)." "FastAPI"
+                agentRegistry = component "Реестр агентов и адаптеры" "Реестр агентов (bl.agents), запуски и события (bl.runs), адаптеры echo / LangGraph Agent Server; суточная квота запусков на пользователя." "FastAPI"
                 workersBridge = component "Async bridge" "Публикация запуска агента в брокер (publish); кэш get/set." "FastAPI"
             }
 
@@ -60,8 +64,8 @@ workspace "alexsoft" "Personal Ecosystem Lab — целевая архитект
         }
 
         # --- L1 ---
-        user -> alexsoft "HTTPS: лендинг, логин, агенты, Q&A"
-        admin -> alexsoft "Эксплуатация, BI, деплой через delivery"
+        user -> alexsoft "HTTPS: лендинг, логин, кабинет, агенты, Q&A"
+        admin -> alexsoft "HTTPS: админ-панель; эксплуатация, BI, деплой через delivery"
         admin -> cursor "Разрабатывает"
         cursor -> github "Пуш кода"
         github -> alexsoft "GitHub Actions деплоит на VDS/VPS"
@@ -71,9 +75,12 @@ workspace "alexsoft" "Personal Ecosystem Lab — целевая архитект
         # --- L2: perimeter & apps ---
         user -> alexsoft.edge "HTTPS"
         admin -> alexsoft.edge "HTTPS"
-        alexsoft.edge -> alexsoft.iam "OIDC / проверка JWT"
-        alexsoft.edge -> alexsoft.frontend "reverse proxy /api"
-        alexsoft.frontend -> alexsoft.businessLogic "HTTPS REST (+ SSE статуса)"
+        alexsoft.edge -> alexsoft.landing "раздача файлов"
+        alexsoft.edge -> alexsoft.iam "reverse proxy: вход / OIDC"
+        alexsoft.edge -> alexsoft.cabinet "reverse proxy /app (+ /app/api)"
+        alexsoft.cabinet -> alexsoft.iam "OIDC (обмен кода)"
+        alexsoft.cabinet -> alexsoft.businessLogic "HTTPS REST (+ SSE статуса), JWT"
+        alexsoft.businessLogic -> alexsoft.iam "JWKS (проверка JWT)"
 
         # --- L2: BL ---
         alexsoft.businessLogic -> alexsoft.postgres "SQL"
@@ -105,7 +112,7 @@ workspace "alexsoft" "Personal Ecosystem Lab — целевая архитект
         admin -> alexsoft.metabase "Дашборды BI"
         admin -> alexsoft.observability "Дашборды и алерты"
         alexsoft.edge -> alexsoft.observability "Метрики и логи"
-        alexsoft.frontend -> alexsoft.observability "Метрики и логи"
+        alexsoft.cabinet -> alexsoft.observability "Метрики и логи"
         alexsoft.businessLogic -> alexsoft.observability "Метрики и логи"
         alexsoft.agentPlatform -> alexsoft.observability "Метрики и логи"
         alexsoft.rag -> alexsoft.observability "Метрики и логи"
@@ -117,11 +124,16 @@ workspace "alexsoft" "Personal Ecosystem Lab — целевая архитект
         alexsoft.rabbitmq -> alexsoft.observability "Метрики и логи"
 
         # --- L3 relationships ---
-        alexsoft.edge.reverseProxy -> alexsoft.frontend "reverse proxy /api"
-        alexsoft.edge.jwtCheck -> alexsoft.iam "OIDC / JWT"
+        alexsoft.edge.staticServe -> alexsoft.landing "раздача файлов"
+        alexsoft.edge.reverseProxy -> alexsoft.cabinet "reverse proxy /app (+ /app/api)"
+        alexsoft.edge.reverseProxy -> alexsoft.iam "reverse proxy: вход / OIDC"
 
+        alexsoft.businessLogic.authz -> alexsoft.iam "JWKS (проверка JWT)"
         alexsoft.businessLogic.apiOrchestration -> alexsoft.postgres "SQL"
         alexsoft.businessLogic.apiOrchestration -> alexsoft.minio "Файлы / артефакты"
+        alexsoft.businessLogic.apiOrchestration -> alexsoft.businessLogic.agentRegistry "запуск агента, квота"
+        alexsoft.businessLogic.agentRegistry -> alexsoft.postgres "SQL (схема bl)"
+        alexsoft.businessLogic.agentRegistry -> alexsoft.agentPlatform "HTTPS run (этап 5, без брокера)"
         alexsoft.businessLogic.workersBridge -> alexsoft.rabbitmq "publish"
         alexsoft.businessLogic.workersBridge -> alexsoft.redis "cache get/set"
 
@@ -164,13 +176,13 @@ workspace "alexsoft" "Personal Ecosystem Lab — целевая архитект
         component alexsoft.edge "ComponentsEdge" {
             include *
             autoLayout tb
-            description "C4 Level 3 — Edge (Nginx)."
+            description "C4 Level 3 — Edge (Nginx): статика и reverse proxy, без проверки JWT."
         }
 
         component alexsoft.businessLogic "ComponentsBusinessLogic" {
             include *
             autoLayout tb
-            description "C4 Level 3 — Business Logic (FastAPI)."
+            description "C4 Level 3 — Business Logic (FastAPI): JWT и роли, API, async bridge."
         }
 
         component alexsoft.agentPlatform "ComponentsAgentPlatform" {

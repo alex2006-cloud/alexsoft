@@ -2,7 +2,7 @@ openapi: 3.1.0
 
 info:
   title: alexsoft RAG API
-  version: 0.1.0
+  version: 0.2.0
   summary: Контракт RAG-сервиса (apps/rag) — три слоя - загрузка, хранение эмбеддингов, поиск.
   description: |
     Контракт-первый (contract-first) для сервиса `apps/rag` (LlamaIndex + Qdrant).
@@ -219,6 +219,13 @@ paths:
         Запускает ingest: Loader → Parser & Clean → Chunking → embedding (через LiteLLM) → upsert в Qdrant.
         Повторная загрузка с тем же `external_id` заменяет чанки документа (идемпотентно).
         Заголовок `Idempotency-Key` защищает от дублей при повторе запроса.
+
+        **Поддерживаемые форматы** (тип по расширению `key`, для `inline` — по `content_type`):
+        текст и markdown (`.md`, `.txt`); код и конфигурации (`.py`, `.ts`, `.tsx`, `.js`, `.ps1`,
+        `.sql`, `.yaml`, `.yml`, `.json`, `.toml`, `.dsl`, `.puml`); диаграммы (`.bpmn`, `.drawio`) —
+        разворачиваются в текст узлов и связей; PDF (`.pdf`) — текстовый слой, страницы без него
+        распознаются vision-моделью через LiteLLM; Excel (`.xlsx`) — листы и формулы.
+        Остальные бинарные типы → ошибка `validation_error` в `Job.error`.
       parameters:
         - name: Idempotency-Key
           in: header
@@ -421,7 +428,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Этап 6 — JWT Authentik (проверяется на Edge).
+      description: JWT Authentik; подпись проверяется по JWKS на стороне приложения (FastAPI), не на Nginx ([ADR-0019](../adr/0019-cabinet-ssr-bff-authentik.md)).
 
   parameters:
     CollectionName:
@@ -533,6 +540,14 @@ components:
       pattern: "^[a-z0-9][a-z0-9_-]{1,62}$"
       description: Строчные латинские буквы, цифры, `_`, `-`; 2–63 символа.
 
+    SparseLanguage:
+      type: string
+      enum: [russian, english]
+      default: russian
+      description: |
+        Язык BM25 (стемминг и стоп-слова) для sparse-вектора. Фиксируется при создании коллекции:
+        запросы и документы обязаны индексироваться одним языком. Для коллекции с кодом — `english`.
+
     CollectionCreate:
       type: object
       required: [name]
@@ -545,6 +560,8 @@ components:
           maxLength: 500
         chunking:
           $ref: "#/components/schemas/ChunkingConfig"
+        sparse_language:
+          $ref: "#/components/schemas/SparseLanguage"
 
     Collection:
       type: object
@@ -563,6 +580,8 @@ components:
           examples: [1536]
         chunking:
           $ref: "#/components/schemas/ChunkingConfig"
+        sparse_language:
+          $ref: "#/components/schemas/SparseLanguage"
         documents_count:
           type: integer
           minimum: 0
@@ -586,13 +605,22 @@ components:
 
     ChunkingConfig:
       type: object
-      description: Параметры чанкинга (LlamaIndex node parser). Значения по умолчанию — из конфигурации сервиса.
+      description: |
+        Параметры чанкинга. `strategy`:
+        - `auto` — по типу файла: markdown → `markdown`, код/конфиги/DSL → `code`, PDF → `pages`,
+          Excel → `table`, прочий текст → `sentence`;
+        - `markdown` — по заголовкам, крупные секции делятся по `chunk_size`;
+        - `sentence` / `token` — окно по предложениям / токенам (LlamaIndex);
+        - `code` — по синтаксическим единицам (класс, функция), крупные делятся по `chunk_size`;
+        - `pages` — текст страницы PDF (страницы без текстового слоя распознаются vision-моделью);
+        - `table` — листы Excel как таблицы группами строк с повтором шапки + отдельные чанки формул.
+        Стратегия, не подходящая типу файла, заменяется на `auto`.
       additionalProperties: false
       properties:
         strategy:
           type: string
-          enum: [sentence, markdown, token]
-          default: markdown
+          enum: [auto, sentence, markdown, token, code, pages, table]
+          default: auto
         chunk_size:
           type: integer
           minimum: 64
@@ -637,6 +665,16 @@ components:
           $ref: "#/components/schemas/Metadata"
         chunking:
           $ref: "#/components/schemas/ChunkingConfig"
+        content_hash:
+          $ref: "#/components/schemas/ContentHash"
+
+    ContentHash:
+      type: string
+      maxLength: 128
+      description: |
+        Хеш содержимого (например, `sha256:<hex>`), вычисляется клиентом. Если документ с тем же
+        `external_id` уже `indexed` с таким же `content_hash`, а `chunking` и `metadata` не изменились,
+        переиндексация не выполняется: возвращается уже завершённый Job (`succeeded`).
 
     DocumentSource:
       oneOf:
@@ -662,6 +700,11 @@ components:
           type: string
         version_id:
           type: string
+        content_type:
+          type: string
+          description: |
+            Необязательная подсказка типа файла (MIME), если расширение ключа неоднозначно.
+            По умолчанию тип определяется по расширению `key`.
 
     InlineSource:
       type: object
@@ -700,6 +743,8 @@ components:
         chunks_count:
           type: integer
           minimum: 0
+        content_hash:
+          $ref: "#/components/schemas/ContentHash"
         error:
           type: [string, "null"]
           description: Причина `failed`.
@@ -821,8 +866,42 @@ components:
           type: integer
           minimum: 0
           description: Порядковый номер чанка в документе.
+        locator:
+          $ref: "#/components/schemas/Locator"
         metadata:
           $ref: "#/components/schemas/Metadata"
+
+    Locator:
+      type: object
+      description: |
+        Где в источнике находится чанк — для ссылок и цитат. Заполняются только применимые поля:
+        PDF — `page`; Excel — `sheet`, `range`; код — `path`, `line_start`, `line_end`, `symbol`;
+        markdown — `section` (путь заголовков).
+      additionalProperties: false
+      properties:
+        path:
+          type: string
+          description: Путь файла в источнике (обычно равен `external_id`).
+        page:
+          type: integer
+          minimum: 1
+        sheet:
+          type: string
+        range:
+          type: string
+          examples: ["A1:F20"]
+        line_start:
+          type: integer
+          minimum: 1
+        line_end:
+          type: integer
+          minimum: 1
+        symbol:
+          type: string
+          description: Класс/функция/блок (для кода).
+        section:
+          type: string
+          description: Путь заголовков markdown, например `Решение > Последствия`.
 
     SearchResponse:
       type: object
@@ -873,6 +952,8 @@ components:
         quote:
           type: string
           description: Фрагмент чанка, использованный в ответе.
+        locator:
+          $ref: "#/components/schemas/Locator"
 
     QueryResponse:
       type: object

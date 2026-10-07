@@ -2,7 +2,7 @@
 
 По [CONCEPT.md](../../CONCEPT.md) и [ADR-0011](../../artifacts/adr/0011-ai-gateway-litellm.md): **LiteLLM** — единый шлюз к облачным LLM (**DeepSeek** подключён; Qwen в конфиге; далее ChatGPT и др.).
 
-Не путать с **API Gateway** / **IAM** (этап облака, инструмент TBD).
+Не путать с **API Gateway** / **IAM** (Authentik — по архитектуре, локально).
 
 Локальный запуск (Windows): [infra/litellm/README.md](../../infra/litellm/README.md).
 

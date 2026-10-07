@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/* Same tokens as apps/landing, so the cabinet reads as part of one site. */
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-inter-tight), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --color-ink: #f5f5f7;
+  --color-ink-dim: #86868b;
+  --color-canvas: #000000;
+  --color-panel: #151516;
+  --color-line: #2a2a2c;
+  --color-link: #2997ff;
+  --color-blue: #0071e3;
+  --color-blue-hover: #0077ed;
+  --color-ok: #30d158;
+  --color-warn: #ffd60a;
+  --color-bad: #ff453a;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #0071e3;
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 3px;
+}
+
+.wrap {
+  width: min(1040px, calc(100% - 2.5rem));
+  margin-inline: auto;
+}
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.eyebrow {
+  color: var(--color-ink-dim);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  background: var(--color-blue);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.55rem 1.1rem;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+.btn:hover:not(:disabled) {
+  background: var(--color-blue-hover);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--color-line);
+  color: var(--color-ink);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: #1d1d1f;
+}
+
+.input {
+  width: 100%;
+  background: #0b0b0c;
+  border: 1px solid var(--color-line);
+  border-radius: 0.9rem;
+  color: var(--color-ink);
+  padding: 0.7rem 0.95rem;
+  font-size: 0.95rem;
+}
+.input::placeholder {
+  color: var(--color-ink-dim);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  padding: 0.1rem 0.6rem;
+  font-size: 0.72rem;
+  color: var(--color-ink-dim);
+}
+
+table.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+table.tbl th {
+  text-align: left;
+  color: var(--color-ink-dim);
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--color-line);
+}
+table.tbl td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid #1c1c1e;
+  vertical-align: top;
+}
+table.tbl tr:last-child td {
+  border-bottom: none;
+}

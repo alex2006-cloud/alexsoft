@@ -46,7 +46,7 @@
 
 ## Текущий этап
 
-**Этап 5 — AI-контур.** LiteLLM+DeepSeek → агенты с продуктами и стек агентов (lab, выполнено) → **Architecture and documentation** (целевая архитектура: [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md)) → RAG → **первый AI-агент с RAG**. Redis-кеш AI, RabbitMQ, FastAPI, LLM Guard, Authentik — при целевой архитектуре (этап 6); до брокера BL вызывает Agent Platform напрямую. См. [ROADMAP.md](ROADMAP.md), [CONCEPT.md](CONCEPT.md).
+**Этап 5 — AI-контур.** LiteLLM+DeepSeek → агенты с продуктами и стек агентов (lab, выполнено) → **Architecture and documentation** (целевая архитектура: [ADR-0015](artifacts/adr/0015-target-architecture-stacks.md)) → RAG → **первый AI-агент с RAG**. **Authentik / личный кабинет** — по архитектуре, локально (не ждать VPS). Redis-кеш AI, RabbitMQ, FastAPI, LLM Guard в проде — целевой контур (этап 6 = планирование переноса); до брокера BL вызывает Agent Platform напрямую. См. [ROADMAP.md](ROADMAP.md), [CONCEPT.md](CONCEPT.md).
 
 ## Быстрый старт
 
@@ -81,6 +81,10 @@
 | 8070 | Structurizr Local (C4 UI) |
 | 8071 | Swagger UI (контракт RAG, опционально) |
 | 8080 | LiteLLM AI Gateway |
+| 8000 | Nginx gateway (локально, нативно; `alexsoft.localhost:8000`) |
+| 9100 / 9143 | Authentik (Docker Compose, `auth.alexsoft.localhost:8000`; 9000 занят MinIO) |
+| 3020 | Кабинет (`apps/cabinet`, Next.js SSR, `/app`) |
+| 8100 | BL API (`apps/api`, FastAPI, только 127.0.0.1) |
 
 Источник правды по значениям — `.env` (шаблон `.env.example`).
 

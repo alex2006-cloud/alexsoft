@@ -18,7 +18,7 @@
   - **Состояние:** PostgreSQL, схема `rag` (таблицы `collections`, `documents`, `jobs`, `idempotency_keys`); создаётся самим сервисом при старте (идемпотентный DDL). Ingest — `asyncio`-задача, этапы `load → parse → chunk → embed → upsert` пишутся в `jobs.stage`.
   - **Идентификаторы точек Qdrant:** `uuid5(document_id, position)`; повторный ingest с тем же `external_id` удаляет старые точки документа и пишет новые.
   - **Guard:** интерфейс `GuardrailsClient`; по умолчанию `NoopGuard` (`LLM_GUARD_ENABLED=false`). Реальный LLM Guard подключается на этапе 6 без изменения контракта.
-  - **Auth этапа 5:** `X-API-Key` (`RAG_API_KEY` в `.env`); JWT Authentik — этап 6.
+  - **Auth этапа 5:** `X-API-Key` (`RAG_API_KEY` в `.env`); JWT Authentik — по архитектуре (локально), не ждать VPS.
   - **Модели LLM для `/v1/query`:** алиас LiteLLM (`RAG_LLM_MODEL`, по умолчанию `deepseek`); только через шлюз.
 - **Последствия:**
   - Новые зависимости на ноутбуке: Qdrant (`infra/qdrant`), фоновая схема `rag` в БД `alexsoft`, бакет MinIO `rag-docs`.

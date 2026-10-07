@@ -28,8 +28,9 @@
   | Роль | Стек |
   |------|------|
   | Edge / веб-сервер / reverse proxy | **Nginx** (+ **Nginx Proxy Manager** при достаточном RAM / Docker) |
-  | IAM | **Authentik** (OIDC / проверка JWT на edge) |
-  | Frontend | **Next.js** (лендинг / Lab; игры — отдельно, [ADR-0010](0010-games-static-app.md)) |
+  | IAM | **Authentik** (OIDC; JWT проверяет FastAPI по JWKS, не Nginx — [ADR-0019](0019-cabinet-ssr-bff-authentik.md)) |
+  | Frontend (лендинг и игры) | **Next.js**, статика SSG; раздаёт Nginx ([ADR-0010](0010-games-static-app.md), [ADR-0019](0019-cabinet-ssr-bff-authentik.md)) |
+  | Frontend (кабинет, админка) | **Next.js SSR (Node) + BFF**, `apps/cabinet` ([ADR-0019](0019-cabinet-ssr-bff-authentik.md)) |
   | Бизнес-логика (API) | **FastAPI (Python)** |
 
   ### Данные и интеграционная шина (целевая схема)
@@ -67,7 +68,7 @@
   - Секреты **вне git** (локально `.env`; в CI — GitHub Secrets). В репозитории только `.env.example`.
 
   ### Потоки (канон для БК1 и целевой схемы)
-  - Клиент → Nginx (+ Authentik: OIDC / проверка JWT) → Next.js (`reverse proxy /api`) → FastAPI (REST + SSE статуса).
+  - Клиент → Nginx → статика (лендинг, игры) **или** кабинет Next.js SSR (`reverse proxy /app, /api`) → FastAPI (REST + SSE статуса). Вход: Nginx проксирует на Authentik; кабинет обменивает код на токены (OIDC); FastAPI проверяет JWT по JWKS Authentik ([ADR-0019](0019-cabinet-ssr-bff-authentik.md)).
   - **Целевой (этап 6):** FastAPI публикует запуск агента в **RabbitMQ** (`publish`); **Agent Platform** забирает задачу (`consume run`) — как на схеме «Архитектура 8».
   - **Этап 5 (решение владельца: брокер на старте не нужен):** FastAPI вызывает Agent Platform напрямую по HTTPS; RabbitMQ не ставится. Прямая связь BL → Agent Platform — временная, добавлена в C4 и Component Diagram сверх XML 8 и удаляется при внедрении брокера.
   - **RAG** читает документы из **MinIO**, пишет/ищет векторы в **Qdrant**, ходит в LiteLLM за embeddings и (при необходимости) LLM.
@@ -83,8 +84,9 @@
   - Корпус для первого RAG: документы проекта (ручной / batch ingest в MinIO → LlamaIndex → Qdrant); hybrid retrieval.
 
   ### Этапность vs целевая схема
-  - Локальный этап 5 **не обязан** поднять Redis AI-cache и RabbitMQ до продуктов агентов/RAG (см. ROADMAP / user priority). В целевой схеме запуск агента идёт через RabbitMQ; до этапа 6 локально допустим прямой вызов агента без брокера.
-  - **Authentik**, полноценный edge с JWT, Redis AI-cache, RabbitMQ в проде — в контуре **целевой / этап 6**, но стек уже **утверждён** этой диаграммой и ADR.
+  - **Архитектура первична:** ROADMAP нарезает внедрение, а не отодвигает утверждённые узлы «на VPS». **Authentik и личный кабинет** поднимаем **локально** по этой схеме, не дожидаясь переноса.
+  - Локальный этап 5 **не обязан** поднять Redis AI-cache и RabbitMQ до продуктов агентов/RAG. В целевой схеме запуск агента идёт через RabbitMQ; до брокера локально допустим прямой вызов агента.
+  - Полноценный edge с JWT в проде, Redis AI-cache, RabbitMQ на сервере — **целевой контур**; этап 6 ROADMAP — **планирование** переноса/создания заново, без детального чеклиста внедрения.
   - Лабораторные агенты CrewAI / AutoGen и n8n не отменяются предыдущими ADR; на целевой draw.io они не обязаны быть отдельными узлами.
 
 - **Последствия:**
@@ -100,5 +102,5 @@
   - Видение и стек: [`CONCEPT.md`](../../CONCEPT.md)
   - Статус этапов: [`ROADMAP.md`](../../ROADMAP.md)
   - Правила агентов: [`AGENTS.md`](../../AGENTS.md)
-  - Связанные ADR: [0001](0001-architecture-as-code.md), [0002](0002-github-monorepo.md), [0004](0004-postgresql-native-local.md)–[0009](0009-metabase-native-local.md), [0007](0007-edge-nginx-npm.md), [0010](0010-games-static-app.md), [0011](0011-ai-gateway-litellm.md), [0012](0012-agent1-langgraph-stack.md), [0013](0013-agent2-crewai.md), [0014](0014-agent3-autogen-n8n-dify.md)
+  - Связанные ADR: [0001](0001-architecture-as-code.md), [0002](0002-github-monorepo.md), [0004](0004-postgresql-native-local.md)–[0009](0009-metabase-native-local.md), [0007](0007-edge-nginx-npm.md), [0010](0010-games-static-app.md), [0011](0011-ai-gateway-litellm.md), [0012](0012-agent1-langgraph-stack.md), [0013](0013-agent2-crewai.md), [0014](0014-agent3-autogen-n8n-dify.md), [0019](0019-cabinet-ssr-bff-authentik.md) (кабинет, SSR/BFF, проверка JWT — уточняет Frontend и роль Nginx)
   - БК1: [`artifacts/business-cases/bc1/`](../business-cases/bc1/)

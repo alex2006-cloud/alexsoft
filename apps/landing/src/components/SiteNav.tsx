@@ -42,6 +42,11 @@ export function SiteNav() {
             </li>
           ))}
           <li>
+            <a className="text-ink/80 transition-colors hover:text-ink" href="/app">
+              Кабинет
+            </a>
+          </li>
+          <li>
             <a
               className="rounded-full bg-blue px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-blue-hover"
               href="/#contact"
@@ -78,6 +83,11 @@ export function SiteNav() {
                 </a>
               </li>
             ))}
+            <li>
+              <a className="block py-2" href="/app" onClick={() => setOpen(false)}>
+                Кабинет
+              </a>
+            </li>
             <li>
               <a className="mt-4 inline-flex rounded-full bg-blue px-5 py-2 text-lg font-medium text-white" href="/#contact" onClick={() => setOpen(false)}>
                 Написать

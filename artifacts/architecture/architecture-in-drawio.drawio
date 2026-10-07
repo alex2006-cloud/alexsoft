@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram name="Страница-1" id="fTWoUnDUK6GiSJuJ4Qjo">
-    <mxGraphModel dx="2298" dy="2063" grid="1" gridSize="10" guides="0" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1537" dy="1601" grid="1" gridSize="10" guides="0" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -26,10 +26,10 @@
           <mxGeometry height="40" width="240" x="560" y="-680" as="geometry" />
         </mxCell>
         <mxCell id="j03xKc4rXderQ0Zs5p-X-6" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="Админ / Пользователь" vertex="1">
-          <mxGeometry height="60" width="30" x="80" y="250" as="geometry" />
+          <mxGeometry height="60" width="30" x="80" y="370" as="geometry" />
         </mxCell>
         <mxCell id="j03xKc4rXderQ0Zs5p-X-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeWidth=2;fillWeight=4;hachureGap=8;hachureAngle=45;fillColor=#1ba1e2;sketch=1;" value="Телефон/ноутбук" vertex="1">
-          <mxGeometry height="80" width="120" x="40" y="360" as="geometry" />
+          <mxGeometry height="80" width="120" x="40" y="480" as="geometry" />
         </mxCell>
         <mxCell id="j03xKc4rXderQ0Zs5p-X-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="Назначение сущности&lt;div&gt;&lt;i&gt;Пример используемого ПО&lt;/i&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="80" width="240" x="-380" y="-310" as="geometry" />
@@ -57,15 +57,15 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="j03xKc4rXderQ0Zs5p-X-18" parent="1" style="swimlane;whiteSpace=wrap;html=1;startSize=23;fillColor=#fff2cc;strokeColor=#d6b656;" value="Компоненты периметра безопасности и маршрутизации" vertex="1">
-          <mxGeometry height="400" width="320" x="560" y="280" as="geometry">
+          <mxGeometry height="440" width="320" x="560" y="280" as="geometry">
             <mxRectangle height="30" width="350" x="560" y="280" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
         <mxCell id="j03xKc4rXderQ0Zs5p-X-10" parent="j03xKc4rXderQ0Zs5p-X-18" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;b&gt;API GATEWAY/&lt;/b&gt;&lt;b&gt;Веб-сервер&lt;/b&gt;&lt;span lang=&quot;ru&quot; style=&quot;font-family: Calibri;&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;i&gt;&lt;span lang=&quot;ru&quot; style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;NGINX&lt;/span&gt;&lt;/i&gt;" vertex="1">
-          <mxGeometry height="80" width="240" x="40" y="80" as="geometry" />
+          <mxGeometry height="80" width="240" x="40" y="200" as="geometry" />
         </mxCell>
         <mxCell id="j03xKc4rXderQ0Zs5p-X-13" parent="j03xKc4rXderQ0Zs5p-X-18" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;b&gt;Сервисы аутентификации и авторизации&lt;/b&gt;&lt;br&gt;&lt;i&gt;&lt;span lang=&quot;ru&quot;&gt;Authentik&lt;/span&gt;&lt;/i&gt;" vertex="1">
-          <mxGeometry height="80" width="240" x="40" y="240" as="geometry" />
+          <mxGeometry height="80" width="240" x="40" y="320" as="geometry" />
         </mxCell>
         <mxCell id="j03xKc4rXderQ0Zs5p-X-14" edge="1" parent="j03xKc4rXderQ0Zs5p-X-18" source="j03xKc4rXderQ0Zs5p-X-13" style="endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="j03xKc4rXderQ0Zs5p-X-10" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
@@ -73,8 +73,22 @@
             <mxPoint x="161" y="170" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="j03xKc4rXderQ0Zs5p-X-15" connectable="0" parent="j03xKc4rXderQ0Zs5p-X-14" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;span style=&quot;font-family: Arial; text-align: start; background-color: rgb(254, 254, 254);&quot;&gt;OIDC / проверка JWT&lt;/span&gt;" vertex="1">
+        <mxCell id="j03xKc4rXderQ0Zs5p-X-15" connectable="0" parent="j03xKc4rXderQ0Zs5p-X-14" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&lt;span style=&quot;font-family: Arial; text-align: start; background-color: rgb(254, 254, 254);&quot;&gt;reverse proxy: вход / OIDC&lt;/span&gt;" vertex="1">
           <mxGeometry relative="1" x="-0.0275" y="-4" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4WOS06B0j3O8trp9Q8PB-1" parent="j03xKc4rXderQ0Zs5p-X-18" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;&quot; lang=&quot;ru&quot;&gt;&lt;b style=&quot;font-family: Calibri;&quot;&gt;Фронтенд л&lt;/b&gt;&lt;font face=&quot;Calibri&quot;&gt;&lt;b&gt;ендинга и игр&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;/span&gt;&lt;i&gt;Next.js&lt;/i&gt;&lt;div&gt;&lt;font face=&quot;Calibri&quot; style=&quot;font-size: 8px;&quot;&gt;Статика (SSG): лендинг + портфолио + игры&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="240" x="40" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="4WOS06B0j3O8trp9Q8PB-2" edge="1" parent="j03xKc4rXderQ0Zs5p-X-18" source="j03xKc4rXderQ0Zs5p-X-10" style="endArrow=classic;startArrow=none;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;startFill=0;" target="4WOS06B0j3O8trp9Q8PB-1" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="340" y="230" as="sourcePoint" />
+            <mxPoint x="390" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4WOS06B0j3O8trp9Q8PB-3" connectable="0" parent="4WOS06B0j3O8trp9Q8PB-2" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="раздача файлов" vertex="1">
+          <mxGeometry relative="1" x="0.2123" y="-2" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
@@ -86,7 +100,7 @@
         <mxCell id="j03xKc4rXderQ0Zs5p-X-20" parent="j03xKc4rXderQ0Zs5p-X-19" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;b&gt;Бизнес логика&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-family:Calibri&quot; lang=&quot;en-US&quot;&gt;&lt;/span&gt;&lt;div&gt;&lt;i&gt;FastAPI (Python)&lt;/i&gt;&lt;b&gt;&lt;/b&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="80" width="240" x="320" y="80" as="geometry" />
         </mxCell>
-        <mxCell id="1FRNwiYMG28oeLiQT1Bs-12" parent="j03xKc4rXderQ0Zs5p-X-19" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-family: Calibri;&quot; lang=&quot;ru&quot;&gt;&lt;b style=&quot;&quot;&gt;Фронтенд&lt;/b&gt;&lt;br&gt;&lt;/span&gt;&lt;i&gt;Next.js&lt;/i&gt;&lt;span style=&quot;font-family:Calibri&quot; lang=&quot;en-US&quot;&gt;&lt;/span&gt;" vertex="1">
+        <mxCell id="1FRNwiYMG28oeLiQT1Bs-12" parent="j03xKc4rXderQ0Zs5p-X-19" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-family: Calibri;&quot; lang=&quot;ru&quot;&gt;&lt;b style=&quot;&quot;&gt;Фронтенд кабинета&lt;/b&gt;&lt;br&gt;&lt;/span&gt;&lt;i&gt;Next.js&lt;/i&gt;&lt;div&gt;&lt;font face=&quot;Calibri&quot; style=&quot;font-size: 8px;&quot;&gt;SSR (Node): кабинет, админка, страницы AI-агентов&lt;/font&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="80" width="240" x="40" y="80" as="geometry" />
         </mxCell>
         <mxCell id="1FRNwiYMG28oeLiQT1Bs-14" edge="1" parent="j03xKc4rXderQ0Zs5p-X-19" source="1FRNwiYMG28oeLiQT1Bs-12" style="endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="j03xKc4rXderQ0Zs5p-X-20" value="">
@@ -397,7 +411,7 @@
             <mxPoint x="1670" y="630" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="fUvA6A9vglUz-YZcxcvK-7" connectable="0" parent="u-OZR0dpKm66BMyOTKv5-20" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="reverse proxy /api" vertex="1">
+        <mxCell id="fUvA6A9vglUz-YZcxcvK-7" connectable="0" parent="u-OZR0dpKm66BMyOTKv5-20" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="reverse proxy /app, /api" vertex="1">
           <mxGeometry relative="1" x="0.0362" y="2" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
@@ -490,6 +504,25 @@
         <mxCell id="-PUdgNTIoOC5XaAY9CEC-1" connectable="0" parent="HvTpXTPC9I4zLSuXEMQU-1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="HTTPS" vertex="1">
           <mxGeometry relative="1" x="0.081" as="geometry">
             <mxPoint x="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4WOS06B0j3O8trp9Q8PB-4" edge="1" parent="1" source="1FRNwiYMG28oeLiQT1Bs-12" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="j03xKc4rXderQ0Zs5p-X-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4WOS06B0j3O8trp9Q8PB-5" connectable="0" parent="4WOS06B0j3O8trp9Q8PB-4" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="OIDC (обмен кода)" vertex="1">
+          <mxGeometry relative="1" x="-0.3432" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4WOS06B0j3O8trp9Q8PB-6" edge="1" parent="1" source="j03xKc4rXderQ0Zs5p-X-20" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="j03xKc4rXderQ0Zs5p-X-13">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1300" y="610" as="sourcePoint" />
+            <mxPoint x="1100" y="810" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="4WOS06B0j3O8trp9Q8PB-7" connectable="0" parent="4WOS06B0j3O8trp9Q8PB-6" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="JWKS (проверка JWT)" vertex="1">
+          <mxGeometry relative="1" x="-0.3432" y="-2" as="geometry">
+            <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
       </root>

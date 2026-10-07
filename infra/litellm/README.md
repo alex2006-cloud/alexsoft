@@ -1,6 +1,6 @@
 # LiteLLM (локально, Windows)
 
-См. [ADR-0011](../../artifacts/adr/0011-ai-gateway-litellm.md). Нативный **AI Gateway** этапа 5.1: Python venv + `litellm[proxy]`. OpenAI-compatible API к облачным LLM. **Подключены:** **DeepSeek** (рабочий путь) и **Qwen** (DashScope, опционально). Не путать с API Gateway / IAM (этап 6). Docker/Compose — на этапе VPS.
+См. [ADR-0011](../../artifacts/adr/0011-ai-gateway-litellm.md). Нативный **AI Gateway** этапа 5.1: Python venv + `litellm[proxy]`. OpenAI-compatible API к облачным LLM. **Подключены:** **DeepSeek** (рабочий путь) и **Qwen** (DashScope, опционально). Не путать с API Gateway / IAM (Authentik — отдельный контур). Docker/Compose — на этапе VPS.
 
 ## Статус на машине разработчика
 

@@ -15,7 +15,11 @@ param(
     [switch]$WithObs,
     [switch]$WithBi,
     [switch]$WithN8n,
-    [switch]$WithDify
+    [switch]$WithDify,
+    [switch]$WithAuth,
+    [switch]$WithApi,
+    [switch]$WithCabinet,
+    [switch]$WithGateway
 )
 
 $ErrorActionPreference = "Continue"
@@ -124,6 +128,26 @@ if ($WithLanding) {
 if ($WithGames) {
     Write-Host "[..] Stopping Games (:3010)..."
     Stop-PortListeners -Port 3010 -Label "Games"
+}
+
+if ($WithGateway) {
+    $s = Join-Path $repoRoot "infra\nginx\local\stop-nginx.ps1"
+    if (Test-Path $s) { Write-Host "[..] Stopping Nginx gateway..."; & powershell -ExecutionPolicy Bypass -File $s }
+}
+
+if ($WithCabinet) {
+    Write-Host "[..] Stopping Cabinet (:3020)..."
+    Stop-PortListeners -Port 3020 -Label "Cabinet"
+}
+
+if ($WithApi) {
+    $s = Join-Path $repoRoot "infra\api\stop-api.ps1"
+    if (Test-Path $s) { Write-Host "[..] Stopping BL API..."; & powershell -ExecutionPolicy Bypass -File $s }
+}
+
+if ($WithAuth) {
+    $s = Join-Path $repoRoot "infra\authentik\stop-authentik.ps1"
+    if (Test-Path $s) { Write-Host "[..] Stopping Authentik..."; & powershell -ExecutionPolicy Bypass -File $s }
 }
 
 Write-Host "=== done ===" -ForegroundColor Cyan

@@ -31,10 +31,11 @@ node "Физический сервер / VPS (VDS)" as VDS {
   package "Периметр безопасности и маршрутизации" {
     [API Gateway / веб-сервер\nNginx] as Edge
     [Аутентификация и авторизация\nAuthentik] as IAM
+    [Фронтенд лендинга и игр\nNext.js (статика, SSG)] as Landing
   }
 
   package "Сервер приложений" {
-    [Фронтенд\nNext.js] as Frontend
+    [Фронтенд кабинета\nNext.js (SSR / BFF)\nкабинет, админка, страницы AI-агентов] as Cabinet
     [Бизнес-логика\nFastAPI (Python)] as BL
   }
 
@@ -104,18 +105,21 @@ Services -up- IMetrics
 User --> Client
 Admin --> Client
 Client --> Edge : HTTPS
-Edge ..> IOidc : OIDC / проверка JWT
-Edge ..> Frontend : reverse proxy /api
+Edge ..> Landing : раздача файлов
+Edge ..> IOidc : reverse proxy:\nвход / OIDC
+Edge ..> Cabinet : reverse proxy /app (+ /app/api)
 
-' Фронтенд ↔ BL
-Frontend ..> IRest : HTTPS REST\n(+ SSE статуса)
+' Кабинет ↔ IAM, BL
+Cabinet ..> IOidc : OIDC (обмен кода)
+Cabinet ..> IRest : HTTPS REST\n(+ SSE статуса)
+BL ..> IOidc : JWKS (проверка JWT)
 
 ' BL
 BL ..> ISql : SQL
 BL ..> IS3 : файлы / артефакты
 BL ..> IRedis : cache get/set
 BL ..> IAmqp : publish (целевой, этап 6)
-BL ..> Agents : HTTPS run (этап 5, без брокера)
+BL ..> Agents : HTTPS run (этап 5, без брокера;\nреестр агентов + квота в BL)
 BL ..> ILlm : HTTPS
 
 ' Запуск агента через брокер
@@ -171,8 +175,8 @@ legend right
 endlegend
 
 note bottom of RMQ
-  БК1 по «Архитектура 8»: Клиент → Nginx (+ Authentik JWT) →
-  Next.js → FastAPI → Agent Platform
+  БК1: Клиент → Nginx → кабинет (Next.js SSR, вход через Authentik) →
+  FastAPI (проверка JWT по JWKS) → Agent Platform
   (этап 5: HTTPS напрямую; целевой, этап 6: через RabbitMQ publish/consume) →
   RAG retrieve →
   LLM Guard → LiteLLM → облачные LLM;

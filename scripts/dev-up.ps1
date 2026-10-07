@@ -8,6 +8,7 @@
 #   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-up.ps1 -WithObs -WithBi
 #   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-up.ps1 -WithN8n -WithDify
 #   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-up.ps1 -SkipAi
+#   powershell -ExecutionPolicy Bypass -File C:\alexsoft\scripts\dev-up.ps1 -WithAuth -WithApi -WithCabinet -WithLanding -WithGames -WithGateway
 #
 # Stop: scripts\dev-down.ps1
 
@@ -20,7 +21,11 @@ param(
     [switch]$WithObs,
     [switch]$WithBi,
     [switch]$WithN8n,
-    [switch]$WithDify
+    [switch]$WithDify,
+    [switch]$WithAuth,      # Authentik (Docker Compose, :9100) - needs infra\authentik\setup-db.ps1 once
+    [switch]$WithApi,       # BL FastAPI (:8100)
+    [switch]$WithCabinet,   # Cabinet Next SSR (:3020, basePath /app)
+    [switch]$WithGateway    # native Nginx gateway (:8000)
 )
 
 $ErrorActionPreference = "Stop"
@@ -245,6 +250,57 @@ else {
     Write-Host "--  Games skipped (pass -WithGames)" -ForegroundColor DarkYellow
 }
 
+if ($WithAuth) {
+    # Docker Compose; first start pulls images and applies blueprints (minutes).
+    Invoke-StartScript -Label "Authentik (:9100)" -ScriptPath (Join-Path $repoRoot "infra\authentik\start-authentik.ps1") -ReadyPort 9100 -Optional
+}
+else {
+    Write-Host ""
+    Write-Host "--  Authentik skipped (pass -WithAuth)" -ForegroundColor DarkYellow
+}
+
+if ($WithApi) {
+    Invoke-StartScript -Label "BL API (:8100)" -ScriptPath (Join-Path $repoRoot "infra\api\start-api.ps1") -ReadyPort 8100
+}
+else {
+    Write-Host ""
+    Write-Host "--  BL API skipped (pass -WithApi)" -ForegroundColor DarkYellow
+}
+
+if ($WithCabinet) {
+    Write-Host ""
+    Write-Host "... Cabinet (next dev :3020/app)..." -ForegroundColor Yellow
+    $cabinetDir = Join-Path $repoRoot "apps\cabinet"
+    if (-not (Test-Path (Join-Path $cabinetDir "package.json"))) {
+        Write-Error "Cabinet app not found: $cabinetDir"
+    }
+    if (Test-PortListen -Port 3020) {
+        Write-Host "OK  Something already listens on 3020 - skip npm run dev" -ForegroundColor Green
+    }
+    else {
+        $cmd = "Set-Location -LiteralPath '$cabinetDir'; npm run dev"
+        Start-Process -FilePath "powershell.exe" -ArgumentList @(
+            "-NoExit",
+            "-ExecutionPolicy", "Bypass",
+            "-Command", $cmd
+        )
+        Write-Host "OK  Cabinet started in a new terminal window" -ForegroundColor Green
+    }
+}
+else {
+    Write-Host ""
+    Write-Host "--  Cabinet skipped (pass -WithCabinet)" -ForegroundColor DarkYellow
+}
+
+if ($WithGateway) {
+    # Gateway last: upstreams (landing/cabinet/authentik) should already be starting.
+    Invoke-StartScript -Label "Nginx gateway (:8000)" -ScriptPath (Join-Path $repoRoot "infra\nginx\local\start-nginx.ps1") -ReadyPort 8000
+}
+else {
+    Write-Host ""
+    Write-Host "--  Gateway skipped (pass -WithGateway)" -ForegroundColor DarkYellow
+}
+
 Write-Host ""
 Write-Host "=== ready ===" -ForegroundColor Cyan
 Write-Host "Postgres: 127.0.0.1:5432"
@@ -279,6 +335,18 @@ if ($WithLanding) {
 }
 if ($WithGames) {
     Write-Host "Games:    http://127.0.0.1:3010/games"
+}
+if ($WithAuth) {
+    Write-Host "Authentik: http://auth.alexsoft.localhost:8000 (direct: http://127.0.0.1:9100)"
+}
+if ($WithApi) {
+    Write-Host "BL API:   http://127.0.0.1:8100  (docs: /docs)"
+}
+if ($WithCabinet) {
+    Write-Host "Cabinet:  http://127.0.0.1:3020/app"
+}
+if ($WithGateway) {
+    Write-Host "Gateway:  http://alexsoft.localhost:8000  (site /, cabinet /app, games /games)"
 }
 Write-Host ""
 $downScript = Join-Path $PSScriptRoot "dev-down.ps1"

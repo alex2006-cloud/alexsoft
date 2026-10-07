@@ -428,7 +428,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Этап 6 — JWT Authentik (проверяется на Edge).
+      description: JWT Authentik; подпись проверяется по JWKS на стороне приложения (FastAPI), не на Nginx ([ADR-0019](../adr/0019-cabinet-ssr-bff-authentik.md)).
 
   parameters:
     CollectionName:

@@ -48,6 +48,7 @@ Copy-Item (Join-Path $art "adr\0007-edge-nginx-npm.md") (Join-Path $arch "adr-00
 Copy-Item (Join-Path $art "architecture\uml-component-diagram.puml") (Join-Path $arch "component-diagram.puml") -Force
 Copy-Item (Join-Path $art "architecture\c4-l1-l2-l3.dsl") (Join-Path $arch "c4.dsl") -Force
 Copy-Item (Join-Path $art "api\rag.openapi.yaml") (Join-Path $arch "rag.openapi.yaml") -Force
+Copy-Item (Join-Path $art "api\bl.openapi.yaml") (Join-Path $arch "bl.openapi.yaml") -Force
 
 # --- C4 (готовый экспорт Structurizr) ---
 Step "C4 из artifacts/generated"
@@ -126,6 +127,8 @@ if (-not $SkipOpenApi) {
   try {
     & npx.cmd --yes "@redocly/cli" build-docs (Join-Path $arch "rag.openapi.yaml") -o (Join-Path $arch "rag-api.html")
     if ($LASTEXITCODE -ne 0) { throw "redocly build-docs завершился с ошибкой" }
+    & npx.cmd --yes "@redocly/cli" build-docs (Join-Path $arch "bl.openapi.yaml") -o (Join-Path $arch "bl-api.html")
+    if ($LASTEXITCODE -ne 0) { throw "redocly build-docs (bl) завершился с ошибкой" }
   } finally { Pop-Location }
 }
 

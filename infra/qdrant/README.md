@@ -7,7 +7,9 @@
 | `6333` | REST + Web UI (`/dashboard`) |
 | `6334` | gRPC |
 
-Бинарник и данные вне репозитория: `%LOCALAPPDATA%\Qdrant\` (`qdrant.exe`, `storage\`, `snapshots\`, логи).
+Бинарник и данные вне репозитория: `%LOCALAPPDATA%\Qdrant\` (`qdrant.exe`, `static\` — Web UI, `storage\`, `snapshots\`, логи).
+
+> На Windows `qdrant.exe` **не включает** Web UI (в отличие от Docker). `install-qdrant.ps1` скачивает [qdrant-web-ui](https://github.com/qdrant/qdrant-web-ui/releases) в `%LOCALAPPDATA%\Qdrant\static\`. Без этой папки `/dashboard` отдаёт 404 / пустую страницу. Обновить UI: `install-qdrant.ps1 -ForceWebUi`, затем перезапуск.
 
 ## Запуск
 
@@ -16,6 +18,8 @@ powershell -ExecutionPolicy Bypass -File infra\qdrant\install-qdrant.ps1
 powershell -ExecutionPolicy Bypass -File infra\qdrant\start-qdrant.ps1
 # проверка
 curl.exe http://127.0.0.1:6333/healthz
+# UI
+start http://127.0.0.1:6333/dashboard
 # остановка
 powershell -ExecutionPolicy Bypass -File infra\qdrant\stop-qdrant.ps1
 ```
