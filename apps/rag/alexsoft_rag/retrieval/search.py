@@ -7,7 +7,7 @@ from uuid import UUID
 
 from ..clients.litellm import LiteLLMClient
 from ..errors import not_found
-from ..schemas import Chunk, SearchParams, Timings
+from ..schemas import Chunk, Locator, SearchParams, Timings
 from ..store.postgres import Database
 from ..store.qdrant import VectorStore, build_filter
 from .sparse import SparseEmbedder
@@ -49,7 +49,7 @@ class SearchService:
         t0 = time.perf_counter()
         # same embedding model as at ingest: it is fixed on the collection
         dense = (await self._llm.embed([query], model=collection.embedding_model))[0]
-        sparse = await self._sparse.embed_query(query)
+        sparse = await self._sparse.embed_query(query, collection.sparse_language)
         t_embed = (time.perf_counter() - t0) * 1000
 
         t0 = time.perf_counter()
@@ -80,6 +80,7 @@ class SearchService:
                     score=round(score, 6),
                     position=payload.get("position"),
                     metadata=payload.get("metadata") or None,
+                    locator=Locator(**payload["locator"]) if payload.get("locator") else None,
                 )
             )
         timings = Timings(

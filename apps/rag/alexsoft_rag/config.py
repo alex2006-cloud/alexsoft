@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     rag_port: int = 8200
     rag_api_key: str = ""
     rag_max_document_chars: int = 1_000_000
+    rag_max_object_bytes: int = 50 * 1024 * 1024
+    rag_max_ocr_pages: int = 60
     rag_ingest_concurrency: int = 2
     rag_embed_batch_size: int = 64
     rag_upsert_batch_size: int = 64
@@ -35,6 +37,7 @@ class Settings(BaseSettings):
     rag_embedding_model: str = "text-embedding-3-small"
     rag_embedding_dimensions: int = 1536
     rag_llm_model: str = "deepseek"
+    rag_vision_model: str = "vision"  # LiteLLM alias used for OCR of scanned PDF pages
     ai_gateway_url: str = "http://127.0.0.1:8080"
     litellm_master_key: str = ""
     rag_llm_timeout_s: float = 120.0

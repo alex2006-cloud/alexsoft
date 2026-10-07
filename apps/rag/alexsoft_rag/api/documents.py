@@ -60,6 +60,7 @@ async def ingest_document(
         body.metadata,
         body.chunking,
         idempotency_key,
+        body.content_hash,
     )
     if created and job.document_id is not None:
         svc.pipeline.submit(job.id, job.document_id)

@@ -70,7 +70,7 @@ def test_implementation_has_no_undocumented_operations(spec, impl):
         "Health", "CollectionCreate", "Collection", "CollectionPage", "ChunkingConfig",
         "Document", "DocumentPage", "DocumentIngest", "InlineSource", "MinioSource",
         "Job", "Chunk", "SearchResponse", "QueryRequest", "QueryResponse", "Citation", "Usage", "Timings",
-        "SearchRequest",
+        "SearchRequest", "Locator",
     ],
 )
 def test_schema_properties_match_contract(name, spec, impl):

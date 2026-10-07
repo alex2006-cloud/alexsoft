@@ -1,0 +1,107 @@
+# kb-sync: what goes into the project knowledge base (ADR-0018).
+# Run: powershell -ExecutionPolicy Bypass -File infra\rag\kb-sync.ps1 [-DryRun] [-NoSummaries]
+#
+# Files come from `git ls-files` (+ untracked, not ignored). Order of `collections` matters:
+# the first collection whose `include` matches a file wins. Secrets never get in: `.env*`, keys,
+# dumps are skipped by name and every text file is scanned for tokens/passwords (see kbsync/rules.py).
+
+version: 1
+minio_prefix: kb
+max_text_bytes: 1000000
+max_binary_bytes: 52428800
+
+# Never indexed (noise, generated, binary, huge).
+exclude:
+  - "**/node_modules/**"
+  - "**/.next/**"
+  - "**/dist/**"
+  - "**/*.egg-info/**"
+  - "**/__pycache__/**"
+  - "package-lock.json"
+  - "pnpm-lock.yaml"
+  - "*.lock"
+  - "*.min.js"
+  - "*.map"
+  - "**/workspace.json"            # Structurizr export, huge generated JSON
+  - "artifacts/.structurizr/**"
+  - "artifacts/generated/**"       # rendered diagrams (png/svg); the DSL is the source of truth
+  - "artifacts/adr/0000-template.md"
+  - ".cursor/**"
+  # artifacts/portfolio/ mirrors other artifacts (collect-portfolio.mjs); index the originals only
+  - "artifacts/portfolio/architecture/**"
+  - "artifacts/portfolio/0001*"
+  - "artifacts/portfolio/*.yaml"
+  - "artifacts/portfolio/*.html"
+
+collections:
+  project-docs:
+    description: "Документация проекта alexsoft: ADR, концепция, roadmap, архитектура, PDF, Excel, диаграммы"
+    sparse_language: russian
+    chunking: { strategy: auto, chunk_size: 512, chunk_overlap: 64 }
+    include:
+      - "*.md"
+      - "*.pdf"
+      - "*.xlsx"
+      - "*.bpmn"
+      - "*.drawio"
+      - "*.txt"
+      - ".env.example"
+      - "artifacts/**/*.puml"
+      - "artifacts/**/*.dsl"
+      - "artifacts/api/*.yaml"
+  project-code:
+    description: "Исходный код alexsoft: apps/, infra/, скрипты, конфиги (+ краткие описания файлов)"
+    sparse_language: english
+    chunking: { strategy: auto, chunk_size: 512, chunk_overlap: 0 }
+    include:
+      - "*.py"
+      - "*.ts"
+      - "*.tsx"
+      - "*.js"
+      - "*.mjs"
+      - "*.ps1"
+      - "*.sql"
+      - "*.yaml"
+      - "*.yml"
+      - "*.toml"
+      - "*.json"
+      - "*.conf"
+      - "*.alloy"
+      - "*.sh"
+      - "*.css"
+      - "*.html"
+
+# first match wins; default: `doc` / `code`
+kinds:
+  - { glob: "artifacts/adr/**", kind: adr }
+  - { glob: "artifacts/business-cases/**", kind: business-case }
+  - { glob: "artifacts/portfolio/**", kind: portfolio }
+  - { glob: "artifacts/api/**", kind: api-contract }
+  - { glob: "artifacts/architecture/**", kind: architecture }
+  - { glob: "CONCEPT.md", kind: concept }
+  - { glob: "ROADMAP.md", kind: roadmap }
+  - { glob: "AGENTS.md", kind: agents }
+  - { glob: "**/README.md", kind: readme }
+  - { glob: "*.pdf", kind: pdf }
+  - { glob: "*.xlsx", kind: spreadsheet }
+  - { glob: "**/tests/**", kind: test }
+  - { glob: "infra/**", kind: infra }
+
+# "What does this file do?" answers: an LLM summary per code file, indexed next to the code.
+summaries:
+  enabled: true
+  model: deepseek            # via LiteLLM; cached by content hash in %LOCALAPPDATA%\AlexsoftRag\summaries
+  collection: project-code
+  min_lines: 25
+  max_file_bytes: 60000
+  include:
+    - "apps/**/*.py"
+    - "apps/**/*.ts"
+    - "apps/**/*.tsx"
+    - "infra/**/*.ps1"
+    - "infra/**/*.py"
+    - "scripts/**"
+  exclude:
+    - "**/tests/**"
+    - "**/__init__.py"
+    - "**/*.d.ts"

@@ -42,7 +42,13 @@ class VectorStore:
     def __init__(self, url: str, api_key: str = "", client: AsyncQdrantClient | None = None) -> None:
         # trust_env=False: internal service, must not go through a Windows system (SOCKS/HTTP) proxy
         self.client = client or AsyncQdrantClient(
-            url=url, api_key=api_key or None, timeout=60, trust_env=False
+            url=url,
+            api_key=api_key or None,
+            timeout=60,
+            trust_env=False,
+            # the client-version check runs in a background thread via a proxy-aware httpx client;
+            # on Windows it crashed the process (ssl cert store, access violation) - we pin versions ourselves
+            check_compatibility=False,
         )
 
     async def aclose(self) -> None:

@@ -24,8 +24,12 @@ class Health(BaseModel):
 
 
 # ---- chunking / collections --------------------------------------------------
+SparseLanguage = Literal["russian", "english"]
+ChunkStrategy = Literal["auto", "sentence", "markdown", "token", "code", "pages", "table"]
+
+
 class ChunkingConfig(Strict):
-    strategy: Literal["sentence", "markdown", "token"] = "markdown"
+    strategy: ChunkStrategy = "auto"
     chunk_size: int = Field(512, ge=64, le=8192)
     chunk_overlap: int = Field(64, ge=0, le=1024)
 
@@ -40,6 +44,7 @@ class CollectionCreate(Strict):
     name: CollectionName
     description: str | None = Field(None, max_length=500)
     chunking: ChunkingConfig | None = None
+    sparse_language: SparseLanguage = "russian"
 
 
 class Collection(BaseModel):
@@ -48,6 +53,7 @@ class Collection(BaseModel):
     embedding_model: str
     dense_dimensions: int
     chunking: ChunkingConfig | None = None
+    sparse_language: SparseLanguage = "russian"
     documents_count: int = 0
     chunks_count: int = 0
     created_at: datetime
@@ -70,6 +76,7 @@ class MinioSource(Strict):
     bucket: str
     key: str
     version_id: str | None = None
+    content_type: str | None = None
 
 
 class InlineSource(Strict):
@@ -87,6 +94,7 @@ class DocumentIngest(Strict):
     source: DocumentSource
     metadata: dict[str, MetadataValue] | None = None
     chunking: ChunkingConfig | None = None
+    content_hash: str | None = Field(None, max_length=128)
 
     @field_validator("metadata")
     @classmethod
@@ -102,6 +110,7 @@ class Document(BaseModel):
     metadata: dict[str, Any] | None = None
     status: DocumentStatus
     chunks_count: int = 0
+    content_hash: str | None = None
     error: str | None = None
     created_at: datetime
     indexed_at: datetime | None = None
@@ -145,6 +154,21 @@ class SearchRequest(SearchParams):
     query: str = Field(min_length=1, max_length=4000)
 
 
+class Locator(BaseModel):
+    """Where a chunk sits in its source (page, sheet/range, lines/symbol, section)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    path: str | None = None
+    page: int | None = Field(None, ge=1)
+    sheet: str | None = None
+    range: str | None = None
+    line_start: int | None = Field(None, ge=1)
+    line_end: int | None = Field(None, ge=1)
+    symbol: str | None = None
+    section: str | None = None
+
+
 class Chunk(BaseModel):
     id: str
     document_id: UUID
@@ -152,6 +176,7 @@ class Chunk(BaseModel):
     text: str
     score: float
     position: int | None = Field(None, ge=0)
+    locator: Locator | None = None
     metadata: dict[str, Any] | None = None
 
 
@@ -180,6 +205,7 @@ class Citation(BaseModel):
     document_id: UUID
     external_id: str | None = None
     quote: str | None = None
+    locator: Locator | None = None
 
 
 class Usage(BaseModel):

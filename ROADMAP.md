@@ -114,7 +114,8 @@
 - [x] LiteLLM: алиас `text-embedding-3-small` в `infra/litellm/config.yaml` (нужен `OPENAI_API_KEY` в `.env`)
 - [x] RAG, 3 слоя в коде: загрузка → хранение эмбеддингов → пайплайны поиска (hybrid dense+BM25, RRF/DBSF)
 - [x] `apps/rag` (сервис RAG, FastAPI, порт 8200; реализует `rag.openapi.yaml`; тесты: unit + интеграционные + контрактные) — `[apps/rag](apps/rag/README.md)`
-- [ ] Живой прогон на `text-embedding-3-small`: ключ `OPENAI_API_KEY` → `infra/litellm/smoke-embeddings.ps1` → `infra/rag/seed-corpus.ps1` → `apps/rag/eval/run_eval.py --answer`
+- [x] Мультиформатный ingest и **база знаний о проекте** (docs + код): PDF (+ vision-OCR сканов через LiteLLM), Excel (таблицы + формулы), код (символы и строки), `.bpmn`/`.drawio`; коллекции `project-docs` и `project-code`; `infra/rag/kb-sync.ps1` (инкрементально, с защитой от секретов и LLM-описаниями файлов) — [ADR-0018](artifacts/adr/0018-rag-multiformat-ingest-and-project-kb.md)
+- [ ] Живой прогон на `text-embedding-3-small`: ключ `OPENAI_API_KEY` в `.env` → перезапуск LiteLLM → `infra/litellm/smoke-embeddings.ps1` → `infra/rag/kb-sync.ps1` → `apps/rag/eval/run_eval.py --answer`
 
 **5.7 — первый AI-агент с RAG**
 

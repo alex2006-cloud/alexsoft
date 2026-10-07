@@ -309,3 +309,87 @@ def ingest_raw(client, coll, source, external_id):
     )
     assert r.status_code == 202, r.text
     return r.json()
+
+
+# ---- multi-format ingest (ADR-0018) ------------------------------------------------------
+def put_object(client, key: str, data: bytes) -> dict:
+    store = client.app.state.services.objects
+    store._client.put_object(store.default_bucket, key, io.BytesIO(data), len(data))
+    return {"type": "minio", "bucket": store.default_bucket, "key": key}
+
+
+def test_multiformat_documents_have_locators(client, llm):
+    from .test_parsers import DRAWIO, PY, make_mixed_pdf, make_xlsx
+
+    name = f"t-{uuid.uuid4().hex[:10]}"
+    assert client.post("/v1/collections", json={"name": name, "sparse_language": "english"}, headers=H).status_code == 201
+    got = client.get(f"/v1/collections/{name}", headers=H).json()
+    assert got["sparse_language"] == "english"
+    prefix = f"it/{uuid.uuid4().hex}"
+    keys = []
+    try:
+        files = {
+            "pnl.xlsx": make_xlsx(),
+            "scan.pdf": make_mixed_pdf(),
+            "svc.py": PY.encode(),
+            "arch.drawio": DRAWIO.encode(),
+        }
+        for fname, data in files.items():
+            key = f"{prefix}/{fname}"
+            keys.append(key)
+            job = ingest_raw(client, name, put_object(client, key, data), key)
+            done = wait_job(client, job["id"])
+            assert done["status"] == "succeeded", (fname, done)
+
+        def search(q, **kw):
+            r = client.post("/v1/search", json={"collection": name, "query": q, "top_k": 5, **kw}, headers=H)
+            assert r.status_code == 200, r.text
+            return r.json()["chunks"]
+
+        xlsx_hit = next(c for c in search("Статья 7 Q1 Q2 Итого") if c["external_id"].endswith("pnl.xlsx"))
+        assert xlsx_hit["locator"]["sheet"] == "Бюджет" and xlsx_hit["locator"]["range"].startswith("A")
+        assert xlsx_hit["locator"]["path"].endswith("pnl.xlsx")
+
+        pdf_hits = [c for c in search("RabbitMQ broker long running AI tasks") if c["external_id"].endswith("scan.pdf")]
+        assert pdf_hits and pdf_hits[0]["locator"]["page"] == 1
+
+        code_hit = next(c for c in search("embed_query method of Service class") if c["external_id"].endswith("svc.py"))
+        loc = code_hit["locator"]
+        assert loc["line_start"] >= 1 and loc["line_end"] >= loc["line_start"]
+        assert "Service" in loc.get("symbol", "") or "alpha" in loc.get("symbol", "")
+
+        diagram_hit = next(c for c in search("LangGraph LiteLLM chat связи") if c["external_id"].endswith("arch.drawio"))
+        assert "LangGraph" in diagram_hit["text"] and diagram_hit["locator"]["section"] == "Target"
+    finally:
+        client.delete(f"/v1/collections/{name}", headers=H)
+        store = client.app.state.services.objects
+        for key in keys:
+            store._client.remove_object(store.default_bucket, key)
+
+
+def test_unchanged_content_hash_skips_reindexing(client, coll, llm):
+    first = client.post(
+        f"/v1/collections/{coll}/documents",
+        json={"source": {"type": "inline", "text": BROKER}, "external_id": "doc-h", "content_hash": "h1"},
+        headers=H,
+    ).json()
+    assert wait_job(client, first["id"])["status"] == "succeeded"
+    calls = llm.embed_calls
+
+    again = client.post(
+        f"/v1/collections/{coll}/documents",
+        json={"source": {"type": "inline", "text": BROKER}, "external_id": "doc-h", "content_hash": "h1"},
+        headers=H,
+    ).json()
+    assert again["status"] == "succeeded" and again["id"] != first["id"]  # nothing to do
+    assert llm.embed_calls == calls
+
+    changed = client.post(
+        f"/v1/collections/{coll}/documents",
+        json={"source": {"type": "inline", "text": BROKER + "\n\nещё"}, "external_id": "doc-h", "content_hash": "h2"},
+        headers=H,
+    ).json()
+    assert wait_job(client, changed["id"])["status"] == "succeeded"
+    assert llm.embed_calls > calls
+    docs = client.get(f"/v1/collections/{coll}/documents", headers=H).json()["items"]
+    assert len(docs) == 1 and docs[0]["content_hash"] == "h2"

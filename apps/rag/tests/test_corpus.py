@@ -77,8 +77,8 @@ def test_corpus_hit_rate_with_hybrid_search():
             hits = total = 0
             misses = []
             for item in QUESTIONS["questions"]:
-                if item.get("answerable") is False:
-                    continue
+                if item.get("answerable") is False or item.get("seed") is False:
+                    continue  # seed: false = needs the full kb-sync (PDF/Excel/code), not this minimal corpus
                 total += 1
                 chunks = c.post(
                     "/v1/search", json={"collection": name, "query": item["q"], "top_k": 5}, headers=H

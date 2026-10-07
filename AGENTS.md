@@ -7,6 +7,7 @@
 - Architecture-as-code: источник правды — `artifacts/architecture/c4-l1-l2-l3.dsl` (C4 L1–L3). Structurizr Local читает `artifacts/workspace.dsl` (полная копия модели; volume Docker = `artifacts/`). После правок C4 синхронизируй: `Copy-Item artifacts/architecture/c4-l1-l2-l3.dsl artifacts/workspace.dsl -Force`. Диаграммы не рисовать «вручную в вакууме»; сначала DSL, потом экспорт. Целевая схема (draw.io): `artifacts/architecture/architecture-in-drawio.drawio` ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md)).
 - Контракт RAG-сервиса — `artifacts/api/rag.openapi.yaml` (contract-first): сначала меняем контракт, потом `apps/rag`.
 - Портфолио лендинга — только `artifacts/portfolio/` (файлы + `portfolio.yaml`, [ADR-0016](artifacts/adr/0016-portfolio-from-artifacts.md)). Лендинг собирает их при build; в `apps/landing/public/portfolio` ничего вручную не копировать.
+- База знаний о проекте (docs + код + PDF/Excel) живёт в Qdrant: коллекции `project-docs` и `project-code`, источники — `apps/rag/kb/sources.yaml`, синхронизация — `infra/rag/kb-sync.ps1` ([ADR-0018](artifacts/adr/0018-rag-multiformat-ingest-and-project-kb.md)). После крупных правок документации или кода — перезапусти sync; секреты в индекс не попадают (сканер + исключения по имени).
 - ADR обязательны для решений, которые меняют стек, границы сервисов или данные. Шаблон: `artifacts/adr/0000-template.md`.
 - Секреты только в `.env` (локально) и в GitHub Secrets. В репозиторий — `.env.example`.
 - Новый продукт = отдельный сервис в `apps/` + запись в Structurizr + ссылка с лендинга.

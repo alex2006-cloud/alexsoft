@@ -9,13 +9,14 @@ from uuid import UUID, uuid5
 from ..clients.litellm import LiteLLMClient
 from ..clients.minio_client import ObjectStore
 from ..errors import ApiError
+from ..parsers import parse_document
+from ..parsers.base import ParseContext, VisionOCR
 from ..retrieval.sparse import SparseEmbedder
 from ..schemas import ChunkingConfig
 from ..store.postgres import Database
 from ..store.qdrant import VectorStore
-from .chunker import chunk_text
+from .chunker import chunk_segments
 from .loader import load_source
-from .parser import clean_text
 
 log = logging.getLogger("alexsoft_rag.ingest")
 
@@ -35,6 +36,9 @@ class IngestPipeline:
         objects: ObjectStore,
         *,
         max_chars: int,
+        max_bytes: int = 50 * 1024 * 1024,
+        ocr: VisionOCR | None = None,
+        max_ocr_pages: int = 60,
         embed_batch_size: int = 64,
         upsert_batch_size: int = 64,
         concurrency: int = 2,
@@ -45,6 +49,9 @@ class IngestPipeline:
         self._sparse = sparse
         self._objects = objects
         self._max_chars = max_chars
+        self._max_bytes = max_bytes
+        self._ocr = ocr
+        self._max_ocr_pages = max_ocr_pages
         self._embed_batch = embed_batch_size
         self._upsert_batch = upsert_batch_size
         self._sem = asyncio.Semaphore(concurrency)
@@ -92,28 +99,33 @@ class IngestPipeline:
         if collection is None:
             raise ApiError(404, "not_found", "Collection was deleted before ingest started")
         name = collection.name
+        language = collection.sparse_language
 
         await self._db.set_document_status(document_id, "processing")
 
+        cfg_raw = row["chunking"] or (collection.chunking.model_dump() if collection.chunking else None)
+        cfg = ChunkingConfig(**cfg_raw) if cfg_raw else ChunkingConfig()
+
         # load
         await self._stage(job_id, "load")
-        raw, _content_type = await load_source(dict(row["source"]), self._objects, self._max_chars)
-        if len(raw) > self._max_chars:
-            raise ApiError(413, "payload_too_large", f"Document exceeds {self._max_chars} characters")
+        raw = await load_source(
+            dict(row["source"]), self._objects, max_bytes=self._max_bytes, external_id=row["external_id"]
+        )
 
-        # parse & clean
+        # parse (format-specific: text, code, PDF with OCR, Excel, diagrams)
         await self._stage(job_id, "parse")
-        text = clean_text(raw)
-        if not text:
-            raise ApiError(422, "validation_error", "Document is empty after cleaning")
+        ctx = ParseContext(chunk_size=cfg.chunk_size, ocr=self._ocr, max_ocr_pages=self._max_ocr_pages)
+        segments = await parse_document(raw, ctx)
+        total_chars = sum(len(s.text) for s in segments)
+        if total_chars > self._max_chars:
+            raise ApiError(413, "payload_too_large", f"Document text exceeds {self._max_chars} characters")
 
         # chunk
         await self._stage(job_id, "chunk")
-        cfg_raw = row["chunking"] or (collection.chunking.model_dump() if collection.chunking else None)
-        cfg = ChunkingConfig(**cfg_raw) if cfg_raw else ChunkingConfig()
-        chunks = await asyncio.to_thread(chunk_text, text, cfg)
+        chunks = await asyncio.to_thread(chunk_segments, segments, cfg)
         if not chunks:
             raise ApiError(422, "validation_error", "No chunks produced from document")
+        path = row["external_id"] or raw.filename
 
         # embed (dense via LiteLLM, sparse locally)
         await self._stage(job_id, "embed")
@@ -121,7 +133,7 @@ class IngestPipeline:
         sparse = []
         for i in range(0, len(chunks), self._embed_batch):
             batch = [c.embed_text for c in chunks[i : i + self._embed_batch]]
-            vectors = await self._llm.embed(batch)
+            vectors = await self._llm.embed(batch, model=collection.embedding_model)
             for v in vectors:
                 if len(v) != collection.dense_dimensions:
                     raise ApiError(
@@ -130,7 +142,7 @@ class IngestPipeline:
                         f"Embedding has {len(v)} dims, collection expects {collection.dense_dimensions}",
                     )
             dense.extend(vectors)
-            sparse.extend(await self._sparse.embed_documents(batch))
+            sparse.extend(await self._sparse.embed_documents(batch, language))
 
         # upsert (overwrite in place, then drop tail left from a longer previous version)
         await self._stage(job_id, "upsert")
@@ -147,7 +159,9 @@ class IngestPipeline:
                     "external_id": row["external_id"],
                     "position": pos,
                     "text": chunk.text,
-                    "header_path": chunk.header_path,
+                    "header": chunk.header,
+                    "kind": chunk.kind,
+                    "locator": {"path": path, **chunk.locator},
                     "metadata": metadata,
                 },
             )

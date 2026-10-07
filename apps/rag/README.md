@@ -20,7 +20,8 @@ Swagger UI сервиса: http://127.0.0.1:8200/docs. Проверка конт
 ## Как устроено
 
 ```
-inline | MinIO ─► Loader ─► Parse&Clean ─► Chunking (LlamaIndex) ─► Embed ─► Qdrant upsert     (ingest, фоновая задача + Job)
+inline | MinIO ─► Loader ─► Parser (по формату) ─► Segments+locator ─► Chunking ─► Embed ─► Qdrant upsert   (ingest, фоновая задача + Job)
+                  md/txt | код | PDF (+vision OCR) | Excel | bpmn/drawio
                                                dense: LiteLLM text-embedding-3-small
                                                sparse: fastembed Qdrant/bm25 (локально)
 query ─► embed(dense+sparse) ─► Qdrant query_points(prefetch dense & sparse, RRF|DBSF, filter) ─► чанки
@@ -30,9 +31,12 @@ query ─► embed(dense+sparse) ─► Qdrant query_points(prefetch dense & spa
 - **Коллекция** = коллекция Qdrant с векторами `dense` (1536, cosine) и `sparse` (BM25, IDF). Модель embedding фиксируется на коллекции при создании; смена модели = новая коллекция.
 - **Состояние** (коллекции, документы, Job, Idempotency-Key) — PostgreSQL, схема `rag` в БД `alexsoft` (DDL создаётся при старте).
 - **Идемпотентность:** повторный `POST` с тем же `external_id` обновляет чанки на месте (точки с детерминированными id, хвост удаляется, поиск не «проваливается»); `Idempotency-Key` возвращает исходный Job.
-- **Чанкинг:** `markdown` (по заголовкам + деление больших секций + склейка крошечных), `sentence`, `token`; параметры по коллекции или документу (`ChunkingConfig`). В текст для embedding добавляется путь заголовков.
+- **Чанкинг:** `auto` (по умолчанию: стратегия по типу содержимого) | `markdown` | `sentence` | `token` | `code` | `pages` | `table`; параметры по коллекции или документу (`ChunkingConfig`). Несовместимая стратегия коллекции не ломает другие форматы (код в «markdown»-коллекции остаётся кодом). В текст для embedding добавляется заголовок (путь заголовков, `File/Language/Symbol`, `файл, стр. N`).
 - **Score:** `score` в ответе нормирован в [0, 1] (RRF: 1.0 = первое место и в dense, и в sparse; DBSF: доля максимума), `score_threshold` действует на него.
-- **Источники:** UTF-8 текст/markdown (inline или объект MinIO). PDF/Office — позже (отдельный парсер).
+- **Источники и форматы** ([ADR-0018](../../artifacts/adr/0018-rag-multiformat-ingest-and-project-kb.md)): текст/markdown; **код** (`.py` через `ast`, `.ts/.tsx/.js` по объявлениям, `.ps1/.sql/.yaml/.toml/.conf/.dsl/.puml` блоками; символ и номера строк в `locator`); **PDF** (`pypdf`; страницы без текстового слоя → картинка → vision-модель через LiteLLM, кеш в `rag.page_ocr_cache`); **Excel `.xlsx`** (листы → markdown-таблицы / записи `колонка: значение`, отдельные чанки формул; скрытые листы пропускаются); **`.bpmn`, `.drawio`** (узлы и связи). Inline-источник — только текст. Не поддержано (422): `.docx/.pptx/.xls`, картинки, архивы.
+- **Локатор:** каждый `Chunk`/`Citation` несёт `locator` (`path`, `page`, `sheet`+`range`, `line_start/line_end`+`symbol`, `section`) — по нему агент указывает точное место источника.
+- **`content_hash`:** если документ с тем же `external_id` уже проиндексирован с таким же хешем, метаданными и чанкингом, ingest возвращает готовый Job и ничего не пересчитывает (экономия токенов embedding).
+- **BM25:** язык на коллекцию (`sparse_language`: `russian` для документов, `english` для кода); идентификаторы `snake_case`/`camelCase` разворачиваются в слова.
 - **Auth этапа 5:** заголовок `X-API-Key` = `RAG_API_KEY`; пустой ключ = все защищённые методы отвечают 401 (fail closed). JWT Authentik — этап 6.
 - **LLM Guard:** интерфейс `GuardrailsClient`; сейчас `NoopGuard` (`LLM_GUARD_ENABLED=false`). Реальный Guard — этап 6.
 - **Ошибки:** `application/problem+json` (RFC 9457) с `code`; `X-Request-Id` принимается и возвращается.
@@ -55,9 +59,11 @@ powershell -ExecutionPolicy Bypass -File infra\rag\install-rag.ps1
 powershell -ExecutionPolicy Bypass -File infra\rag\start-rag.ps1               # http://127.0.0.1:8200
 powershell -ExecutionPolicy Bypass -File infra\rag\smoke-rag.ps1               # коллекция -> ingest -> search -> query
 
-# 3. корпус проекта (ADR, CONCEPT, ROADMAP, README, БК1) и оценка качества
-powershell -ExecutionPolicy Bypass -File infra\rag\seed-corpus.ps1
+# 3. база знаний о проекте и оценка качества
+powershell -ExecutionPolicy Bypass -File infra\rag\kb-sync.ps1 -DryRun        # что будет загружено (без сети)
+powershell -ExecutionPolicy Bypass -File infra\rag\kb-sync.ps1                # docs + код + PDF/Excel + саммари кода
 & "$env:LOCALAPPDATA\AlexsoftRag\venv\Scripts\python.exe" apps\rag\eval\run_eval.py --answer
+# минимальный вариант только с документацией (без кода): infra\rag\seed-corpus.ps1
 
 powershell -ExecutionPolicy Bypass -File infra\rag\stop-rag.ps1
 ```
@@ -73,6 +79,19 @@ curl.exe -s -X POST http://127.0.0.1:8200/v1/search -H "X-API-Key: <key>" -H "Co
 
 > Windows с системным прокси (Clash/V2Ray): клиент Qdrant и LiteLLM-клиент работают с `trust_env=False`, локальные вызовы идут мимо прокси.
 
+## База знаний о проекте (`kb-sync`)
+
+Две коллекции ([ADR-0018](../../artifacts/adr/0018-rag-multiformat-ingest-and-project-kb.md)): **`project-docs`** (ADR, CONCEPT/ROADMAP, README, архитектура `.dsl/.puml/.drawio/.bpmn`, OpenAPI, PDF, Excel; BM25 `russian`) и **`project-code`** (`apps/`, `infra/`, скрипты, конфиги + краткие LLM-описания файлов `summary/<path>.md`; BM25 `english`). Что и куда попадает — `kb/sources.yaml`.
+
+`kb-sync.ps1` берёт файлы из `git ls-files` (+ новые неигнорируемые), считает sha256 и грузит только изменённое (MinIO → ingest с `content_hash`), удаляет из индекса документы исчезнувших файлов и **не индексирует секреты**: `.env*` (кроме `.env.example`), `*.pem/*.key`, `credentials.json` — по имени, остальное — сканером токенов/паролей; подозрительные файлы попадают в отчёт, а не в индекс. Саммари кода генерирует `deepseek` через LiteLLM и кеширует на диске по хешу файла (`-NoSummaries` отключает).
+
+```powershell
+powershell -ExecutionPolicy Bypass -File infra\rag\kb-sync.ps1 -DryRun -VerboseSkips
+powershell -ExecutionPolicy Bypass -File infra\rag\kb-sync.ps1 -Only "apps/rag/**" -Force
+```
+
+> Доступ к `project-code` — только по `X-API-Key` на localhost; публично — после IAM (этап 6).
+
 ## Тесты
 
 ```powershell
@@ -83,6 +102,8 @@ cd apps\rag
 | Файл | Что проверяет | Требует |
 |---|---|---|
 | `tests/test_units.py` | чанкинг, очистка, фильтры, нормализация score, цитаты, guard | ничего |
+| `tests/test_parsers.py` | код (символы, номера строк), Excel (таблицы, формулы), PDF (текст + OCR сканов), bpmn/drawio | ничего |
+| `tests/test_kbsync.py` | правила выбора файлов, сканер секретов, инкрементальная синхронизация, формат eval | ничего |
 | `tests/test_contract.py` | паритет с `rag.openapi.yaml` | ничего |
 | `tests/test_integration.py` | CRUD, ingest → search → query, фильтры, идемпотентность, MinIO, ошибки | Postgres, Qdrant, MinIO (иначе skip) |
 | `tests/test_corpus.py` | реальный корпус проекта: hit@5 ≥ 0.7 на гибридном пути (dense — hashing stand-in) | Postgres, Qdrant, MinIO (иначе skip) |
@@ -91,4 +112,4 @@ cd apps\rag
 
 ## Структура
 
-`alexsoft_rag/` — `api/` (роутеры по тегам контракта), `ingest/` (loader, parser, chunker, pipeline), `store/` (postgres, qdrant), `retrieval/` (sparse, search, query), `clients/` (litellm, minio, guard), `schemas.py`, `config.py`, `errors.py`, `main.py`.
+`alexsoft_rag/` — `api/` (роутеры по тегам контракта), `parsers/` (реестр форматов: text, code, xlsx, pdf, diagrams), `ingest/` (loader, chunker, code_chunker, pipeline), `store/` (postgres, qdrant), `retrieval/` (sparse, search, query), `clients/` (litellm, vision, minio, guard), `kbsync/` (синхронизация репозитория с КБ), `schemas.py`, `config.py`, `errors.py`, `main.py`. `kb/sources.yaml` — источники КБ; `eval/` — вопросы и `run_eval.py`.

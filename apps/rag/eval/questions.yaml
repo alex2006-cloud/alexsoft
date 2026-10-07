@@ -1,6 +1,10 @@
-# Evaluation set for the project corpus (collection `project-docs`, seeded by infra/rag/seed-corpus.ps1).
+# Evaluation set for the project knowledge base (collections `project-docs` and `project-code`, filled by
+# infra/rag/kb-sync.ps1; the first 13 questions also work against the minimal seed of infra/rag/seed-corpus.ps1).
+# collection: which collection to ask (default `project-docs`).
+# seed: false = needs the full kb-sync (PDF/Excel/code); excluded from the offline corpus test.
 # expect_any: a retrieved chunk must come from a document whose external_id (repo path) contains
-#             ANY of these substrings -> counts as a hit. `answerable: false` = must give insufficient_context.
+#             ANY of these substrings -> counts as a hit (code summaries have the id `summary/<path>.md`,
+#             so the same substring matches both). `answerable: false` = must give insufficient_context.
 questions:
   - q: Какая векторная БД выбрана для RAG и почему не Weaviate?
     expect_any: ["adr/0015", "CONCEPT.md", "ROADMAP.md"]
@@ -29,3 +33,71 @@ questions:
   - q: Какой рецепт борща с говядиной?
     answerable: false
     expect_any: []
+
+  # ---- project-docs: PDF, Excel, diagrams, API contract ----
+  - q: Какие шаги входят в анализ бизнес-требований по методологии оценки AI-проектов?
+    expect_any: ["ai-project-methodology"]
+    seed: false
+  - q: Кто в примере методологии выступает заказчиком и инвестором проекта (Банк А)?
+    expect_any: ["ai-project-methodology"]
+    seed: false
+  - q: Кто в команде SupportAI и какую задачу решает сервис?
+    expect_any: ["supportai-pitch"]
+    seed: false
+  - q: Какие драйверы трудозатрат учитываются в калькуляторе оценки AI-проекта?
+    expect_any: ["ai-project-calculator"]
+    seed: false
+  - q: Какие позиции и ставки себестоимости ч/д заложены в расчёте P&L AI-проекта?
+    expect_any: ["ai-project-estimate-pnl"]
+    seed: false
+  - q: Какие шаги проходит пользователь в BPMN-процессе «Узнать о проекте через Q&A-агента»?
+    expect_any: ["0001.bpmn"]
+    seed: false
+  - q: Какие компоненты входят в периметр безопасности и маршрутизации на целевой схеме архитектуры?
+    expect_any: ["architecture-in-drawio", "adr/0015"]
+    seed: false
+  - q: Какими операциями API RAG загружается документ и запускается поиск?
+    expect_any: ["rag.openapi.yaml"]
+    seed: false
+
+  # ---- project-code: source code and its summaries ----
+  - q: Как нормализуется score после RRF-фьюжна в гибридном поиске?
+    collection: project-code
+    expect_any: ["retrieval/search.py"]
+    seed: false
+  - q: Как пайплайн считает id точек в Qdrant для документа, чтобы переиндексация не оставляла дыр?
+    collection: project-code
+    expect_any: ["ingest/pipeline.py"]
+    seed: false
+  - q: Где проверяется X-API-Key и что происходит, если ключ в настройках пустой?
+    collection: project-code
+    expect_any: ["alexsoft_rag/main.py", "alexsoft_rag/deps.py"]
+    seed: false
+  - q: Какой системный промпт используется для ответа с цитатами и когда возвращается INSUFFICIENT_CONTEXT?
+    collection: project-code
+    expect_any: ["retrieval/query.py"]
+    seed: false
+  - q: Как парсер Excel разбивает листы на чанки и что делает с формулами?
+    collection: project-code
+    expect_any: ["parsers/xlsx.py"]
+    seed: false
+  - q: Как скрипт запускает Qdrant на Windows?
+    collection: project-code
+    expect_any: ["infra/qdrant/start-qdrant.ps1", "infra/qdrant/install-qdrant.ps1"]
+    seed: false
+  - q: Какие модели и алиасы подключены в конфиге LiteLLM?
+    collection: project-code
+    expect_any: ["infra/litellm/config.yaml"]
+    seed: false
+  - q: Как настроен nginx для домена alexsoft.space?
+    collection: project-code
+    expect_any: ["infra/nginx/alexsoft.space.conf"]
+    seed: false
+  - q: Из каких секций состоит главная страница лендинга?
+    collection: project-code
+    expect_any: ["apps/landing/src/app/page.tsx", "apps/landing/src/components"]
+    seed: false
+  - q: Как sync-инструмент решает, что файл с секретами нельзя индексировать?
+    collection: project-code
+    expect_any: ["kbsync/rules.py", "kbsync/runner.py"]
+    seed: false

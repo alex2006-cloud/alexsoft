@@ -38,6 +38,7 @@ async def create_collection(
         s.rag_embedding_model,
         s.rag_embedding_dimensions,
         body.chunking,
+        body.sparse_language,
     )
     if created is None:
         raise ApiError(409, "already_exists", f"Collection {body.name!r} already exists")

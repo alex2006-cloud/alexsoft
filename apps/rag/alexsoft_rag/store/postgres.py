@@ -59,6 +59,18 @@ CREATE TABLE IF NOT EXISTS rag.idempotency_keys (
     created_at  timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (collection, key)
 );
+
+-- v0.2.0 (ADR-0018): per-collection BM25 language, content hash, OCR cache
+ALTER TABLE rag.collections ADD COLUMN IF NOT EXISTS sparse_language text NOT NULL DEFAULT 'russian';
+ALTER TABLE rag.documents   ADD COLUMN IF NOT EXISTS content_hash text;
+
+CREATE TABLE IF NOT EXISTS rag.page_ocr_cache (
+    image_sha256  text NOT NULL,
+    model         text NOT NULL,
+    text          text NOT NULL,
+    created_at    timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (image_sha256, model)
+);
 """
 
 
@@ -92,6 +104,7 @@ def _collection(row: asyncpg.Record) -> Collection:
         embedding_model=row["embedding_model"],
         dense_dimensions=row["dense_dimensions"],
         chunking=ChunkingConfig(**chunking) if chunking else None,
+        sparse_language=row["sparse_language"],
         documents_count=row.get("documents_count") or 0,
         chunks_count=row.get("chunks_count") or 0,
         created_at=row["created_at"],
@@ -107,6 +120,7 @@ def _document(row: asyncpg.Record) -> Document:
         metadata=row["metadata"],
         status=row["status"],
         chunks_count=row["chunks_count"],
+        content_hash=row["content_hash"],
         error=row["error"],
         created_at=row["created_at"],
         indexed_at=row["indexed_at"],
@@ -163,13 +177,15 @@ class Database:
         embedding_model: str,
         dense_dimensions: int,
         chunking: ChunkingConfig | None,
+        sparse_language: str = "russian",
     ) -> Collection | None:
         """Returns None if the name is already taken."""
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
-                INSERT INTO rag.collections (name, description, embedding_model, dense_dimensions, chunking)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO rag.collections
+                    (name, description, embedding_model, dense_dimensions, chunking, sparse_language)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (name) DO NOTHING
                 RETURNING *
                 """,
@@ -178,6 +194,7 @@ class Database:
                 embedding_model,
                 dense_dimensions,
                 chunking.model_dump() if chunking else None,
+                sparse_language,
             )
         return _collection(row) if row else None
 
@@ -217,11 +234,14 @@ class Database:
         metadata: dict[str, Any] | None,
         chunking: ChunkingConfig | None,
         idempotency_key: str | None,
+        content_hash: str | None = None,
     ) -> tuple[Job, bool]:
         """Create or reset a document and a queued job atomically.
 
         Returns (job, created). With a known Idempotency-Key returns the original job
         and created=False. Re-ingest with the same `external_id` reuses the document row.
+        If the document is already indexed with the same `content_hash`, chunking and metadata,
+        an already-succeeded job is returned (created=False): nothing to re-index.
         """
         async with self.pool.acquire() as conn, conn.transaction():
             if idempotency_key:
@@ -236,12 +256,30 @@ class Database:
                 if existing:
                     return _job(existing), False
 
+            chunking_json = chunking.model_dump() if chunking else None
             doc_id: UUID | None = None
-            if external_id:
+            unchanged = False
+            if external_id and content_hash:
+                doc_id = await conn.fetchval(
+                    """
+                    SELECT id FROM rag.documents
+                     WHERE collection = $1 AND external_id = $2 AND status = 'indexed'
+                       AND content_hash = $3
+                       AND metadata IS NOT DISTINCT FROM $4::jsonb
+                       AND chunking IS NOT DISTINCT FROM $5::jsonb
+                    """,
+                    collection,
+                    external_id,
+                    content_hash,
+                    metadata,
+                    chunking_json,
+                )
+                unchanged = doc_id is not None
+            if doc_id is None and external_id:
                 doc_id = await conn.fetchval(
                     """
                     UPDATE rag.documents
-                       SET source = $3, metadata = $4, chunking = $5,
+                       SET source = $3, metadata = $4, chunking = $5, content_hash = $6,
                            status = 'queued', error = NULL
                      WHERE collection = $1 AND external_id = $2
                     RETURNING id
@@ -250,27 +288,40 @@ class Database:
                     external_id,
                     source,
                     metadata,
-                    chunking.model_dump() if chunking else None,
+                    chunking_json,
+                    content_hash,
                 )
             if doc_id is None:
                 doc_id = uuid4()
                 await conn.execute(
                     """
-                    INSERT INTO rag.documents (id, collection, external_id, source, metadata, chunking)
-                    VALUES ($1, $2, $3, $4, $5, $6)
+                    INSERT INTO rag.documents
+                        (id, collection, external_id, source, metadata, chunking, content_hash)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
                     """,
                     doc_id,
                     collection,
                     external_id,
                     source,
                     metadata,
-                    chunking.model_dump() if chunking else None,
+                    chunking_json,
+                    content_hash,
                 )
-            row = await conn.fetchrow(
-                "INSERT INTO rag.jobs (id, document_id) VALUES ($1, $2) RETURNING *",
-                uuid4(),
-                doc_id,
-            )
+            if unchanged:
+                row = await conn.fetchrow(
+                    """
+                    INSERT INTO rag.jobs (id, document_id, status, finished_at)
+                    VALUES ($1, $2, 'succeeded', now()) RETURNING *
+                    """,
+                    uuid4(),
+                    doc_id,
+                )
+            else:
+                row = await conn.fetchrow(
+                    "INSERT INTO rag.jobs (id, document_id) VALUES ($1, $2) RETURNING *",
+                    uuid4(),
+                    doc_id,
+                )
             if idempotency_key:
                 await conn.execute(
                     "INSERT INTO rag.idempotency_keys (collection, key, job_id) VALUES ($1, $2, $3)",
@@ -278,7 +329,7 @@ class Database:
                     idempotency_key,
                     row["id"],
                 )
-        return _job(row), True
+        return _job(row), not unchanged
 
     async def get_document(self, collection: str, doc_id: UUID) -> Document | None:
         async with self.pool.acquire() as conn:
@@ -387,3 +438,24 @@ class Database:
                 """
             )
         return len(rows)
+
+    # ---- OCR cache ------------------------------------------------------------------------
+    async def get_ocr(self, image_sha256: str, model: str) -> str | None:
+        async with self.pool.acquire() as conn:
+            return await conn.fetchval(
+                "SELECT text FROM rag.page_ocr_cache WHERE image_sha256 = $1 AND model = $2",
+                image_sha256,
+                model,
+            )
+
+    async def put_ocr(self, image_sha256: str, model: str, text: str) -> None:
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO rag.page_ocr_cache (image_sha256, model, text) VALUES ($1, $2, $3)
+                ON CONFLICT (image_sha256, model) DO UPDATE SET text = EXCLUDED.text
+                """,
+                image_sha256,
+                model,
+                text,
+            )

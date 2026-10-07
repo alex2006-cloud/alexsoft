@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from .clients.guard import GuardrailsClient, build_guard
 from .clients.litellm import LiteLLMClient
 from .clients.minio_client import ObjectStore
+from .clients.vision import LiteLLMVisionOCR
 from .config import Settings
 from .ingest.pipeline import IngestPipeline
 from .retrieval.query import QueryService
@@ -56,6 +57,9 @@ def build_services(settings: Settings, *, llm: LiteLLMClient | None = None) -> S
         sparse,
         objects,
         max_chars=settings.rag_max_document_chars,
+        max_bytes=settings.rag_max_object_bytes,
+        ocr=LiteLLMVisionOCR(llm, db, settings.rag_vision_model),
+        max_ocr_pages=settings.rag_max_ocr_pages,
         embed_batch_size=settings.rag_embed_batch_size,
         upsert_batch_size=settings.rag_upsert_batch_size,
         concurrency=settings.rag_ingest_concurrency,

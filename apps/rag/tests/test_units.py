@@ -5,8 +5,11 @@ from pydantic import ValidationError
 
 from alexsoft_rag.clients.guard import NoopGuard, build_guard
 from alexsoft_rag.ingest.chunker import chunk_text
-from alexsoft_rag.ingest.loader import content_type_for_key, load_source
+from alexsoft_rag.ingest.loader import load_source
 from alexsoft_rag.ingest.parser import clean_text
+from alexsoft_rag.parsers import detect_ext, parse_document
+from alexsoft_rag.parsers.base import ParseContext, RawDocument
+from alexsoft_rag.retrieval.sparse import expand_identifiers
 from alexsoft_rag.errors import ApiError
 from alexsoft_rag.retrieval.query import INSUFFICIENT_MARK, build_messages, extract_citations
 from alexsoft_rag.retrieval.search import normalize_score
@@ -34,7 +37,7 @@ def test_markdown_chunking_respects_size_and_headers():
     cfg = ChunkingConfig(strategy="markdown", chunk_size=128, chunk_overlap=16)
     chunks = chunk_text(clean_text(MD), cfg)
     assert len(chunks) >= 3
-    assert any("Broker" in c.header_path for c in chunks)
+    assert any("Broker" in c.header for c in chunks)
     assert all(c.text.strip() for c in chunks)
     # the lone "## Tiny / short" section is merged into a neighbour instead of becoming its own chunk
     assert not any(c.text.strip().endswith("short") and len(c.text) < 40 for c in chunks)
@@ -62,17 +65,40 @@ def test_chunking_config_overlap_must_be_smaller():
 
 
 # ---- loader --------------------------------------------------------------------
-def test_content_type_by_extension():
-    assert content_type_for_key("adr/0015.md") == "text/markdown"
-    assert content_type_for_key("notes.txt") == "text/plain"
+def test_detect_ext():
+    assert detect_ext(RawDocument("adr/0015.md", b"")) == ".md"
+    assert detect_ext(RawDocument("blob", b"", "application/pdf")) == ".pdf"
+    assert detect_ext(RawDocument("README", b"")) == ""
 
 
-async def test_loader_inline_and_unsupported_binary():
-    text, ct = await load_source({"type": "inline", "text": "hi", "content_type": "text/markdown"}, None, 100)
-    assert (text, ct) == ("hi", "text/markdown")
-    with pytest.raises(ApiError) as e:
-        await load_source({"type": "minio", "bucket": "b", "key": "x/report.pdf"}, None, 100)
-    assert e.value.status == 422
+async def test_loader_inline_names():
+    md = await load_source({"type": "inline", "text": "hi", "content_type": "text/markdown"}, None, max_bytes=100)
+    assert md.filename.endswith(".md") and md.data == b"hi"
+    txt = await load_source({"type": "inline", "text": "hi"}, None, max_bytes=100, external_id="note-1")
+    assert txt.filename == "note-1.txt"
+    code = await load_source({"type": "inline", "text": "x = 1"}, None, max_bytes=100, external_id="a/b.py")
+    assert code.filename == "a/b.py"
+    pdf = await load_source({"type": "inline", "text": "x"}, None, max_bytes=100, external_id="a.pdf")
+    assert pdf.filename == "a.pdf.txt"  # binary formats are never read from inline text
+
+
+async def test_parse_unsupported_binary_and_empty():
+    for name in ("x/report.docx", "x/old.xls", "pic.png"):
+        with pytest.raises(ApiError) as e:
+            await parse_document(RawDocument(name, b"PK\x03\x04"), ParseContext())
+        assert e.value.status == 422
+    with pytest.raises(ApiError):
+        await parse_document(RawDocument("a.md", b"  \n"), ParseContext())
+
+
+async def test_parse_markdown_keeps_kind():
+    segs = await parse_document(RawDocument("a.md", b"# T\n\nbody"), ParseContext())
+    assert segs and segs[0].kind == "markdown"
+
+
+def test_identifier_expansion_for_bm25():
+    out = expand_identifiers("call embed_query and embedQuery in HybridSearchService")
+    assert "embed query" in out and "Hybrid Search Service" in out
 
 
 # ---- schemas -------------------------------------------------------------------

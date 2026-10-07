@@ -28,6 +28,16 @@ def build_context(chunks: list[Chunk]) -> str:
     blocks = []
     for i, c in enumerate(chunks, start=1):
         src = c.external_id or str(c.document_id)
+        loc = c.locator
+        if loc is not None:
+            where = [
+                f"стр. {loc.page}" if loc.page else "",
+                f"лист {loc.sheet}" if loc.sheet else "",
+                f"{loc.range}" if loc.range else "",
+                f"строки {loc.line_start}-{loc.line_end}" if loc.line_start and loc.line_end else "",
+                loc.symbol or "",
+            ]
+            src += "".join(f", {w}" for w in where if w)
         blocks.append(f"[{i}] (источник: {src})\n{c.text}")
     return "\n\n".join(blocks)
 
@@ -51,6 +61,7 @@ def extract_citations(answer: str, chunks: list[Chunk]) -> list[Citation]:
                 chunk_id=c.id,
                 document_id=c.document_id,
                 external_id=c.external_id,
+                locator=c.locator,
                 quote=c.text[:QUOTE_MAX],
             )
         )

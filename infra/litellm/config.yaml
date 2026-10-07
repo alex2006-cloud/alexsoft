@@ -20,5 +20,12 @@ model_list:
     model_info:
       mode: embedding
 
+  # Vision OCR for scanned PDF pages (ADR-0018). Needs OPENAI_API_KEY.
+  # Fallback without OpenAI: model: dashscope/qwen-vl-plus + api_key: os.environ/DASHSCOPE_API_KEY.
+  - model_name: vision
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
