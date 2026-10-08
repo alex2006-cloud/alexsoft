@@ -48,9 +48,9 @@ def seed_agents(settings: Settings) -> list[dict[str, Any]]:
         {
             "id": "bp1-project-qa",
             "title": "Q&A по проекту (БП1)",
-            "description": "Ответы по документации и коду alexsoft на базе RAG. Включается после реализации агента БП1.",
+            "description": "Ответы по документации и коду alexsoft на базе RAG (LangGraph + Qdrant) со ссылками на источники.",
             "kind": "langgraph",
-            "enabled": False,
+            "enabled": True,
             "input_hint": "Спросите об архитектуре проекта",
             "config": {"assistant_id": "bp1_qa", "url": settings.bl_agent_server_url},
             "sort": 30,

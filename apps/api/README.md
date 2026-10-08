@@ -16,9 +16,9 @@ FastAPI-сервис бизнес-логики для кабинета. Конт
 |----|------|-----------|
 | `echo-demo` | `echo` | включён; заглушка без LLM |
 | `agent1-qa` | `langgraph` | включён; граф `agent1_qa` на Agent Server `:2024` (нужны LiteLLM и Studio) |
-| `bp1-project-qa` | `langgraph` | **выключен**; место под агента БП1 (`assistant_id: bp1_qa`) |
+| `bp1-project-qa` | `langgraph` | включён; агент БП1 «Q&A по проекту» — граф `bp1_qa` (нужны Studio `:2024`, RAG `:8200`, LiteLLM) |
 
-Чтобы подключить агента БП1: добавить граф `bp1_qa` в `apps/agent1/langgraph.json` (или другой Agent Server), перезапустить Studio, включить агента в админ-панели кабинета (или `PATCH /v1/admin/agents/bp1-project-qa`). Новый тип запуска (не LangGraph) — это новый класс `AgentRunner` в `alexsoft_api/agents/` и ключ в `build_runners`. `trace_id` запуска = `run_id` Agent Server (совпадает с трейсом LangSmith при включённом трейсинге).
+Seed вставляется с `ON CONFLICT DO NOTHING`: в уже существующей БД состояние агента меняется в админ-панели кабинета (или `PATCH /v1/admin/agents/bp1-project-qa`), а не правкой seed. Агент БП1 описан в [`apps/agent1/README.md`](../agent1/README.md). Новый тип запуска (не LangGraph) — это новый класс `AgentRunner` в `alexsoft_api/agents/` и ключ в `build_runners`. `trace_id` запуска = `run_id` Agent Server (совпадает с трейсом LangSmith при включённом трейсинге).
 
 Пока нет RabbitMQ (этап 6), BL вызывает Agent Platform напрямую по HTTP — временная связь, отражена в C4.
 

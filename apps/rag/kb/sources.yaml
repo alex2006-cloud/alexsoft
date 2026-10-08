@@ -27,6 +27,8 @@ exclude:
   - "artifacts/generated/**"       # rendered diagrams (png/svg); the DSL is the source of truth
   - "artifacts/adr/0000-template.md"
   - ".cursor/**"
+  # Langflow flow exports are multi-MB JSON; chunks exceed embedding model 8192-token limit
+  - "apps/*/langflow/flows/**"
   # artifacts/portfolio/ mirrors other artifacts (collect-portfolio.mjs); index the originals only
   - "artifacts/portfolio/architecture/**"
   - "artifacts/portfolio/0001*"

@@ -117,13 +117,13 @@
 - [x] RAG, 3 слоя в коде: загрузка → хранение эмбеддингов → пайплайны поиска (hybrid dense+BM25, RRF/DBSF)
 - [x] `apps/rag` (сервис RAG, FastAPI, порт 8200; реализует `rag.openapi.yaml`; тесты: unit + интеграционные + контрактные) — `[apps/rag](apps/rag/README.md)`
 - [x] Мультиформатный ingest и **база знаний о проекте** (docs + код): PDF (+ vision-OCR сканов через LiteLLM), Excel (таблицы + формулы), код (символы и строки), `.bpmn`/`.drawio`; коллекции `project-docs` и `project-code`; `infra/rag/kb-sync.ps1` (инкрементально, с защитой от секретов и LLM-описаниями файлов) — [ADR-0018](artifacts/adr/0018-rag-multiformat-ingest-and-project-kb.md)
-- [ ] Живой прогон на `text-embedding-3-small`: ключ `OPENAI_API_KEY` в `.env` → перезапуск LiteLLM → `infra/litellm/smoke-embeddings.ps1` → `infra/rag/kb-sync.ps1` → `apps/rag/eval/run_eval.py --answer`
+- [x] Живой прогон на `text-embedding-3-small`: ключ `OPENAI_API_KEY` в `.env` → перезапуск LiteLLM → `infra/litellm/smoke-embeddings.ps1` → `infra/rag/kb-sync.ps1` → `apps/rag/eval/run_eval.py --answer` (hit@5 = 0.83; `project-docs` 81 docs / 995 chunks, `project-code` 512 docs / 891 chunks)
 
 **5.7 — первый AI-агент с RAG**
 
 После **5.6**. Первый AI-продукт с RAG (см. БК1); не путать с «продуктом агента 3» из старого плана 5.4.
 
-- [ ] **Первый AI-агент с RAG** (поверх `apps/rag` + LiteLLM)
+- [x] **Первый AI-агент с RAG** (поверх `apps/rag` + LiteLLM): БП1 «Q&A по проекту» — граф `bp1_qa` в `apps/agent1` (LangGraph, tool `search_project` → `/v1/search` по `project-docs` / `project-code`, ответ со ссылками на источники); агент `bp1-project-qa` включён в BL и кабинете; eval `infra/agent1/eval-bp1.ps1` — 11/11 (цель ≥ 0.8)
 - [ ] Lab «RAG» → Live (когда есть URL; публично — только после IAM / личного кабинета)
 
 ## Этап 6 — перенос / целевой контур (планирование)

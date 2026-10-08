@@ -1,0 +1,36 @@
+# Eval set for the BP1 agent (graph bp1_qa). Run: infra/agent1/eval-bp1.ps1
+# A question passes when the answer cites at least one of `sources` (substring of a path in the answer)
+# and, if `keywords` is given, mentions at least one of them. `refuse: true` = out-of-corpus question:
+# the agent must decline / admit there is no answer and must NOT cite any project source.
+questions:
+  - q: "Какой шлюз используется для доступа к LLM и почему агенты не ходят к провайдерам напрямую?"
+    sources: ["0011-ai-gateway-litellm", "ai-gateway"]
+    keywords: ["LiteLLM"]
+  - q: "Как личный кабинет аутентифицирует пользователей и где проверяется JWT?"
+    sources: ["0019-cabinet-ssr-bff-authentik", "apps/api"]
+    keywords: ["Authentik", "JWKS"]
+  - q: "Где живёт код игр и как он попадает на сайт вместе с лендингом?"
+    sources: ["0010-games-static-app", "apps/games"]
+    keywords: ["games", "игр"]
+  - q: "Какая модель эмбеддингов используется в RAG-сервисе?"
+    sources: ["apps/rag", "0018", "0017"]
+    keywords: ["text-embedding-3-small"]
+  - q: "Какие коллекции есть в векторной базе и что в них хранится?"
+    sources: ["0018", "sources.yaml", "apps/rag"]
+    keywords: ["project-docs", "project-code"]
+  - q: "Какой reverse proxy / edge используется в архитектуре?"
+    sources: ["0007-edge-nginx-npm", "0015"]
+    keywords: ["Nginx"]
+  - q: "Как BL API запускает агента в LangGraph Agent Server и получает ответ?"
+    sources: ["langgraph_server.py", "apps/api"]
+    keywords: ["stream", "SSE", "run"]
+  - q: "Как RAG-сервис разбивает исходный код на чанки?"
+    sources: ["chunker.py", "apps/rag", "0018"]
+    keywords: ["чанк", "chunk"]
+  - q: "Какие этапы в ROADMAP относятся к AI-контуру и что входит в 5.7?"
+    sources: ["ROADMAP.md"]
+    keywords: ["5.7"]
+  - q: "Какая сегодня погода в Москве?"
+    refuse: true
+  - q: "Расскажи рецепт борща."
+    refuse: true

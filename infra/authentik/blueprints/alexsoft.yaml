@@ -29,6 +29,10 @@ entries:
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
       client_type: confidential
+      # Required: blueprint/API leaves this empty, and Authentik then rejects authorize with invalid_request
+      grant_types:
+        - authorization_code
+        - refresh_token
       client_id: !Env [OIDC_CLIENT_ID, alexsoft-cabinet]
       client_secret: !Env OIDC_CLIENT_SECRET
       redirect_uris:

@@ -60,6 +60,16 @@ powershell -ExecutionPolicy Bypass -File infra\agent1\stop-langflow.ps1
 
 При ошибках сборки на Windows установите [MSVC Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
 
+## Продукт БП1: Q&A по проекту (RAG)
+
+Граф `bp1_qa` (описание — [`apps/agent1/README.md`](../../apps/agent1/README.md)). Нужны LiteLLM `:8080`, RAG `:8200`,
+Studio `:2024` и `RAG_API_KEY` в `.env`:
+
+```powershell
+& "$env:LOCALAPPDATA\AlexsoftAgent1\venv\Scripts\python.exe" infra\agent1\smoke-bp1.py   # поиск + вопрос через граф
+powershell -ExecutionPolicy Bypass -File infra\agent1\eval-bp1.ps1                        # eval через Agent Server
+```
+
 ## Продукт: Q&A-агент с калькулятором
 
 Граф `agent1_qa` в терминале (нужны LiteLLM и venv Agent1):

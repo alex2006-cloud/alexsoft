@@ -14,6 +14,8 @@ from ..schemas import ChunkingConfig
 
 MIN_CHUNK_TOKENS = 32  # tiny markdown sections (e.g. a lone heading) are merged into the previous chunk
 PAGE_MAX_FACTOR = 2  # a page/table block is kept whole up to chunk_size * this
+# OpenAI text-embedding-3-small rejects inputs over 8192 tokens; leave headroom for the header
+EMBED_MAX_TOKENS = 7000
 
 DEFAULT_STRATEGY = {
     "markdown": "markdown",
@@ -109,6 +111,22 @@ def _whole_or_split(seg: Segment, cfg: ChunkingConfig) -> list[TextChunk]:
     return _windowed(seg, cfg, "sentence")
 
 
+def _fit_embed_limit(chunks: list[TextChunk], cfg: ChunkingConfig) -> list[TextChunk]:
+    """Split any chunk whose embed_text would exceed the embedding model context window."""
+    tokenizer = get_tokenizer()
+    out: list[TextChunk] = []
+    splitter = TokenTextSplitter(chunk_size=cfg.chunk_size, chunk_overlap=cfg.chunk_overlap)
+    for chunk in chunks:
+        if len(tokenizer(chunk.embed_text)) <= EMBED_MAX_TOKENS:
+            out.append(chunk)
+            continue
+        for piece in splitter.split_text(chunk.text):
+            piece = piece.strip()
+            if piece:
+                out.append(TextChunk(piece, chunk.header, dict(chunk.locator), chunk.kind))
+    return out
+
+
 def chunk_segments(segments: list[Segment], cfg: ChunkingConfig) -> list[TextChunk]:
     if cfg.chunk_overlap >= cfg.chunk_size:
         raise ValueError("chunk_overlap must be smaller than chunk_size")
@@ -127,7 +145,7 @@ def chunk_segments(segments: list[Segment], cfg: ChunkingConfig) -> list[TextChu
             out.extend(_whole_or_split(seg, cfg))
         else:  # sentence | token
             out.extend(_windowed(seg, cfg, strategy))
-    return out
+    return _fit_embed_limit(out, cfg)
 
 
 def chunk_text(text: str, cfg: ChunkingConfig) -> list[TextChunk]:

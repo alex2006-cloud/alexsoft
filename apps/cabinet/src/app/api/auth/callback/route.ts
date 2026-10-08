@@ -24,7 +24,11 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
   const state = params.get("state");
   const cookieState = req.cookies.get(LOGIN_COOKIE)?.value;
-  if (params.get("error")) return fail("denied");
+  if (params.get("error")) {
+    // Authentik maps many failures (empty grant_types, bad redirect, cancel) to error=...
+    console.error("oidc callback error:", params.get("error"), params.get("error_description"));
+    return fail(params.get("error") === "access_denied" ? "denied" : "exchange");
+  }
   if (!state || !cookieState || state !== cookieState) return fail("state");
 
   const login = await takeLogin(state);

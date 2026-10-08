@@ -17,7 +17,8 @@ export default async function LoginError({ searchParams }: { searchParams: Promi
         <h1 className="display text-2xl">Не удалось войти</h1>
         <p className="mt-3 text-ink-dim">{REASONS[reason ?? ""] ?? "Что-то пошло не так."}</p>
         <div className="mt-6 flex gap-3">
-          <a className="btn" href="/app/api/auth/login">
+          {/* Full URL so the browser always does a hard navigation (API route returns 303 to Authentik). */}
+          <a className="btn" href="/app/api/auth/login?returnTo=%2Fapp">
             Войти
           </a>
           <a className="btn btn-ghost" href="/">

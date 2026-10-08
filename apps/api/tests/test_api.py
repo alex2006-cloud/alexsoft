@@ -88,11 +88,17 @@ async def test_me_roles_and_quota(client, make_token):
 async def test_agents_list_hides_disabled(client, make_token):
     r = await client.get("/v1/agents", headers=bearer(make_token()))
     ids = [a["id"] for a in r.json()["items"]]
-    assert ids == ["echo-demo", "agent1-qa"]  # bp1-project-qa is disabled by default
+    assert ids == ["echo-demo", "agent1-qa", "bp1-project-qa"]
     assert "config" not in r.json()["items"][0]
+    admin = make_token(sub="a-1", groups=["alexsoft-admins"], username="root")
+    assert (await client.patch("/v1/admin/agents/agent1-qa", json={"enabled": False}, headers=bearer(admin))).status_code == 200
+    ids = [a["id"] for a in (await client.get("/v1/agents", headers=bearer(make_token()))).json()["items"]]
+    assert ids == ["echo-demo", "bp1-project-qa"]
 
 
 async def test_disabled_agent_cannot_run(client, make_token):
+    admin = make_token(sub="a-1", groups=["alexsoft-admins"], username="root")
+    await client.patch("/v1/admin/agents/bp1-project-qa", json={"enabled": False}, headers=bearer(admin))
     r = await client.post("/v1/agents/bp1-project-qa/runs", json={"input": "hi"}, headers=bearer(make_token()))
     assert r.status_code == 404
 
@@ -213,6 +219,9 @@ async def test_admin_settings_change_quota(client, make_token):
 
 async def test_admin_toggle_agent_and_stats(client, make_token):
     admin = make_token(sub="a-1", groups=["alexsoft-admins"], username="root")
+    r = await client.patch("/v1/admin/agents/bp1-project-qa", json={"enabled": False}, headers=bearer(admin))
+    assert r.status_code == 200 and r.json()["enabled"] is False
+    assert "bp1-project-qa" not in [a["id"] for a in (await client.get("/v1/agents", headers=bearer(make_token()))).json()["items"]]
     r = await client.patch("/v1/admin/agents/bp1-project-qa", json={"enabled": True}, headers=bearer(admin))
     assert r.status_code == 200 and r.json()["enabled"] is True
     assert "bp1-project-qa" in [a["id"] for a in (await client.get("/v1/agents", headers=bearer(make_token()))).json()["items"]]

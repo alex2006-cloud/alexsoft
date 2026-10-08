@@ -6,7 +6,7 @@ export default function SignedOut() {
       <div className="panel mx-auto max-w-lg p-8">
         <h1 className="display text-2xl">Вы вышли из кабинета</h1>
         <div className="mt-6 flex gap-3">
-          <a className="btn" href="/app/api/auth/login">
+          <a className="btn" href="/app/api/auth/login?returnTo=%2Fapp">
             Войти снова
           </a>
           <a className="btn btn-ghost" href="/">

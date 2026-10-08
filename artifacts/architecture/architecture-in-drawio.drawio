@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram name="Страница-1" id="fTWoUnDUK6GiSJuJ4Qjo">
-    <mxGraphModel dx="1537" dy="1601" grid="1" gridSize="10" guides="0" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2039" dy="1905" grid="1" gridSize="10" guides="0" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -64,7 +64,7 @@
         <mxCell id="j03xKc4rXderQ0Zs5p-X-10" parent="j03xKc4rXderQ0Zs5p-X-18" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;b&gt;API GATEWAY/&lt;/b&gt;&lt;b&gt;Веб-сервер&lt;/b&gt;&lt;span lang=&quot;ru&quot; style=&quot;font-family: Calibri;&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;i&gt;&lt;span lang=&quot;ru&quot; style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;NGINX&lt;/span&gt;&lt;/i&gt;" vertex="1">
           <mxGeometry height="80" width="240" x="40" y="200" as="geometry" />
         </mxCell>
-        <mxCell id="j03xKc4rXderQ0Zs5p-X-13" parent="j03xKc4rXderQ0Zs5p-X-18" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;b&gt;Сервисы аутентификации и авторизации&lt;/b&gt;&lt;br&gt;&lt;i&gt;&lt;span lang=&quot;ru&quot;&gt;Authentik&lt;/span&gt;&lt;/i&gt;" vertex="1">
+        <mxCell id="j03xKc4rXderQ0Zs5p-X-13" parent="j03xKc4rXderQ0Zs5p-X-18" style="rounded=1;whiteSpace=wrap;html=1;" value="&lt;b&gt;Сервис аутентификации и авторизации&lt;/b&gt;&lt;br&gt;&lt;i&gt;&lt;span lang=&quot;ru&quot;&gt;Authentik&lt;/span&gt;&lt;/i&gt;" vertex="1">
           <mxGeometry height="80" width="240" x="40" y="320" as="geometry" />
         </mxCell>
         <mxCell id="j03xKc4rXderQ0Zs5p-X-14" edge="1" parent="j03xKc4rXderQ0Zs5p-X-18" source="j03xKc4rXderQ0Zs5p-X-13" style="endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="j03xKc4rXderQ0Zs5p-X-10" value="">

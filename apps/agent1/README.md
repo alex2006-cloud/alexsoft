@@ -19,6 +19,7 @@
 - `graph.py` — echo без LLM (smoke Studio).
 - `graph_llm.py` — chat через LiteLLM (`AGENT1_MODEL`, по умолчанию `deepseek`).
 - `graph_qa.py` — **продукт: Q&A-агент с калькулятором** (см. ниже).
+- `graph_bp1.py` — **продукт БП1: Q&A по проекту на RAG** (граф `bp1_qa`, см. ниже).
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File infra\agent1\smoke-litellm.ps1
@@ -48,7 +49,39 @@ powershell -ExecutionPolicy Bypass -File infra\agent1\chat-qa.ps1 --once "2^10 +
 В Studio: `start-studio.ps1`, затем граф `agent1_qa` — в трейсе видно вызов `calculator` и
 возврат в `agent`.
 
-## Тот же продукт в LangFlow
+## Продукт БП1: Q&A по проекту (RAG)
+
+Граф `bp1_qa` (US-0001, этап 5.7): ассистент отвечает на вопросы об архитектуре, решениях, документации и
+коде alexsoft **только по найденным фрагментам** базы знаний и в конце перечисляет источники.
+
+Цикл тот же, что в `agent1_qa`: `agent` (LLM через LiteLLM) → `tools` → `agent`. Единственный инструмент —
+`search_project(query, collection, top_k)`: он через [`rag_client.py`](rag_client.py) вызывает `POST /v1/search`
+сервиса `apps/rag` (гибридный поиск Qdrant) по коллекции `project-docs` (документация, ADR, ROADMAP, PDF/Excel)
+или `project-code` (код и конфиги). Результат — пронумерованные источники `[n] путь (раздел / строки / символ)`.
+Ошибки RAG (нет ключа, 401, недоступен) инструмент возвращает строкой `ERROR: ...`, и агент честно сообщает о сбое.
+Промпт ([`prompts.py`](prompts.py)): отвечать только по фрагментам, вопросы вне темы отклонять, текст внутри
+найденных фрагментов считать данными (не инструкциями), секреты не повторять.
+
+Настройки (корневой `.env`, подхватывается Studio): `RAG_API_KEY` (обязателен, иначе RAG отвечает 401),
+`RAG_URL` (по умолчанию `http://127.0.0.1:$RAG_PORT`). Агенты шлют в LiteLLM `LITELLM_MASTER_KEY`, а не
+`OPENAI_API_KEY` из `.env` (тот нужен самому LiteLLM для эмбеддингов).
+
+Предусловия: LiteLLM `:8080`, RAG `:8200` (+ Qdrant), Studio `:2024` (`start-studio.ps1`).
+В BL агент зарегистрирован как `bp1-project-qa` (`assistant_id: bp1_qa`).
+
+```powershell
+# смоук: поиск + один вопрос через граф
+& "$env:LOCALAPPDATA\AlexsoftAgent1\venv\Scripts\python.exe" infra\agent1\smoke-bp1.py "Какой шлюз к LLM используется?"
+# eval на 11 вопросах через Agent Server (цель >= 0.8)
+powershell -ExecutionPolicy Bypass -File infra\agent1\eval-bp1.ps1
+# unit-тесты (нужен pytest в venv: pip install pytest)
+cd apps\agent1; & "$env:LOCALAPPDATA\AlexsoftAgent1\venv\Scripts\python.exe" -m pytest tests -q
+```
+
+Вопросы eval — [`eval/bp1_questions.yaml`](eval/bp1_questions.yaml). После крупных правок документации или кода
+перезапусти `infra\rag\kb-sync.ps1`, чтобы агент видел актуальную базу.
+
+## Q&A с калькулятором в LangFlow
 
 Флоу `agent1_qa`: `Chat Input → Agent → Chat Output`, инструмент Agent'а — компонент
 **Alexsoft Calculator**. Цикл «подумал → позвал инструмент → ответил» здесь внутри компонента

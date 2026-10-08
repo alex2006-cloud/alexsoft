@@ -3,7 +3,8 @@
   "graphs": {
     "agent1": "./graph.py:graph",
     "agent1_llm": "./graph_llm.py:graph",
-    "agent1_qa": "./graph_qa.py:graph"
+    "agent1_qa": "./graph_qa.py:graph",
+    "bp1_qa": "./graph_bp1.py:graph"
   },
   "env": "../../.env"
 }

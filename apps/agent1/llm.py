@@ -23,9 +23,11 @@ def model_name() -> str:
 
 
 def make_llm(temperature: float = 0) -> ChatOpenAI:
+    # All traffic goes through LiteLLM (ADR-0011), so its master key wins. The shared .env also holds a
+    # real OPENAI_API_KEY (used by LiteLLM itself for embeddings/vision) - it must not be sent to the gateway.
     api_key = (
-        os.environ.get("OPENAI_API_KEY")
-        or os.environ.get("LITELLM_MASTER_KEY")
+        os.environ.get("LITELLM_MASTER_KEY")
+        or os.environ.get("OPENAI_API_KEY")
         or "sk-unset"
     )
     return ChatOpenAI(

@@ -38,13 +38,17 @@ if (Test-Path $envFile) {
 if (-not $env:LANGSMITH_TRACING) { $env:LANGSMITH_TRACING = "false" }
 # Windows console without colorama used to crash; keep colors off when headless.
 if (-not $env:LOG_COLOR) { $env:LOG_COLOR = "false" }
+# The repo .env is UTF-8 (Cyrillic comments); langgraph's dotenv reader otherwise uses the cp1251 locale codec.
+$env:PYTHONUTF8 = "1"
 
 # Map LiteLLM for OpenAI-compatible clients (used after wire step)
 if ($env:AI_GATEWAY_URL -and -not $env:OPENAI_BASE_URL) {
     $base = $env:AI_GATEWAY_URL.TrimEnd("/")
     $env:OPENAI_BASE_URL = "$base/v1"
 }
-if ($env:LITELLM_MASTER_KEY -and -not $env:OPENAI_API_KEY) {
+# .env holds a real OPENAI_API_KEY for LiteLLM itself (embeddings/vision); agents must send the
+# gateway key instead, otherwise LiteLLM answers 401.
+if ($env:LITELLM_MASTER_KEY) {
     $env:OPENAI_API_KEY = $env:LITELLM_MASTER_KEY
 }
 
