@@ -1,0 +1,69 @@
+# Authentik on VDS — joins data network `alexsoft`, Postgres = service `postgres`.
+# ADR-0021 / ADR-0019. Run with data stack:
+#   cd /opt/alexsoft/infra/compose/vds
+#   set -a && . /etc/alexsoft/.env && set +a
+#   docker compose -f docker-compose.yml -f docker-compose.authentik.yml up -d
+
+name: alexsoft-vds
+
+x-authentik-env: &authentik-env
+  AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?set AUTHENTIK_SECRET_KEY}
+  AUTHENTIK_POSTGRESQL__HOST: postgres
+  AUTHENTIK_POSTGRESQL__PORT: "5432"
+  AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_DB_NAME:-authentik}
+  AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_DB_USER:-authentik}
+  AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_DB_PASSWORD:?set AUTHENTIK_DB_PASSWORD}
+  AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+  AUTHENTIK_DISABLE_UPDATE_CHECK: "true"
+  AUTHENTIK_DISABLE_STARTUP_ANALYTICS: "true"
+  AUTHENTIK_WEB__BASE_URL: ${AUTH_PUBLIC_URL:-https://auth.alexsoft.space}
+  PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-https://alexsoft.space}
+  AUTH_PUBLIC_URL: ${AUTH_PUBLIC_URL:-https://auth.alexsoft.space}
+  OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-alexsoft-cabinet}
+  OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?set OIDC_CLIENT_SECRET}
+  AUTHENTIK_BL_TOKEN: ${AUTHENTIK_BL_TOKEN:?set AUTHENTIK_BL_TOKEN}
+
+services:
+  authentik-server:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.8.3}
+    command: server
+    restart: unless-stopped
+    environment:
+      <<: *authentik-env
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD:?set AUTHENTIK_BOOTSTRAP_PASSWORD}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL:-admin@alexsoft.space}
+    networks: [alexsoft]
+    ports:
+      - "127.0.0.1:${AUTHENTIK_PORT_HTTP:-9100}:9000"
+    shm_size: 512mb
+    volumes:
+      - authentik_data:/data
+      - /opt/alexsoft/infra/authentik/blueprints:/blueprints/custom:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  authentik-worker:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.8.3}
+    command: worker
+    restart: unless-stopped
+    depends_on:
+      authentik-server:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *authentik-env
+    networks: [alexsoft]
+    shm_size: 512mb
+    volumes:
+      - authentik_data:/data
+      - /opt/alexsoft/infra/authentik/blueprints:/blueprints/custom:ro
+
+volumes:
+  authentik_data:
+
+networks:
+  alexsoft:
+    external: true
+    name: alexsoft

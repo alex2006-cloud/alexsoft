@@ -1,0 +1,97 @@
+# VDS day-1 data plane (фаза 2+). Сеть внутренняя; наружу только через host Nginx.
+# Запуск на сервере:
+#   cd /opt/alexsoft/infra/compose/vds   # или путь к checkout
+#   set -a && source /etc/alexsoft/.env && set +a
+#   docker compose up -d
+#
+# Не публиковать порты БД в 0.0.0.0. Management UI — SSH-туннель.
+# См. ADR-0021, artifacts/architecture/vds-cutover-plan.md
+
+name: alexsoft-vds
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-alexsoft}
+      POSTGRES_USER: ${POSTGRES_USER:-alexsoft}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - /var/lib/alexsoft/postgres:/var/lib/postgresql/data
+    networks: [alexsoft]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # только localhost хоста (туннель / локальные сервисы на VDS)
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    command: ["sh", "-c", "redis-server --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - /var/lib/alexsoft/redis:/data
+    networks: [alexsoft]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  minio:
+    # Official minio/minio removed from Docker Hub/Quay (2026); Chainguard community image
+    # Host dir must be writable by uid 65532: chown -R 65532:65532 /var/lib/alexsoft/minio
+    image: cgr.dev/chainguard/minio:latest
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+    volumes:
+      - /var/lib/alexsoft/minio:/data
+    networks: [alexsoft]
+    # health via host curl after up (image may lack curl/mc)
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+
+  qdrant:
+    image: qdrant/qdrant:v1.13.2
+    restart: unless-stopped
+    volumes:
+      - /var/lib/alexsoft/qdrant:/qdrant/storage
+    networks: [alexsoft]
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-alexsoft}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}
+    volumes:
+      - /var/lib/alexsoft/rabbitmq:/var/lib/rabbitmq
+    networks: [alexsoft]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+
+networks:
+  alexsoft:
+    name: alexsoft
+    driver: bridge

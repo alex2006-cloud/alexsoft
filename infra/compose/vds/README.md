@@ -1,0 +1,56 @@
+# Compose на VDS (alexsoft)
+
+Целевой data-plane для полного cutover: [ADR-0021](../../../artifacts/adr/0021-vds-full-cutover.md), [vds-cutover-plan.md](../../../artifacts/architecture/vds-cutover-plan.md).
+
+## Сервисы (фаза 2)
+
+| Сервис | Порт на хосте | Назначение |
+|--------|---------------|------------|
+| postgres | `127.0.0.1:5432` | РСУБД приложения (+ позже БД Authentik) |
+| redis | `127.0.0.1:6379` | Кэш |
+| minio | `127.0.0.1:9000` / `:9001` | S3 + Console (туннель) |
+| qdrant | `127.0.0.1:6333` | Векторная БД |
+| rabbitmq | `127.0.0.1:5672` / `:15672` | Брокер + management (туннель) |
+
+Сеть Docker: `alexsoft`. Edge (Nginx) — **host**, не в этом файле.
+
+## На сервере
+
+```bash
+# секреты
+cp infra/compose/vds/.env.example /etc/alexsoft/.env   # один раз; заменить пароли
+chmod 600 /etc/alexsoft/.env
+
+# volumes уже: /var/lib/alexsoft/{postgres,redis,minio,qdrant,rabbitmq}
+
+cd /path/to/repo/infra/compose/vds
+set -a && source /etc/alexsoft/.env && set +a
+docker compose pull
+docker compose up -d
+docker compose ps
+```
+
+Не поднимать, пока не заполнены пароли в `/etc/alexsoft/.env`.
+
+### Authentik (фаза 3)
+
+```bash
+# БД
+bash setup-authentik-db.sh   # или уже выполнено
+
+# старт (рядом с data compose)
+set -a && . /etc/alexsoft/.env && set +a
+docker compose -f docker-compose.yml -f docker-compose.authentik.yml up -d authentik-server authentik-worker
+```
+
+Публично: https://auth.alexsoft.space — admin `/if/admin/`, логин `akadmin`, пароль `AUTHENTIK_BOOTSTRAP_PASSWORD` из `/etc/alexsoft/.env`.  
+Если `docker pull` с ghcr.io рвётся по IPv6 — временно `sysctl net.ipv6.conf.all.disable_ipv6=1` (см. `pull-authentik.sh`).
+
+### MinIO (Chainguard)
+
+Официальный `minio/minio` с Docker Hub/Quay недоступен (2026). В compose — `cgr.dev/chainguard/minio` (nonroot uid **65532**):
+
+```bash
+mkdir -p /var/lib/alexsoft/minio
+chown -R 65532:65532 /var/lib/alexsoft/minio
+```

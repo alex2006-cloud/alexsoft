@@ -126,8 +126,17 @@
 - [x] **Первый AI-агент с RAG** (поверх `apps/rag` + LiteLLM): БП1 «Q&A по проекту» — граф `bp1_qa` в `apps/agent1` (LangGraph, tool `search_project` → `/v1/search` по `project-docs` / `project-code`, ответ со ссылками на источники); агент `bp1-project-qa` включён в BL и кабинете; eval `infra/agent1/eval-bp1.ps1` — 11/11 (цель ≥ 0.8)
 - [ ] Lab «RAG» → Live (когда есть URL; публично — только после IAM / личного кабинета)
 
-## Этап 6 — перенос / целевой контур (планирование)
+## Этап 6 — полный переезд на VDS
 
-Детальный чеклист внедрения на VDS **не** фиксируем здесь. Сначала план на основе архитектуры: что переносим с ноутбука, что поднимаем заново, в каком порядке. Заметки и критерии — в [CONCEPT.md](CONCEPT.md).
+Режим: **полный cutover** (включая все БД), без гибрида. Lab-агенты/тестовые данные локалки не переносим. План по схеме draw.io: [`artifacts/architecture/vds-cutover-plan.md`](artifacts/architecture/vds-cutover-plan.md). Заметки владельца — в [CONCEPT.md](CONCEPT.md).
 
-- [ ] Спланировать этап 6: перенос и/или создание контура заново согласно целевой архитектуре ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md), C4 / draw.io)
+- [x] Спланировать этап 6: полный перенос / создание контура заново ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md), draw.io → [vds-cutover-plan.md](artifacts/architecture/vds-cutover-plan.md))
+- [x] Фаза 0: домены, [ADR-0021](artifacts/adr/0021-vds-full-cutover.md), Compose [`infra/compose/vds/`](infra/compose/vds/), ufw, Nginx HTTP-stub + certbot (2026-10-28). DNS A → новый IP и TLS — остаток ниже
+- [x] Фаза 1: фундамент VDS — Docker, каталоги, `/etc/alexsoft/.env`
+- [ ] DNS + TLS: A `alexsoft.space` / `www` / `auth` → `31.172.71.231`, затем certbot
+- [x] Фаза 2: плоскость данных на VDS — Postgres/Redis/MinIO/Qdrant/RabbitMQ up (2026-10-28; MinIO = Chainguard)
+- [x] Фаза 3 (частично): Authentik на VDS + TLS `auth`/`www`; `/app` 503 до cabinet; apex DNS ещё старый (2026-10-28)
+- [ ] Фаза 4: cabinet + BL API + CI-деплой
+- [ ] Фаза 5: LiteLLM + RAG + Agent Platform + ingest; RabbitMQ BL→Agent; Q&A-агент (перенос кода или новый)
+- [ ] Фаза 6: observability + Metabase (+ LangSmith)
+- [ ] Фаза 7: DNS cutover (если не раньше), выключить локальный runtime, бэкапы volume

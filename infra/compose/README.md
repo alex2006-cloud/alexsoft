@@ -1,6 +1,8 @@
 # Docker Compose
 
-Локальный контур и публичная витрина.
+**VDS (полный cutover):** [`vds/`](vds/) — data-plane на сервере, [ADR-0021](../../artifacts/adr/0021-vds-full-cutover.md).
+
+Локальный контур и публичная витрина (ниже).
 
 Порядок появления сервисов данных: PostgreSQL → Redis → MinIO → продукты → RabbitMQ.
 
