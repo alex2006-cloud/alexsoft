@@ -1,6 +1,8 @@
-# LangGraph Agent Server on VDS (фаза 5). Direct HTTP from BL until RabbitMQ.
+# LangGraph Agent Server + RabbitMQ worker on VDS (фаза 5).
+# BL publishes to RabbitMQ; agent-worker consumes and calls agent1 HTTP.
+#
 #   docker compose -f docker-compose.yml -f docker-compose.litellm.yml -f docker-compose.rag.yml \
-#     -f docker-compose.agent1.yml up -d --build agent1
+#     -f docker-compose.agent1.yml up -d --build agent1 agent-worker
 
 name: alexsoft-vds
 
@@ -15,7 +17,6 @@ services:
     environment:
       AI_GATEWAY_URL: http://litellm:4000
       OPENAI_BASE_URL: http://litellm:4000/v1
-      # Agents must authenticate to LiteLLM with the master key (not provider OPENAI_API_KEY).
       OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
       AGENT1_MODEL: ${AGENT1_MODEL:-deepseek}
@@ -40,6 +41,26 @@ services:
       timeout: 5s
       retries: 10
       start_period: 60s
+
+  agent-worker:
+    image: ${AGENT1_IMAGE:-alexsoft-agent1:local}
+    restart: unless-stopped
+    command: ["python", "rmq_worker.py"]
+    env_file: [/etc/alexsoft/.env]
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: ${RABBITMQ_USER:-alexsoft}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}
+      BL_AGENT_QUEUE: ${BL_AGENT_QUEUE:-alexsoft.agent.runs}
+      BL_AGENT_SERVER_URL: http://agent1:2024
+      BL_RUN_TIMEOUT_S: ${BL_RUN_TIMEOUT_S:-120}
+    networks: [alexsoft]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      agent1:
+        condition: service_healthy
 
 networks:
   alexsoft:

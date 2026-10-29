@@ -26,8 +26,14 @@ services:
       POSTGRES_PORT: "5432"
       BL_JWKS_URL: http://authentik-server:9000/application/o/${OIDC_APP_SLUG:-alexsoft-cabinet}/jwks/
       BL_AUTHENTIK_API_URL: http://authentik-server:9000/api/v3
-      # Agent runtime arrives in фаза 5; echo agents still list without it.
-      BL_AGENT_SERVER_URL: ${BL_AGENT_SERVER_URL:-http://127.0.0.1:2024}
+      # фаза 5: BL → RabbitMQ → agent-worker → agent1
+      BL_AGENT_SERVER_URL: ${BL_AGENT_SERVER_URL:-http://agent1:2024}
+      BL_AGENT_TRANSPORT: ${BL_AGENT_TRANSPORT:-rabbitmq}
+      BL_AGENT_QUEUE: ${BL_AGENT_QUEUE:-alexsoft.agent.runs}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: ${RABBITMQ_USER:-alexsoft}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD}
     networks: [alexsoft]
     ports:
       - "127.0.0.1:${BL_PORT:-8100}:8100"

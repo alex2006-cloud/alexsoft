@@ -8,17 +8,28 @@ from ..config import Settings
 from .base import AgentError, AgentRunner, Message, Meta, RunRequest, Step
 from .echo import EchoRunner
 from .langgraph_server import LangGraphServerRunner
+from .rabbit_langgraph import RabbitLangGraphRunner
 
 __all__ = [
     "AgentError", "AgentRunner", "Message", "Meta", "RunRequest", "Step",
-    "EchoRunner", "LangGraphServerRunner", "build_runners", "seed_agents",
+    "EchoRunner", "LangGraphServerRunner", "RabbitLangGraphRunner", "build_runners", "seed_agents",
 ]
 
 
 def build_runners(settings: Settings) -> dict[str, AgentRunner]:
+    transport = (settings.bl_agent_transport or "http").strip().lower()
+    if transport == "rabbitmq":
+        langgraph: AgentRunner = RabbitLangGraphRunner(
+            settings.amqp_url,
+            queue_name=settings.bl_agent_queue,
+            timeout_s=settings.bl_run_timeout_s,
+            default_agent_url=settings.bl_agent_server_url,
+        )
+    else:
+        langgraph = LangGraphServerRunner(settings.bl_agent_server_url, timeout_s=settings.bl_run_timeout_s)
     return {
         "echo": EchoRunner(),
-        "langgraph": LangGraphServerRunner(settings.bl_agent_server_url, timeout_s=settings.bl_run_timeout_s),
+        "langgraph": langgraph,
     }
 
 

@@ -137,6 +137,6 @@
 - [x] Фаза 2: плоскость данных на VDS — Postgres/Redis/MinIO/Qdrant/RabbitMQ up (2026-10-28; MinIO = Chainguard)
 - [x] Фаза 3: Authentik на VDS + TLS apex/www/auth
 - [x] Фаза 4: cabinet + BL API на VDS, Nginx `/app`, smoke логин→агенты; CI лендинга + apps (GHCR→VDS)
-- [x] Фаза 5 (частично): LiteLLM + RAG + ingest + LangGraph `bp1_qa` (Q&A smoke OK); RabbitMQ BL→Agent и LLM Guard — ещё открыты
+- [x] Фаза 5: LiteLLM + RAG + ingest + LangGraph `bp1_qa` + RabbitMQ BL→Agent (`agent-worker`); LLM Guard отложен (не day-1)
 - [ ] Фаза 6: observability + Metabase (+ LangSmith)
 - [ ] Фаза 7: DNS cutover (если не раньше), выключить локальный runtime, бэкапы volume

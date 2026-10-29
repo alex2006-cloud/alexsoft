@@ -26,8 +26,27 @@ class Settings(BaseSettings):
     bl_run_timeout_s: float = 120.0
     bl_max_input_chars: int = 8000
 
-    # agents: LangGraph Agent Server (apps/agent1); BL calls it directly until RabbitMQ (stage 6)
+    # agents: LangGraph Agent Server (apps/agent1)
     bl_agent_server_url: str = "http://127.0.0.1:2024"
+    # http = temporary direct call; rabbitmq = BL publish → agent worker consume (целевой путь)
+    bl_agent_transport: str = "http"
+    bl_agent_queue: str = "alexsoft.agent.runs"
+    rabbitmq_host: str = "localhost"
+    rabbitmq_port: int = 5672
+    rabbitmq_user: str = "guest"
+    rabbitmq_password: str = "guest"
+    rabbitmq_vhost: str = "/"
+    rabbitmq_url: str = ""  # optional full AMQP URL override
+
+    @property
+    def amqp_url(self) -> str:
+        if self.rabbitmq_url:
+            return self.rabbitmq_url
+        vh = quote(self.rabbitmq_vhost, safe="") if self.rabbitmq_vhost != "/" else ""
+        return (
+            f"amqp://{quote(self.rabbitmq_user)}:{quote(self.rabbitmq_password)}"
+            f"@{self.rabbitmq_host}:{self.rabbitmq_port}/{vh}"
+        )
 
     # IAM (Authentik). Issuer is what the browser-facing host puts into `iss`;
     # JWKS / API are fetched directly from the Authentik port (no gateway hop).

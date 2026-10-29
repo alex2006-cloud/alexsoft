@@ -114,9 +114,9 @@
 - [x] RAG (`apps/rag`) → MinIO + Qdrant + LiteLLM — Compose `rag`, Qdrant **v1.15.3**, hybrid via `FusionQuery` (2026-10-29).
 - [x] Ingest корпуса → `project-docs` (170/2882) + `project-code` (390/2531); `run-kb-sync.sh` (2026-10-29).
 - [x] Agent Platform: LangGraph runtime (`apps/agent1`, граф `bp1_qa`) на `:2024`; Studio/LangFlow/Dify — не блокер (2026-10-29).
-- [ ] Провод RabbitMQ: BL `publish` → Agent `consume run` (пока временный прямой HTTP BL→`agent1:2024`).
+- [x] Провод RabbitMQ: BL `publish` → `agent-worker` `consume` → LangGraph `agent1` (`BL_AGENT_TRANSPORT=rabbitmq`); fallback `http` оставлен в конфиге (2026-10-29).
 - [x] Агент Q&A по проекту: `bp1_qa` smoke — ответ про LiteLLM со ссылками на корпус (2026-10-29).
-- [ ] LLM Guard — после зелёного прогона без него.
+- ~~LLM Guard~~ — отложено: подключим, когда понадобится (не в критерии cutover day-1).
 
 ### 6. Наблюдаемость и BI
 

@@ -61,10 +61,15 @@ docker compose -f docker-compose.yml -f docker-compose.litellm.yml -f docker-com
 bash run-kb-sync.sh --no-summaries
 bash smoke-rag.sh
 
-# Agent1 (bp1_qa); BL_AGENT_SERVER_URL=http://agent1:2024 в /etc/alexsoft/.env
+# Agent1 + RabbitMQ worker; BL_AGENT_TRANSPORT=rabbitmq в /etc/alexsoft/.env
+# (BL_AGENT_SERVER_URL=http://agent1:2024)
 docker compose -f docker-compose.yml -f docker-compose.litellm.yml -f docker-compose.rag.yml \
-  -f docker-compose.agent1.yml up -d --build agent1
-bash smoke-bp1.sh
+  -f docker-compose.agent1.yml up -d --build agent1 agent-worker
+# BL API с publish (после правок apps/api):
+docker compose -f docker-compose.yml -f docker-compose.authentik.yml -f docker-compose.apps.yml \
+  up -d --build bl-api
+bash smoke-bp1.sh                  # прямой HTTP к agent1
+python3 smoke-rmq-bp1.py           # полный путь: кабинет → BL → RabbitMQ → worker → bp1_qa
 ```
 
 Публично наружу не открывать — только `127.0.0.1` + сеть `alexsoft`.

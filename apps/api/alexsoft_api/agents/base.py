@@ -1,6 +1,6 @@
 """Agent adapter interface (ADR-0020). A runner turns one user input into a stream of events.
 
-BL calls the Agent Platform directly (temporary link until the RabbitMQ broker of stage 6).
+BL → Agent: `BL_AGENT_TRANSPORT=http` (прямой вызов) или `rabbitmq` (publish / consume run).
 Adding the BP1 agent = a registry row (kind + config) and, if needed, a new runner kind.
 """
 

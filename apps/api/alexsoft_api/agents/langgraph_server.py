@@ -91,7 +91,8 @@ class LangGraphServerRunner:
         self._transport = transport
 
     async def run(self, req: RunRequest) -> AsyncIterator[RunnerEvent]:
-        base = str(req.config.get("url") or self._default_url).rstrip("/")
+        raw = str(req.config.get("url") or self._default_url).rstrip("/")
+        base = self._default_url if ("127.0.0.1" in raw or "localhost" in raw) else raw
         assistant = req.config.get("assistant_id")
         if not assistant:
             raise AgentError("Агент не настроен (assistant_id)")
