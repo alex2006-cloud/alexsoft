@@ -7,6 +7,7 @@ dependencies = [
   "langchain",
   "langgraph",
   "langchain-openai",
+  "httpx",
 ]
 
 [build-system]
@@ -14,4 +15,4 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["graph", "graph_llm", "graph_qa", "calculator", "llm", "prompts"]
+py-modules = ["graph", "graph_llm", "graph_qa", "graph_bp1", "calculator", "llm", "prompts", "rag_client"]

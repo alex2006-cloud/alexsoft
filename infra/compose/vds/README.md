@@ -46,6 +46,29 @@ docker compose -f docker-compose.yml -f docker-compose.authentik.yml up -d authe
 Публично: https://auth.alexsoft.space — admin `/if/admin/`, логин `akadmin`, пароль `AUTHENTIK_BOOTSTRAP_PASSWORD` из `/etc/alexsoft/.env`.  
 Если `docker pull` с ghcr.io рвётся по IPv6 — временно `sysctl net.ipv6.conf.all.disable_ipv6=1` (см. `pull-authentik.sh`).
 
+### AI (фаза 5)
+
+```bash
+# LiteLLM DB + gateway
+bash setup-litellm-db.sh
+docker compose -f docker-compose.yml -f docker-compose.litellm.yml up -d litellm
+bash smoke-litellm.sh
+
+# RAG (+ Qdrant v1.15+)
+docker compose -f docker-compose.yml -f docker-compose.litellm.yml -f docker-compose.rag.yml \
+  up -d --build rag
+# ключи AI: powershell -File infra/compose/vds/sync-ai-env.ps1
+bash run-kb-sync.sh --no-summaries
+bash smoke-rag.sh
+
+# Agent1 (bp1_qa); BL_AGENT_SERVER_URL=http://agent1:2024 в /etc/alexsoft/.env
+docker compose -f docker-compose.yml -f docker-compose.litellm.yml -f docker-compose.rag.yml \
+  -f docker-compose.agent1.yml up -d --build agent1
+bash smoke-bp1.sh
+```
+
+Публично наружу не открывать — только `127.0.0.1` + сеть `alexsoft`.
+
 ### BL API + Cabinet (фаза 4)
 
 Нужен checkout с `apps/api`, `apps/cabinet` и этим compose (обычно `/opt/alexsoft`).

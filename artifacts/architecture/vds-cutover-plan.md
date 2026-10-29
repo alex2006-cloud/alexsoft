@@ -110,12 +110,12 @@
 
 ### 5. ИИ-контур
 
-- [ ] LiteLLM + ключи провайдеров + `text-embedding-3-small`.
-- [ ] RAG (`apps/rag`) → MinIO + Qdrant + LiteLLM.
-- [ ] Ingest корпуса (из git / MinIO) → коллекции `project-docs` / `project-code` (или новые имена).
-- [ ] Agent Platform: LangGraph runtime (код из `apps/agent1`); Studio/LangFlow/Dify — не блокер cutover.
-- [ ] Провод RabbitMQ: BL `publish` → Agent `consume run` (убрать прямой HTTP BL→Agent как временный).
-- [ ] Агент Q&A по проекту: поднять существующий граф **или** новый — критерий: прогон + ответ с источниками.
+- [x] LiteLLM + ключи провайдеров + `text-embedding-3-small` — Compose `litellm`, smoke embed+deepseek (2026-10-29).
+- [x] RAG (`apps/rag`) → MinIO + Qdrant + LiteLLM — Compose `rag`, Qdrant **v1.15.3**, hybrid via `FusionQuery` (2026-10-29).
+- [x] Ingest корпуса → `project-docs` (170/2882) + `project-code` (390/2531); `run-kb-sync.sh` (2026-10-29).
+- [x] Agent Platform: LangGraph runtime (`apps/agent1`, граф `bp1_qa`) на `:2024`; Studio/LangFlow/Dify — не блокер (2026-10-29).
+- [ ] Провод RabbitMQ: BL `publish` → Agent `consume run` (пока временный прямой HTTP BL→`agent1:2024`).
+- [x] Агент Q&A по проекту: `bp1_qa` smoke — ответ про LiteLLM со ссылками на корпус (2026-10-29).
 - [ ] LLM Guard — после зелёного прогона без него.
 
 ### 6. Наблюдаемость и BI

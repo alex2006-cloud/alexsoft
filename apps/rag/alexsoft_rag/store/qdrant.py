@@ -156,11 +156,9 @@ class VectorStore:
         rrf_k: int,
         flt: qm.Filter | None,
     ) -> list[qm.ScoredPoint]:
-        query: qm.Query
-        if fusion == "dbsf":
-            query = qm.FusionQuery(fusion=qm.Fusion.DBSF)
-        else:
-            query = qm.RrfQuery(rrf=qm.Rrf(k=rrf_k))
+        # qdrant-client ≥1.14 + Qdrant 1.15: use FusionQuery for RRF (RrfQuery JSON is rejected).
+        _ = rrf_k  # server-side RRF uses its default k
+        query = qm.FusionQuery(fusion=qm.Fusion.DBSF if fusion == "dbsf" else qm.Fusion.RRF)
         try:
             res = await self.client.query_points(
                 collection_name=name,

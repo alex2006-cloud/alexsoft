@@ -1,0 +1,47 @@
+# LangGraph Agent Server on VDS (фаза 5). Direct HTTP from BL until RabbitMQ.
+#   docker compose -f docker-compose.yml -f docker-compose.litellm.yml -f docker-compose.rag.yml \
+#     -f docker-compose.agent1.yml up -d --build agent1
+
+name: alexsoft-vds
+
+services:
+  agent1:
+    build:
+      context: ../../..
+      dockerfile: apps/agent1/Dockerfile
+    image: ${AGENT1_IMAGE:-alexsoft-agent1:local}
+    restart: unless-stopped
+    env_file: [/etc/alexsoft/.env]
+    environment:
+      AI_GATEWAY_URL: http://litellm:4000
+      OPENAI_BASE_URL: http://litellm:4000/v1
+      # Agents must authenticate to LiteLLM with the master key (not provider OPENAI_API_KEY).
+      OPENAI_API_KEY: ${LITELLM_MASTER_KEY}
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      AGENT1_MODEL: ${AGENT1_MODEL:-deepseek}
+      RAG_URL: http://rag:8200
+      RAG_API_KEY: ${RAG_API_KEY}
+      LANGSMITH_TRACING: "false"
+    networks: [alexsoft]
+    ports:
+      - "127.0.0.1:${AGENT1_STUDIO_PORT:-2024}:2024"
+    depends_on:
+      litellm:
+        condition: service_healthy
+      rag:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:2024/ok', timeout=3)\"",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+networks:
+  alexsoft:
+    external: true
+    name: alexsoft
