@@ -1,0 +1,73 @@
+# BL API + Cabinet on VDS (фаза 4). Same project/network as data + Authentik.
+# Local / first bring-up (build on server):
+#   cd /opt/alexsoft/infra/compose/vds
+#   set -a && . /etc/alexsoft/.env && set +a
+#   docker compose -f docker-compose.yml -f docker-compose.authentik.yml -f docker-compose.apps.yml \
+#     up -d --build bl-api cabinet
+#
+# CI (GHCR images, no --build):
+#   BL_API_IMAGE=ghcr.io/alex2006-cloud/alexsoft-bl-api:sha-… \
+#   CABINET_IMAGE=ghcr.io/alex2006-cloud/alexsoft-cabinet:sha-… \
+#   bash deploy-apps.sh
+
+name: alexsoft-vds
+
+services:
+  bl-api:
+    image: ${BL_API_IMAGE:-alexsoft-bl-api:local}
+    build:
+      context: ../../..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: [/etc/alexsoft/.env]
+    environment:
+      BL_HOST: "0.0.0.0"
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      BL_JWKS_URL: http://authentik-server:9000/application/o/${OIDC_APP_SLUG:-alexsoft-cabinet}/jwks/
+      BL_AUTHENTIK_API_URL: http://authentik-server:9000/api/v3
+      # Agent runtime arrives in фаза 5; echo agents still list without it.
+      BL_AGENT_SERVER_URL: ${BL_AGENT_SERVER_URL:-http://127.0.0.1:2024}
+    networks: [alexsoft]
+    ports:
+      - "127.0.0.1:${BL_PORT:-8100}:8100"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health/live', timeout=2)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  cabinet:
+    image: ${CABINET_IMAGE:-alexsoft-cabinet:local}
+    build:
+      context: ../../..
+      dockerfile: apps/cabinet/Dockerfile
+    restart: unless-stopped
+    env_file: [/etc/alexsoft/.env]
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      BL_URL: http://bl-api:8100
+      HOSTNAME: "0.0.0.0"
+      PORT: "3020"
+    networks: [alexsoft]
+    ports:
+      - "127.0.0.1:${CABINET_PORT:-3020}:3020"
+    depends_on:
+      bl-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3020/app').then(r=>process.exit(r.ok||r.status===307||r.status===302?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+
+networks:
+  alexsoft:
+    external: true
+    name: alexsoft

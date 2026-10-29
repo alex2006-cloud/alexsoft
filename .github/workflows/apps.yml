@@ -1,0 +1,157 @@
+name: Apps
+
+# BL API + Cabinet images → GHCR → VDS (фаза 4).
+# Secrets: LANDING_SSH_KEY (тот же ключ, что для лендинга; public key в authorized_keys на VDS).
+
+on:
+  push:
+    paths:
+      - "apps/api/**"
+      - "apps/cabinet/**"
+      - "infra/compose/vds/docker-compose.apps.yml"
+      - "infra/compose/vds/deploy-apps.sh"
+      - ".github/workflows/apps.yml"
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - "apps/cabinet/**"
+      - "infra/compose/vds/docker-compose.apps.yml"
+      - "infra/compose/vds/deploy-apps.sh"
+      - ".github/workflows/apps.yml"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # lowercase required by GHCR
+  IMAGE_API: ghcr.io/alex2006-cloud/alexsoft-bl-api
+  IMAGE_CABINET: ghcr.io/alex2006-cloud/alexsoft-cabinet
+  DEPLOY_HOST: 31.172.71.231
+  DEPLOY_USER: root
+  DEPLOY_COMPOSE_DIR: /opt/alexsoft/infra/compose/vds
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image version
+        id: meta
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            v="${GITHUB_REF_NAME}"
+          else
+            v="sha-${GITHUB_SHA::12}"
+          fi
+          echo "version=${v}" >> "$GITHUB_OUTPUT"
+          echo "version=${v}"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker tags (API)
+        id: tags_api
+        run: |
+          set -euo pipefail
+          tags="${IMAGE_API}:${{ steps.meta.outputs.version }}"
+          if [[ "${GITHUB_REF}" == "refs/heads/main" && "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
+            tags="${tags}"$'\n'"${IMAGE_API}:latest"
+          fi
+          {
+            echo "tags<<EOF"
+            echo "${tags}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Docker tags (Cabinet)
+        id: tags_cabinet
+        run: |
+          set -euo pipefail
+          tags="${IMAGE_CABINET}:${{ steps.meta.outputs.version }}"
+          if [[ "${GITHUB_REF}" == "refs/heads/main" && "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
+            tags="${tags}"$'\n'"${IMAGE_CABINET}:latest"
+          fi
+          {
+            echo "tags<<EOF"
+            echo "${tags}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build BL API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
+          tags: ${{ steps.tags_api.outputs.tags }}
+          cache-from: type=gha,scope=bl-api
+          cache-to: type=gha,mode=max,scope=bl-api
+
+      - name: Build Cabinet
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/cabinet/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          load: ${{ github.event_name == 'pull_request' }}
+          tags: ${{ steps.tags_cabinet.outputs.tags }}
+          cache-from: type=gha,scope=cabinet
+          cache-to: type=gha,mode=max,scope=cabinet
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.LANDING_SSH_KEY }}
+
+      - name: Trust VDS host key
+        run: ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Sync compose + deploy script
+        run: |
+          set -euo pipefail
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p ${DEPLOY_COMPOSE_DIR} /opt/alexsoft"
+          rsync -avz --delete \
+            infra/compose/vds/ \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_COMPOSE_DIR}/"
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "chmod +x ${DEPLOY_COMPOSE_DIR}/deploy-apps.sh"
+
+      - name: Pull images and restart on VDS
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          API_IMAGE="${IMAGE_API}:${VERSION}"
+          CAB_IMAGE="${IMAGE_CABINET}:${VERSION}"
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "echo '${GHCR_TOKEN}' | docker login ghcr.io -u '${GHCR_USER}' --password-stdin"
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "BL_API_IMAGE='${API_IMAGE}' CABINET_IMAGE='${CAB_IMAGE}' bash ${DEPLOY_COMPOSE_DIR}/deploy-apps.sh"
+          # Drop temporary GHCR creds from the build token (job-scoped).
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "docker logout ghcr.io >/dev/null 2>&1 || true"

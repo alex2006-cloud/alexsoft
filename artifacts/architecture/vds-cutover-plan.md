@@ -71,7 +71,8 @@
 - [x] Скелет Compose VDS: [`infra/compose/vds/`](../../infra/compose/vds/) + `/etc/alexsoft/.env` на сервере.
 - [x] ADR cutover: [ADR-0021](../adr/0021-vds-full-cutover.md).
 - [x] Firewall ufw 22/80/443; Nginx HTTP-stub + certbot установлены на VDS.
-- [ ] DNS: A `alexsoft.space`, `www`, `auth` → `31.172.71.231` (сейчас apex ещё на старый IP) → затем `certbot --nginx -d alexsoft.space -d www.alexsoft.space`.
+- [x] DNS: A `alexsoft.space`, `www`, `auth` → `31.172.71.231` (apex починен после отвязки хостинга reg.ru Host-0).
+- [x] TLS Let's Encrypt: `alexsoft.space`+`www` (один сертификат), `auth.alexsoft.space` (2026-10-29).
 - ~~Бэкапы volume~~ — исключены на старте (решение владельца).
 
 ### 1. Фундамент VDS
@@ -97,15 +98,15 @@
 - [x] Nginx: HTTP/HTTPS stub лендинга (`www` TLS); `/app` → 503 до фазы 4; Authentik на `auth.alexsoft.space` (TLS). Apex `alexsoft.space` — DNS ещё старый IP.
 - [x] Authentik Compose на VDS (`docker-compose.authentik.yml` + DB `authentik` в Postgres); blueprint OIDC `alexsoft-cabinet`, JWKS OK. (2026-10-28)
 - [x] Админ bootstrap: пользователь **`akadmin`**, пароль в `/etc/alexsoft/.env` → `AUTHENTIK_BOOTSTRAP_PASSWORD` (на сервере). Тестового user — через UI enrollment или Admin после входа.
-- [ ] Полный Nginx под кабинет (`/app` → `:3020`) — с фазой 4.
-- [ ] TLS на apex `alexsoft.space` — после смены A `@` на `31.172.71.231`.
+- [x] Полный Nginx под кабинет (`/app` → `:3020`) — 2026-10-29 (фаза 4).
+- [x] TLS на apex `alexsoft.space` (+ www) — 2026-10-29.
 
 ### 4. Приложения
 
-- [ ] BL API (`apps/api`): миграции схемы `bl`, JWT по JWKS, слушает только внутреннюю сеть.
-- [ ] Cabinet SSR (`apps/cabinet`): OIDC login, BFF → BL.
-- [ ] CI: деплой статики + образов/артефактов cabinet/api.
-- [ ] Smoke БК1 без AI: логин → список агентов (даже echo).
+- [x] BL API (`apps/api`): Compose `bl-api`, схема `bl`, JWT/JWKS via `authentik-server`, порт `127.0.0.1:8100` (2026-10-29).
+- [x] Cabinet SSR (`apps/cabinet`): Compose `cabinet`, OIDC → `auth.alexsoft.space`, BFF → `bl-api`, порт `127.0.0.1:3020` (2026-10-29).
+- [x] CI: статика — [`.github/workflows/landing.yml`](../../.github/workflows/landing.yml) → VDS `/var/www/alexsoft`; образы cabinet/api — [`.github/workflows/apps.yml`](../../.github/workflows/apps.yml) → GHCR → `deploy-apps.sh` (2026-10-29).
+- [x] Smoke БК1 без AI: логин → список агентов (echo + langgraph stubs) — 2026-10-29.
 
 ### 5. ИИ-контур
 

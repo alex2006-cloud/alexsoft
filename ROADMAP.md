@@ -133,10 +133,10 @@
 - [x] Спланировать этап 6: полный перенос / создание контура заново ([ADR-0015](artifacts/adr/0015-target-architecture-stacks.md), draw.io → [vds-cutover-plan.md](artifacts/architecture/vds-cutover-plan.md))
 - [x] Фаза 0: домены, [ADR-0021](artifacts/adr/0021-vds-full-cutover.md), Compose [`infra/compose/vds/`](infra/compose/vds/), ufw, Nginx HTTP-stub + certbot (2026-10-28). DNS A → новый IP и TLS — остаток ниже
 - [x] Фаза 1: фундамент VDS — Docker, каталоги, `/etc/alexsoft/.env`
-- [ ] DNS + TLS: A `alexsoft.space` / `www` / `auth` → `31.172.71.231`, затем certbot
+- [x] DNS + TLS: A `@`/`www`/`auth` → `31.172.71.231`; certbot apex+www и auth (2026-10-29)
 - [x] Фаза 2: плоскость данных на VDS — Postgres/Redis/MinIO/Qdrant/RabbitMQ up (2026-10-28; MinIO = Chainguard)
-- [x] Фаза 3 (частично): Authentik на VDS + TLS `auth`/`www`; `/app` 503 до cabinet; apex DNS ещё старый (2026-10-28)
-- [ ] Фаза 4: cabinet + BL API + CI-деплой
+- [x] Фаза 3: Authentik на VDS + TLS apex/www/auth
+- [x] Фаза 4: cabinet + BL API на VDS, Nginx `/app`, smoke логин→агенты; CI лендинга + apps (GHCR→VDS)
 - [ ] Фаза 5: LiteLLM + RAG + Agent Platform + ingest; RabbitMQ BL→Agent; Q&A-агент (перенос кода или новый)
 - [ ] Фаза 6: observability + Metabase (+ LangSmith)
 - [ ] Фаза 7: DNS cutover (если не раньше), выключить локальный runtime, бэкапы volume

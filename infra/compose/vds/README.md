@@ -46,6 +46,26 @@ docker compose -f docker-compose.yml -f docker-compose.authentik.yml up -d authe
 Публично: https://auth.alexsoft.space — admin `/if/admin/`, логин `akadmin`, пароль `AUTHENTIK_BOOTSTRAP_PASSWORD` из `/etc/alexsoft/.env`.  
 Если `docker pull` с ghcr.io рвётся по IPv6 — временно `sysctl net.ipv6.conf.all.disable_ipv6=1` (см. `pull-authentik.sh`).
 
+### BL API + Cabinet (фаза 4)
+
+Нужен checkout с `apps/api`, `apps/cabinet` и этим compose (обычно `/opt/alexsoft`).
+
+**CI (предпочтительно):** workflow [`.github/workflows/apps.yml`](../../../.github/workflows/apps.yml) на `main` собирает образы → GHCR (`alexsoft-bl-api`, `alexsoft-cabinet`) → SSH на VDS → `deploy-apps.sh`. Секрет тот же, что у лендинга: `LANDING_SSH_KEY`.
+
+Ручной первый/аварийный bring-up (build на сервере):
+
+```bash
+cd /opt/alexsoft/infra/compose/vds
+set -a && . /etc/alexsoft/.env && set +a
+docker compose -f docker-compose.yml -f docker-compose.authentik.yml -f docker-compose.apps.yml \
+  up -d --build bl-api cabinet
+curl -sS http://127.0.0.1:8100/health/live
+curl -sS -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3020/app
+```
+
+Nginx: `location /app` → `127.0.0.1:3020` (см. `infra/nginx/alexsoft.space.conf`).  
+Cabinet ходит в BL по `BL_URL=http://bl-api:8100` (override в compose); JWKS — через `authentik-server:9000`.
+
 ### MinIO (Chainguard)
 
 Официальный `minio/minio` с Docker Hub/Quay недоступен (2026). В compose — `cgr.dev/chainguard/minio` (nonroot uid **65532**):

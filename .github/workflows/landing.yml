@@ -17,9 +17,10 @@ on:
 
 env:
   LANDING_URL: https://alexsoft.space
-  DEPLOY_HOST: 130.17.1.193
+  # VDS cutover (фаза 4): apex Nginx root = /var/www/alexsoft
+  DEPLOY_HOST: 31.172.71.231
   DEPLOY_USER: root
-  DEPLOY_PATH: /var/www/osipcraft
+  DEPLOY_PATH: /var/www/alexsoft
 
 jobs:
   build:

@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   agentRules: false,
+  // Slim image for VDS Compose (фаза 4).
+  output: "standalone",
+  // Keep standalone layout under apps/cabinet (Docker CMD: node apps/cabinet/server.js).
+  outputFileTracingRoot: path.join(__dirname),
   // Cabinet lives under /app behind the Nginx gateway (ADR-0019/0020); BFF is /app/api/*.
   basePath: "/app",
   // The gateway serves the dev server under *.localhost:8000

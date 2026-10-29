@@ -46,7 +46,7 @@ npm run build
 
 | Secret | Значение |
 |--------|----------|
-| `LANDING_SSH_KEY` | приватный ключ SSH для `root@130.17.1.193` (весь файл `alexsoft_fornex`, включая `BEGIN`/`END`) |
+| `LANDING_SSH_KEY` | приватный ключ SSH для `root@31.172.71.231` (весь файл `alexsoft_fornex`, включая `BEGIN`/`END`; тот же секрет для workflow **Apps**) |
 
 В PowerShell скопируйте ключ **без искажений**:
 
