@@ -1,0 +1,42 @@
+# Metabase on VDS (фаза 6) — ADR-0022.
+# Application DB = Postgres DB `metabase`; analytics = read-only `metabase_ro` → alexsoft.
+# UI: 127.0.0.1:3002 (SSH-туннель). Не публиковать в Nginx day-1.
+#
+#   bash setup-metabase-db.sh
+#   docker compose -f docker-compose.yml -f docker-compose.metabase.yml up -d metabase
+#   bash smoke-metabase.sh
+
+name: alexsoft-vds
+
+services:
+  metabase:
+    image: metabase/metabase:v0.53.6
+    restart: unless-stopped
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: "5432"
+      MB_DB_USER: ${METABASE_DB_USER:-metabase}
+      MB_DB_PASS: ${METABASE_DB_PASSWORD:?set METABASE_DB_PASSWORD}
+      MB_DB_HOST: postgres
+      MB_JETTY_HOST: 0.0.0.0
+      MB_JETTY_PORT: "3000"
+      JAVA_TOOL_OPTIONS: ${METABASE_JAVA_OPTS:--Xmx512m -Xms128m}
+    networks: [alexsoft]
+    ports:
+      - "127.0.0.1:${METABASE_PORT:-3002}:3000"
+    mem_limit: 768m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:3000/api/health | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+
+networks:
+  alexsoft:
+    external: true
+    name: alexsoft

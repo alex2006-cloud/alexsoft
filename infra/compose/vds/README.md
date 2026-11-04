@@ -74,6 +74,26 @@ python3 smoke-rmq-bp1.py           # полный путь: кабинет → B
 
 Публично наружу не открывать — только `127.0.0.1` + сеть `alexsoft`.
 
+### Observability + Metabase (фаза 6)
+
+[ADR-0022](../../../artifacts/adr/0022-vds-observability-metabase.md). UI только `127.0.0.1` + SSH-туннель.
+
+```bash
+# секреты в /etc/alexsoft/.env: GRAFANA_ADMIN_PASSWORD, METABASE_DB_PASSWORD, METABASE_RO_PASSWORD
+mkdir -p /var/lib/alexsoft/{loki,prometheus,grafana,alloy}
+docker compose -f docker-compose.yml -f docker-compose.obs.yml up -d
+bash smoke-obs.sh
+# UI: ssh -L 3001:127.0.0.1:3001 root@VDS → http://127.0.0.1:3001
+
+bash setup-metabase-db.sh
+docker compose -f docker-compose.yml -f docker-compose.metabase.yml up -d metabase
+bash smoke-metabase.sh
+# UI: ssh -L 3002:127.0.0.1:3002 root@VDS → http://127.0.0.1:3002
+# Setup → Add database PostgreSQL host=postgres db=alexsoft user=metabase_ro (read-only)
+```
+
+LangSmith: при `LANGSMITH_API_KEY` в `.env` выставить `LANGSMITH_TRACING=true` и пересоздать `agent1` / `litellm`.
+
 ### BL API + Cabinet (фаза 4)
 
 Нужен checkout с `apps/api`, `apps/cabinet` и этим compose (обычно `/opt/alexsoft`).

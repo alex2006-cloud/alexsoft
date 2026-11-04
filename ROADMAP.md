@@ -138,5 +138,5 @@
 - [x] Фаза 3: Authentik на VDS + TLS apex/www/auth
 - [x] Фаза 4: cabinet + BL API на VDS, Nginx `/app`, smoke логин→агенты; CI лендинга + apps (GHCR→VDS)
 - [x] Фаза 5: LiteLLM + RAG + ingest + LangGraph `bp1_qa` + RabbitMQ BL→Agent (`agent-worker`); LLM Guard отложен (не day-1)
-- [ ] Фаза 6: observability + Metabase (+ LangSmith)
+- [x] Фаза 6: observability (Loki/Prometheus/Alloy/Grafana) + Metabase + LangSmith ([ADR-0022](artifacts/adr/0022-vds-observability-metabase.md), 2026-11-04)
 - [ ] Фаза 7: DNS cutover (если не раньше), выключить локальный runtime, бэкапы volume

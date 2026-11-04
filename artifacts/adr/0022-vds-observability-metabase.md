@@ -1,0 +1,21 @@
+# ADR-0022: Observability и Metabase на VDS (Compose)
+
+- **Статус:** accepted
+- **Дата:** 2026-11-04
+- **Контекст:** Фаза 6 cutover ([vds-cutover-plan.md](../architecture/vds-cutover-plan.md)). Локально стек нативный Windows ([ADR-0008](0008-observability-native-local.md), [ADR-0009](0009-metabase-native-local.md)); на VDS оркестрация — Docker Compose ([ADR-0021](0021-vds-full-cutover.md)). Нужны базовые логи/метрики (host + контейнеры) и BI read-only к Postgres без публикации UI в интернет.
+- **Рассмотренные альтернативы:**
+  - Перенос Windows-бинарников — не подходит для Ubuntu VDS.
+  - Полный k8s/Agent stack — вне day-1; 6 GB RAM.
+  - Публичный Grafana/Metabase за Nginx — отложено (только `127.0.0.1` + SSH-туннель).
+- **Решение:**
+  - **Compose:** `infra/compose/vds/docker-compose.obs.yml` — Loki + Prometheus + Grafana Alloy + Grafana; `docker-compose.metabase.yml` — Metabase OSS.
+  - **Сеть:** все UI/API только `127.0.0.1` (Grafana `:3001`, Metabase `:3002`, Loki `:3100`, Prometheus `:9090`, Alloy UI `:12345`). Доступ — SSH-туннель.
+  - **Alloy:** `loki.source.docker` (docker.sock) → Loki; `prometheus.exporter.unix` + self-scrape → Prometheus remote_write. Конфиг: `infra/compose/vds/obs/config.alloy`.
+  - **Ретеншн lean:** Loki/Prometheus короткие периоды + `mem_limit`, чтобы уложиться в 6 GB рядом с Authentik/LiteLLM/RAG.
+  - **Metabase:** application DB = Postgres DB `metabase` (роль `metabase`); datasource к `alexsoft` — роль `metabase_ro` (SELECT). Setup admin — UI при первом входе.
+  - **LangSmith:** платформа трейсов (не Studio). Ключ `LANGSMITH_API_KEY` в `/etc/alexsoft/.env`; при наличии — `LANGSMITH_TRACING=true` на agent1/LiteLLM. Не блокер day-1.
+- **Последствия:**
+  - Локальный ADR-0008/0009 остаются для ноутбука; VDS — этот ADR.
+  - Без ключа LangSmith трейсы в облако не уходят; smoke фазы 6 = health Grafana/Loki/Prometheus + Metabase `/api/health`.
+  - При OOM: сначала снизить лимиты Metabase (`JAVA_OPTS`) или временно остановить Metabase; не трогать data-plane.
+- **Ссылки:** [ADR-0008](0008-observability-native-local.md), [ADR-0009](0009-metabase-native-local.md), [ADR-0015](0015-target-architecture-stacks.md), [ADR-0021](0021-vds-full-cutover.md), `infra/compose/vds/README.md`

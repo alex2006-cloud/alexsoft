@@ -22,7 +22,10 @@ services:
       AGENT1_MODEL: ${AGENT1_MODEL:-deepseek}
       RAG_URL: http://rag:8200
       RAG_API_KEY: ${RAG_API_KEY}
-      LANGSMITH_TRACING: "false"
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-alexsoft-vds}
+      LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}
     networks: [alexsoft]
     ports:
       - "127.0.0.1:${AGENT1_STUDIO_PORT:-2024}:2024"

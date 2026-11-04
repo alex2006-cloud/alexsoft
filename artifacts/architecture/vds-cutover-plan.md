@@ -120,9 +120,9 @@
 
 ### 6. Наблюдаемость и BI
 
-- [ ] Alloy → Loki / Prometheus → Grafana (базовые дашборды host + контейнеры).
-- [ ] Metabase → read-only к Postgres.
-- [ ] LangSmith: ключ, трейсы с Agent/LiteLLM.
+- [x] Alloy → Loki / Prometheus → Grafana (host metrics + docker logs; UI `127.0.0.1:3001`, [ADR-0022](../adr/0022-vds-observability-metabase.md)) — 2026-11-04.
+- [x] Metabase → Postgres app DB `metabase` + read-only `metabase_ro` → `alexsoft` (UI `127.0.0.1:3002`) — 2026-11-04.
+- [x] LangSmith: `LANGSMITH_API_KEY` + `LANGSMITH_TRACING=true` на `agent1` (`enable-langsmith.sh`) — 2026-11-04.
 
 ### 7. Cutover и выключение локалки как runtime
 
