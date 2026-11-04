@@ -139,4 +139,4 @@
 - [x] Фаза 4: cabinet + BL API на VDS, Nginx `/app`, smoke логин→агенты; CI лендинга + apps (GHCR→VDS)
 - [x] Фаза 5: LiteLLM + RAG + ingest + LangGraph `bp1_qa` + RabbitMQ BL→Agent (`agent-worker`); LLM Guard отложен (не day-1)
 - [x] Фаза 6: observability (Loki/Prometheus/Alloy/Grafana) + Metabase + LangSmith ([ADR-0022](artifacts/adr/0022-vds-observability-metabase.md), 2026-11-04)
-- [ ] Фаза 7: DNS cutover (если не раньше), выключить локальный runtime, бэкапы volume
+- [x] Фаза 7: DNS только на VDS; бэкапы volume (`backup-volumes.sh` + копия на ноутбук); локальный product-runtime остановлен (`infra/stop-local-product-runtime.ps1`) — 2026-11-04

@@ -1,0 +1,40 @@
+# Nginx Proxy Manager on VDS ([ADR-0007](../../../artifacts/adr/0007-edge-nginx-npm.md)).
+# Day-1: UI only — production TLS stays on host Nginx (:80/:443).
+# HTTP/HTTPS of NPM mapped to localhost high ports for smoke / future cutover.
+#
+#   mkdir -p /var/lib/alexsoft/npm/{data,letsencrypt}
+#   docker compose -f docker-compose.yml -f docker-compose.npm.yml up -d npm
+#   ssh -L 81:127.0.0.1:81 root@VDS  →  http://127.0.0.1:81
+#   Default login: admin@example.com / changeme  (сменить сразу)
+#
+# Full edge cutover (later): stop host nginx, remap "80:80" "443:443", recreate Proxy Hosts + SSL.
+
+name: alexsoft-vds
+
+services:
+  npm:
+    image: jc21/nginx-proxy-manager:2.12.3
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:81:81"
+      # Parallel / test only — do not steal host Nginx 80/443 yet
+      - "127.0.0.1:8088:80"
+      - "127.0.0.1:8443:443"
+    environment:
+      DISABLE_IPV6: "true"
+    volumes:
+      - /var/lib/alexsoft/npm/data:/data
+      - /var/lib/alexsoft/npm/letsencrypt:/etc/letsencrypt
+    networks: [alexsoft]
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "curl", "-fS", "http://127.0.0.1:81/api/"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+networks:
+  alexsoft:
+    external: true
+    name: alexsoft

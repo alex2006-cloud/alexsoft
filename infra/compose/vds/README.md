@@ -74,6 +74,33 @@ python3 smoke-rmq-bp1.py           # полный путь: кабинет → B
 
 Публично наружу не открывать — только `127.0.0.1` + сеть `alexsoft`.
 
+### Nginx Proxy Manager (фаза 8 / ADR-0007)
+
+Параллельно с **host Nginx** (прод `:80`/`:443` не забираем):
+
+```bash
+mkdir -p /var/lib/alexsoft/npm/{data,letsencrypt}
+docker compose -f docker-compose.yml -f docker-compose.npm.yml up -d npm
+bash smoke-npm.sh
+# UI: ssh -L 81:127.0.0.1:81 root@VDS → http://127.0.0.1:81
+# логин по умолчанию: admin@example.com / changeme — сменить сразу
+```
+
+Полный перенос edge на NPM (остановить host nginx, повесить `80`/`443` на контейнер, Proxy Hosts + LE) — отдельная операция.
+
+### Cutover / бэкапы (фаза 7)
+
+```bash
+bash smoke-cutover.sh
+bash backup-volumes.sh   # → /var/backups/alexsoft/<stamp>/
+# копия на ноутбук (с Windows):
+#   scp -r root@VDS:/var/backups/alexsoft/<stamp> %USERPROFILE%\alexsoft-backups\
+```
+
+Локальный product-runtime (Postgres/Memurai/MinIO/…):  
+`powershell -ExecutionPolicy Bypass -File infra\stop-local-product-runtime.ps1`  
+(для PostgreSQL Windows Service может понадобиться UAC).
+
 ### Observability + Metabase (фаза 6)
 
 [ADR-0022](../../../artifacts/adr/0022-vds-observability-metabase.md). UI только `127.0.0.1` + SSH-туннель.

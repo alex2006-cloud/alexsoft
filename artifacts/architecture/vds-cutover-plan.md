@@ -126,14 +126,15 @@
 
 ### 7. Cutover и выключение локалки как runtime
 
-- [ ] DNS/трафик только на VDS.
-- [ ] Финальные бэкапы volume (Postgres dump, MinIO, Qdrant snapshot «на всякий»).
-- [ ] Ноутбук: остановить Postgres/Memurai/MinIO/Qdrant/Authentik/… как **серверы продукта**; оставить только Cursor + git.
-- [ ] Обновить ROADMAP: этап 6 planning ✓, фазы внедрения по факту.
+- [x] DNS/трафик только на VDS — A `@`/`www`/`auth` → `31.172.71.231`; HTTPS apex/app/auth OK (2026-11-04).
+- [x] Финальные бэкапы volume: `backup-volumes.sh` → `/var/backups/alexsoft/20261104T0634Z` (+ копия на ноутбук `%USERPROFILE%\alexsoft-backups\`) — Postgres dump, MinIO tar, Qdrant storage (2026-11-04).
+- [x] Ноутбук: `infra/stop-local-product-runtime.ps1` — остановлены lab-процессы; PostgreSQL service Stop + Manual; продукт только на VDS (2026-11-04).
+- [x] ROADMAP: этап 6 фазы 0–7 по факту (2026-11-04).
 
 ### 8. После стабилизации (не day-1)
 
-- NPM при нехватке удобства Nginx, Portainer, k3s, Kafka, заявка РКН — только если появятся ПДн субъектов РФ в проде.
+- [x] **Nginx Proxy Manager** установлен параллельно (UI `127.0.0.1:81`, тест-порты `8088`/`8443`); прод TLS пока host Nginx — 2026-11-04. Полный cutover edge → NPM — по отдельной команде.
+- Portainer, k3s, Kafka, заявка РКН — только если появятся ПДн субъектов РФ в проде / явная нужда.
 
 ---
 
